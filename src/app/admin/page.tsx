@@ -88,7 +88,7 @@ export default function AdminPage() {
     <section className="adminPage adminConsole">
       <div className="adminHero">
         <div><p className="eyebrow">ÉLANE COMMERCE CONSOLE</p><h1>Store operations.</h1></div>
-        <div className="adminHeroActions"><Link className="btn ghost small" href="/">Xem storefront</Link><button className="btn small" onClick={openNewProduct}><Plus size={15} /> Thêm sản phẩm</button></div>
+        <div className="adminHeroActions"><Link className="btn ghost small" href="/">Xem cửa hàng</Link><button className="btn small" onClick={openNewProduct}><Plus size={15} /> Thêm sản phẩm</button></div>
       </div>
 
       <div className="adminTabs">
@@ -117,7 +117,7 @@ export default function AdminPage() {
 
       {tab === "products" ? <div className="adminPanel">
         <div className="adminPanelHead adminPanelToolbar">
-          <div><p className="eyebrow">CATALOG & INVENTORY</p><h2>{catalog.length} sản phẩm</h2></div>
+          <div><p className="eyebrow">PRODUCTS & INVENTORY</p><h2>{catalog.length} sản phẩm</h2></div>
           <div className="adminSearch"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tìm tên, SKU, màu..." /><button className="btn small" onClick={openNewProduct}><Plus size={15} /> Thêm mới</button></div>
         </div>
         <div className="tableWrap"><table className="adminTable productAdminTable"><thead><tr><th>Sản phẩm</th><th>SKU</th><th>Danh mục</th><th>Giá</th><th>Tồn kho</th><th>Hiển thị</th><th></th></tr></thead><tbody>{visibleCatalog.map((product) => <tr key={product.id}>
@@ -130,7 +130,7 @@ export default function AdminPage() {
       </div> : null}
 
       {tab === "orders" ? <div className="adminPanel">
-        <div className="adminPanelHead"><div><p className="eyebrow">ORDER MANAGEMENT</p><h2>Đơn hàng</h2></div><span className="adminHint">Checkout trên storefront sẽ xuất hiện tại đây.</span></div>
+        <div className="adminPanelHead"><div><p className="eyebrow">ORDER MANAGEMENT</p><h2>Đơn hàng</h2></div><span className="adminHint">Đơn hàng mới từ website sẽ xuất hiện tại đây.</span></div>
         {orders.length ? <div className="adminOrderList">{orders.map((order) => <article key={order.id}>
           <div><strong>#{order.id}</strong><small>{new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(order.createdAt))}</small></div>
           <div><strong>{order.customer.name}</strong><small>{order.customer.phone} · {order.customer.city}</small></div>
@@ -147,9 +147,9 @@ export default function AdminPage() {
           <button className="btn" onClick={() => updateSettings({ promoText: promo.trim() || settings.promoText })}><Save size={15} /> Lưu thông báo</button>
         </div>
         <div className="adminPanel dangerPanel">
-          <div className="adminPanelHead"><div><p className="eyebrow">CATALOG DATA</p><h2>Khôi phục catalog</h2></div><RefreshCcw size={19} /></div>
-          <p>Đưa toàn bộ sản phẩm, giá và tồn kho về dữ liệu seed ban đầu. Đơn hàng và wishlist không bị xóa.</p>
-          <button className="btn secondary" onClick={() => { if (window.confirm("Khôi phục catalog mặc định?")) resetCatalog(); }}><RefreshCcw size={15} /> Reset catalog</button>
+          <div className="adminPanelHead"><div><p className="eyebrow">PRODUCT DATA</p><h2>Khôi phục dữ liệu sản phẩm</h2></div><RefreshCcw size={19} /></div>
+          <p>Đưa toàn bộ sản phẩm, giá và tồn kho về trạng thái mặc định. Đơn hàng và wishlist vẫn được giữ nguyên.</p>
+          <button className="btn secondary" onClick={() => { if (window.confirm("Khôi phục dữ liệu sản phẩm mặc định?")) resetCatalog(); }}><RefreshCcw size={15} /> Khôi phục mặc định</button>
         </div>
       </div> : null}
 
