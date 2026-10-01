@@ -1,0 +1,84 @@
+
+/* Admin commerce console */
+.adminConsole { max-width: 1600px; margin: 0 auto; }
+.adminHeroActions { display:flex; gap:8px; align-items:center; }
+.adminTabs { display:flex; gap:6px; margin:0 0 24px; overflow-x:auto; padding-bottom:2px; }
+.adminTabs button { border:1px solid var(--line); background:var(--paper); padding:11px 16px; cursor:pointer; white-space:nowrap; font-size:11px; font-weight:700; }
+.adminTabs button.active { background:var(--ink); border-color:var(--ink); color:white; }
+.statCard span { display:block; color:var(--muted); font-size:10px; margin-top:8px; }
+.moneyStat { font-size:22px !important; }
+.adminOverviewGrid,.adminSettingsGrid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+.adminPanel { background:var(--paper); border:1px solid var(--line); padding:22px; }
+.adminPanelHead { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; margin-bottom:18px; }
+.adminPanelHead h2 { font-family:Georgia,serif; font-size:28px; font-weight:400; margin:0; }
+.adminPanelHead .eyebrow { margin-bottom:7px; }
+.adminPanelHead > button { border:0; background:transparent; cursor:pointer; font-size:11px; text-decoration:underline; text-underline-offset:3px; }
+.adminPanelToolbar { align-items:end; }
+.adminSearch { display:flex; gap:8px; }
+.adminSearch input { width:260px; height:40px; border:1px solid var(--line); background:white; padding:0 10px; }
+.compactList,.compactOrders { display:grid; }
+.compactList > div { display:grid; grid-template-columns:48px 1fr auto; align-items:center; gap:11px; padding:9px 0; border-top:1px solid var(--line); }
+.adminThumb { width:48px; height:58px; position:relative; overflow:hidden; background:var(--soft); }
+.adminThumb img,.adminProductImage img { object-fit:cover; }
+.compactList strong,.compactList small,.compactOrders strong,.compactOrders small { display:block; }
+.compactList small,.compactOrders small { color:var(--muted); margin-top:3px; font-size:10px; }
+.compactOrders > div { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:12px 0; border-top:1px solid var(--line); }
+.compactOrders > div > span:last-child { text-align:right; }
+.adminEmpty { color:var(--muted); border:1px dashed var(--line); padding:28px; text-align:center; font-size:12px; }
+.adminEmpty.large { padding:70px 25px; }
+.dangerText { color:#b42318 !important; }
+.adminProductCell { display:flex; align-items:center; gap:10px; min-width:240px; }
+.adminProductImage { width:48px; height:58px; position:relative; overflow:hidden; background:var(--soft); flex:none; }
+.adminProductCell strong,.adminProductCell small { display:block; }
+.adminProductCell small { color:var(--muted); font-size:10px; margin-top:3px; }
+.stockStepper { display:inline-grid; grid-template-columns:28px 34px 28px; border:1px solid var(--line); align-items:center; }
+.stockStepper button { height:28px; border:0; background:white; cursor:pointer; }
+.stockStepper strong { text-align:center; font-size:11px; }
+.visibilityButton { border:1px solid #b6d9ca; background:#edf8f3; color:#176948; min-height:32px; padding:0 9px; display:inline-flex; gap:6px; align-items:center; cursor:pointer; font-size:10px; font-weight:700; }
+.visibilityButton.off { border-color:#d7d2ca; background:#f1eee9; color:#706a62; }
+.rowActions { display:flex; gap:4px; justify-content:flex-end; }
+.rowActions button { width:32px; height:32px; border:1px solid var(--line); background:white; display:grid; place-items:center; cursor:pointer; }
+.adminHint { color:var(--muted); font-size:11px; }
+.adminOrderList { display:grid; }
+.adminOrderList article { display:grid; grid-template-columns:1fr 1.2fr .8fr 1.2fr 160px; gap:18px; align-items:center; border-top:1px solid var(--line); padding:15px 0; }
+.adminOrderList strong,.adminOrderList small { display:block; }
+.adminOrderList small { color:var(--muted); font-size:9px; margin-top:4px; overflow:hidden; text-overflow:ellipsis; }
+.statusSelect { position:relative; }
+.statusSelect select { width:100%; height:38px; border:1px solid var(--line); background:white; padding:0 30px 0 10px; appearance:none; font-size:10px; font-weight:700; }
+.statusSelect svg { position:absolute; right:9px; top:12px; pointer-events:none; }
+.adminField { display:grid; gap:7px; }
+.adminField span { font-size:9px; text-transform:uppercase; font-weight:800; letter-spacing:.08em; color:var(--muted); }
+.adminField input,.adminField select,.adminField textarea { width:100%; border:1px solid var(--line); background:white; padding:10px; outline:none; }
+.adminField input,.adminField select { height:42px; }
+.adminField textarea { resize:vertical; }
+.dangerPanel p { color:var(--muted); line-height:1.65; font-size:12px; }
+.adminModalBackdrop { position:fixed; inset:0; z-index:100; background:rgba(15,14,13,.58); backdrop-filter:blur(7px); display:grid; place-items:center; padding:20px; }
+.adminProductForm { width:min(900px,100%); max-height:92vh; overflow-y:auto; background:var(--bg); border:1px solid var(--line); padding:25px; box-shadow:var(--shadow); }
+.adminFormHead { display:flex; justify-content:space-between; align-items:flex-start; gap:20px; margin-bottom:20px; }
+.adminFormHead h2 { font-family:Georgia,serif; font-size:36px; font-weight:400; margin:0; }
+.adminFormHead .eyebrow { margin-bottom:7px; }
+.adminFormGrid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.adminFormGrid .full { grid-column:span 2; }
+.adminChecks { display:flex; gap:20px; flex-wrap:wrap; margin:18px 0; padding:14px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); font-size:11px; }
+.adminChecks label { display:flex; gap:7px; align-items:center; }
+.adminFormActions { display:flex; justify-content:flex-end; gap:8px; }
+.productAdminTable td:last-child { text-align:right; }
+.status-cancelled { background:#f8e7e7; color:#9b1c1c; }
+.status-completed { background:#e7f4ed; color:#1f6d4f; }
+@media (max-width:1100px) {
+  .adminOverviewGrid,.adminSettingsGrid { grid-template-columns:1fr; }
+  .adminOrderList article { grid-template-columns:1fr 1fr 1fr; }
+  .adminOrderList article > :nth-child(4) { display:none; }
+}
+@media (max-width:760px) {
+  .adminHeroActions { margin-top:20px; flex-wrap:wrap; }
+  .adminPanelToolbar { display:block; }
+  .adminSearch { margin-top:15px; display:grid; grid-template-columns:1fr auto; }
+  .adminSearch input { width:100%; }
+  .adminOrderList article { grid-template-columns:1fr 1fr; }
+  .adminOrderList article > :nth-child(3) { display:none; }
+  .statusSelect { grid-column:span 2; }
+  .adminFormGrid { grid-template-columns:1fr; }
+  .adminFormGrid .full { grid-column:auto; }
+  .adminProductForm { padding:18px; }
+}

@@ -15,11 +15,11 @@ const nav = [
 
 export function Header() {
   const [open, setOpen] = useState(false);
-  const { cartCount, wishlist } = useStore();
+  const { cartCount, wishlist, settings } = useStore();
 
   return (
     <>
-      <div className="announcement">FALL / WINTER 2026 · FREESHIP ĐƠN TỪ 699K · ĐỔI SIZE TRONG 7 NGÀY</div>
+      <div className="announcement">{settings.promoText}</div>
       <header className="siteHeader">
         <Link className="brand" href="/" aria-label="ÉLANE home">ÉLANE<span>®</span></Link>
         <nav className="desktopNav" aria-label="Điều hướng chính">
@@ -27,13 +27,9 @@ export function Header() {
         </nav>
         <div className="headerActions">
           <Link className="iconButton" href="/shop" aria-label="Tìm kiếm"><Search size={19} /></Link>
-          <Link className="iconButton countWrap" href="/wishlist" aria-label="Yêu thích">
-            <Heart size={19} />{wishlist.length > 0 ? <span className="countBadge">{wishlist.length}</span> : null}
-          </Link>
+          <Link className="iconButton countWrap" href="/wishlist" aria-label="Yêu thích"><Heart size={19} />{wishlist.length > 0 ? <span className="countBadge">{wishlist.length}</span> : null}</Link>
           <Link className="iconButton" href="/orders" aria-label="Đơn hàng"><UserRound size={19} /></Link>
-          <Link className="iconButton countWrap" href="/cart" aria-label="Giỏ hàng">
-            <ShoppingBag size={19} />{cartCount > 0 ? <span className="countBadge">{cartCount}</span> : null}
-          </Link>
+          <Link className="iconButton countWrap" href="/cart" aria-label="Giỏ hàng"><ShoppingBag size={19} />{cartCount > 0 ? <span className="countBadge">{cartCount}</span> : null}</Link>
           <button className="iconButton mobileMenu" onClick={() => setOpen(true)} aria-label="Mở menu"><Menu size={21} /></button>
         </div>
       </header>

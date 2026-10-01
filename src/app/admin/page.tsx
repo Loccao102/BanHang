@@ -1,28 +1,179 @@
-import { Boxes, MessageSquareText, PackageCheck, Sparkles } from "lucide-react";
-import { categoryLabels, formatPrice, products } from "@/lib/products";
+"use client";
+
+import Image from "next/image";
+import Link from "next/link";
+import { Boxes, ChevronDown, Eye, EyeOff, PackageCheck, Pencil, Plus, RefreshCcw, Save, Settings2, ShoppingBag, Trash2, TrendingUp } from "lucide-react";
+import { FormEvent, useMemo, useState } from "react";
+import { useStore } from "@/components/store-provider";
+import type { OrderStatus } from "@/lib/cart";
+import { categoryLabels, formatPrice, type Product, type ProductCategory } from "@/lib/products";
+
+type Tab = "overview" | "products" | "orders" | "settings";
+
+const statusLabel: Record<OrderStatus, string> = {
+  processing: "Đang xử lý",
+  confirmed: "Đã xác nhận",
+  shipping: "Đang giao",
+  completed: "Hoàn tất",
+  cancelled: "Đã hủy"
+};
+
+function blankProduct(): Product {
+  return {
+    id: "",
+    sku: "",
+    name: "",
+    subtitle: "",
+    category: "tops",
+    gender: "unisex",
+    price: 399000,
+    color: "Đen",
+    colorFamily: "black",
+    sizes: ["S", "M", "L", "XL"],
+    stock: 10,
+    image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=1000&q=85",
+    images: ["https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=1000&q=85"],
+    style: ["minimal"],
+    occasion: ["casual"],
+    material: "Cotton",
+    fit: "Regular fit",
+    active: true,
+    featured: false,
+    isNew: true
+  };
+}
 
 export default function AdminPage() {
-  const stock = products.reduce((sum, item) => sum + item.stock, 0);
-  const inventoryValue = products.reduce((sum, item) => sum + item.price * item.stock, 0);
+  const { catalog, orders, settings, saveProduct, deleteProduct, adjustStock, toggleProductActive, updateOrderStatus, resetCatalog, updateSettings } = useStore();
+  const [tab, setTab] = useState<Tab>("overview");
+  const [editing, setEditing] = useState<Product | null>(null);
+  const [promo, setPromo] = useState(settings.promoText);
+  const [query, setQuery] = useState("");
+
+  const visibleCatalog = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return catalog.filter((product) => !q || `${product.name} ${product.sku ?? ""} ${product.color}`.toLowerCase().includes(q));
+  }, [catalog, query]);
+
+  const stock = catalog.reduce((sum, item) => sum + item.stock, 0);
+  const inventoryValue = catalog.reduce((sum, item) => sum + item.price * item.stock, 0);
+  const revenue = orders.filter((order) => order.status !== "cancelled").reduce((sum, order) => sum + order.total, 0);
+  const lowStock = catalog.filter((item) => item.stock <= 8).toSorted((a, b) => a.stock - b.stock);
+
+  function openNewProduct() {
+    setEditing(blankProduct());
+  }
+
+  function submitProduct(event: FormEvent) {
+    event.preventDefault();
+    if (!editing) return;
+    const generatedId = editing.id.trim() || `${editing.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-${crypto.randomUUID().slice(0, 5)}`;
+    saveProduct({
+      ...editing,
+      id: generatedId,
+      sku: editing.sku?.trim() || `ELA-${String(catalog.length + 1).padStart(3, "0")}`,
+      images: editing.images.length ? editing.images : [editing.image],
+      stock: Math.max(0, Number(editing.stock)),
+      price: Math.max(0, Number(editing.price)),
+      oldPrice: editing.oldPrice ? Number(editing.oldPrice) : undefined
+    });
+    setEditing(null);
+  }
 
   return (
-    <section className="adminPage">
+    <section className="adminPage adminConsole">
       <div className="adminHero">
-        <div><p className="eyebrow">ADMIN / DEMO</p><h1>Store overview.</h1></div>
-        <span style={{color:'var(--muted)', maxWidth: 430, lineHeight: 1.6}}>Dashboard demo không auth để phục vụ đồ án. Các số liệu được suy ra từ catalog seed hiện tại.</span>
+        <div><p className="eyebrow">ÉLANE COMMERCE CONSOLE</p><h1>Store operations.</h1></div>
+        <div className="adminHeroActions"><Link className="btn ghost small" href="/">Xem storefront</Link><button className="btn small" onClick={openNewProduct}><Plus size={15} /> Thêm sản phẩm</button></div>
       </div>
-      <div className="statsGrid">
-        <div className="statCard"><Boxes size={18} /><small>Sản phẩm</small><strong>{products.length}</strong></div>
-        <div className="statCard"><PackageCheck size={18} /><small>Tồn kho</small><strong>{stock}</strong></div>
-        <div className="statCard"><Sparkles size={18} /><small>AI modules</small><strong>3</strong></div>
-        <div className="statCard"><MessageSquareText size={18} /><small>Giá trị kho</small><strong style={{fontSize: 23}}>{formatPrice(inventoryValue)}</strong></div>
+
+      <div className="adminTabs">
+        {([["overview","Tổng quan"],["products","Sản phẩm & kho"],["orders","Đơn hàng"],["settings","Cài đặt"]] as const).map(([value,label]) => <button key={value} className={tab === value ? "active" : ""} onClick={() => setTab(value)}>{label}</button>)}
       </div>
-      <div className="tableWrap">
-        <table className="adminTable">
-          <thead><tr><th>Sản phẩm</th><th>Danh mục</th><th>Màu</th><th>Giá</th><th>Kho</th><th>Trạng thái</th></tr></thead>
-          <tbody>{products.map((product) => <tr key={product.id}><td><strong>{product.name}</strong></td><td>{categoryLabels[product.category]}</td><td>{product.color}</td><td>{formatPrice(product.price)}</td><td>{product.stock}</td><td><span className="statusPill">Đang bán</span></td></tr>)}</tbody>
-        </table>
-      </div>
+
+      {tab === "overview" ? <>
+        <div className="statsGrid">
+          <div className="statCard"><Boxes size={18} /><small>Sản phẩm</small><strong>{catalog.length}</strong><span>{catalog.filter((item) => item.active !== false).length} đang hiển thị</span></div>
+          <div className="statCard"><PackageCheck size={18} /><small>Tồn kho</small><strong>{stock}</strong><span>{lowStock.length} SKU sắp hết</span></div>
+          <div className="statCard"><ShoppingBag size={18} /><small>Đơn hàng</small><strong>{orders.length}</strong><span>{orders.filter((order) => order.status === "processing").length} chờ xử lý</span></div>
+          <div className="statCard"><TrendingUp size={18} /><small>Doanh thu demo</small><strong className="moneyStat">{formatPrice(revenue)}</strong><span>Giá trị kho {formatPrice(inventoryValue)}</span></div>
+        </div>
+
+        <div className="adminOverviewGrid">
+          <div className="adminPanel">
+            <div className="adminPanelHead"><div><p className="eyebrow">INVENTORY ALERT</p><h2>Sắp hết hàng</h2></div><button onClick={() => setTab("products")}>Xem kho →</button></div>
+            {lowStock.length ? <div className="compactList">{lowStock.slice(0, 6).map((product) => <div key={product.id}><div className="adminThumb"><Image src={product.image} alt={product.name} fill sizes="48px" /></div><span><strong>{product.name}</strong><small>{product.sku ?? product.id}</small></span><b className={product.stock <= 3 ? "dangerText" : ""}>{product.stock}</b></div>)}</div> : <div className="adminEmpty">Kho đang ổn.</div>}
+          </div>
+          <div className="adminPanel">
+            <div className="adminPanelHead"><div><p className="eyebrow">LATEST ORDERS</p><h2>Đơn gần đây</h2></div><button onClick={() => setTab("orders")}>Quản lý →</button></div>
+            {orders.length ? <div className="compactOrders">{orders.slice(0, 5).map((order) => <div key={order.id}><span><strong>#{order.id}</strong><small>{order.customer.name} · {order.items.length} sản phẩm</small></span><span><b>{formatPrice(order.total)}</b><small>{statusLabel[order.status]}</small></span></div>)}</div> : <div className="adminEmpty">Chưa có đơn hàng demo.</div>}
+          </div>
+        </div>
+      </> : null}
+
+      {tab === "products" ? <div className="adminPanel">
+        <div className="adminPanelHead adminPanelToolbar">
+          <div><p className="eyebrow">CATALOG & INVENTORY</p><h2>{catalog.length} sản phẩm</h2></div>
+          <div className="adminSearch"><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tìm tên, SKU, màu..." /><button className="btn small" onClick={openNewProduct}><Plus size={15} /> Thêm mới</button></div>
+        </div>
+        <div className="tableWrap"><table className="adminTable productAdminTable"><thead><tr><th>Sản phẩm</th><th>SKU</th><th>Danh mục</th><th>Giá</th><th>Tồn kho</th><th>Hiển thị</th><th></th></tr></thead><tbody>{visibleCatalog.map((product) => <tr key={product.id}>
+          <td><div className="adminProductCell"><div className="adminProductImage"><Image src={product.image} alt={product.name} fill sizes="50px" /></div><span><strong>{product.name}</strong><small>{product.color} · {product.fit}</small></span></div></td>
+          <td>{product.sku ?? "—"}</td><td>{categoryLabels[product.category]}</td><td>{formatPrice(product.price)}</td>
+          <td><div className="stockStepper"><button onClick={() => adjustStock(product.id, -1)}>−</button><strong className={product.stock <= 3 ? "dangerText" : ""}>{product.stock}</strong><button onClick={() => adjustStock(product.id, 1)}>+</button></div></td>
+          <td><button className={`visibilityButton ${product.active === false ? "off" : ""}`} onClick={() => toggleProductActive(product.id)}>{product.active === false ? <><EyeOff size={14} /> Đang ẩn</> : <><Eye size={14} /> Đang bán</>}</button></td>
+          <td><div className="rowActions"><button aria-label="Sửa" onClick={() => setEditing(product)}><Pencil size={15} /></button><button aria-label="Xóa" onClick={() => { if (window.confirm(`Xóa ${product.name}?`)) deleteProduct(product.id); }}><Trash2 size={15} /></button></div></td>
+        </tr>)}</tbody></table></div>
+      </div> : null}
+
+      {tab === "orders" ? <div className="adminPanel">
+        <div className="adminPanelHead"><div><p className="eyebrow">ORDER MANAGEMENT</p><h2>Đơn hàng</h2></div><span className="adminHint">Checkout trên storefront sẽ xuất hiện tại đây.</span></div>
+        {orders.length ? <div className="adminOrderList">{orders.map((order) => <article key={order.id}>
+          <div><strong>#{order.id}</strong><small>{new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(order.createdAt))}</small></div>
+          <div><strong>{order.customer.name}</strong><small>{order.customer.phone} · {order.customer.city}</small></div>
+          <div><strong>{order.items.reduce((sum, line) => sum + line.quantity, 0)} sản phẩm</strong><small>{order.payment === "qr" ? "QR chuyển khoản" : "COD"}</small></div>
+          <div><strong>{formatPrice(order.total)}</strong><small>{order.customer.address}</small></div>
+          <label className="statusSelect"><select value={order.status} onChange={(event) => updateOrderStatus(order.id, event.target.value as OrderStatus)}>{Object.entries(statusLabel).map(([value,label]) => <option value={value} key={value}>{label}</option>)}</select><ChevronDown size={14} /></label>
+        </article>)}</div> : <div className="adminEmpty large">Chưa có đơn hàng. Hãy thử checkout một đơn ở storefront.</div>}
+      </div> : null}
+
+      {tab === "settings" ? <div className="adminSettingsGrid">
+        <div className="adminPanel">
+          <div className="adminPanelHead"><div><p className="eyebrow">PROMOTION BAR</p><h2>Thông báo đầu trang</h2></div><Settings2 size={19} /></div>
+          <label className="adminField"><span>Nội dung</span><textarea rows={4} value={promo} onChange={(event) => setPromo(event.target.value)} /></label>
+          <button className="btn" onClick={() => updateSettings({ promoText: promo.trim() || settings.promoText })}><Save size={15} /> Lưu thông báo</button>
+        </div>
+        <div className="adminPanel dangerPanel">
+          <div className="adminPanelHead"><div><p className="eyebrow">DEMO DATA</p><h2>Khôi phục catalog</h2></div><RefreshCcw size={19} /></div>
+          <p>Đưa toàn bộ sản phẩm, giá và tồn kho về dữ liệu seed ban đầu. Đơn hàng và wishlist không bị xóa.</p>
+          <button className="btn secondary" onClick={() => { if (window.confirm("Khôi phục catalog mặc định?")) resetCatalog(); }}><RefreshCcw size={15} /> Reset catalog</button>
+        </div>
+      </div> : null}
+
+      {editing ? <div className="adminModalBackdrop" onMouseDown={(event) => { if (event.currentTarget === event.target) setEditing(null); }}>
+        <form className="adminProductForm" onSubmit={submitProduct}>
+          <div className="adminFormHead"><div><p className="eyebrow">{editing.id ? "EDIT PRODUCT" : "NEW PRODUCT"}</p><h2>{editing.id ? editing.name : "Thêm sản phẩm"}</h2></div><button type="button" className="iconButton" onClick={() => setEditing(null)}>×</button></div>
+          <div className="adminFormGrid">
+            <label className="adminField full"><span>Tên sản phẩm</span><input required value={editing.name} onChange={(event) => setEditing({ ...editing, name: event.target.value })} /></label>
+            <label className="adminField full"><span>Mô tả ngắn</span><input required value={editing.subtitle} onChange={(event) => setEditing({ ...editing, subtitle: event.target.value })} /></label>
+            <label className="adminField"><span>SKU</span><input value={editing.sku ?? ""} onChange={(event) => setEditing({ ...editing, sku: event.target.value })} placeholder="Tự sinh nếu để trống" /></label>
+            <label className="adminField"><span>Danh mục</span><select value={editing.category} onChange={(event) => setEditing({ ...editing, category: event.target.value as ProductCategory })}>{Object.entries(categoryLabels).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+            <label className="adminField"><span>Đối tượng</span><select value={editing.gender} onChange={(event) => setEditing({ ...editing, gender: event.target.value as Product["gender"] })}><option value="unisex">Unisex</option><option value="women">Nữ</option><option value="men">Nam</option></select></label>
+            <label className="adminField"><span>Giá bán</span><input type="number" min="0" value={editing.price} onChange={(event) => setEditing({ ...editing, price: Number(event.target.value) })} /></label>
+            <label className="adminField"><span>Giá cũ</span><input type="number" min="0" value={editing.oldPrice ?? ""} onChange={(event) => setEditing({ ...editing, oldPrice: event.target.value ? Number(event.target.value) : undefined })} /></label>
+            <label className="adminField"><span>Tồn kho</span><input type="number" min="0" value={editing.stock} onChange={(event) => setEditing({ ...editing, stock: Number(event.target.value) })} /></label>
+            <label className="adminField"><span>Màu hiển thị</span><input value={editing.color} onChange={(event) => setEditing({ ...editing, color: event.target.value })} /></label>
+            <label className="adminField"><span>Nhóm màu</span><select value={editing.colorFamily} onChange={(event) => setEditing({ ...editing, colorFamily: event.target.value as Product["colorFamily"] })}>{["black","white","navy","beige","blue","brown","red","green"].map((color) => <option key={color}>{color}</option>)}</select></label>
+            <label className="adminField"><span>Size (ngăn cách dấu phẩy)</span><input value={editing.sizes.join(", ")} onChange={(event) => setEditing({ ...editing, sizes: event.target.value.split(",").map((item) => item.trim()).filter(Boolean) })} /></label>
+            <label className="adminField"><span>Chất liệu</span><input value={editing.material} onChange={(event) => setEditing({ ...editing, material: event.target.value })} /></label>
+            <label className="adminField"><span>Phom</span><input value={editing.fit} onChange={(event) => setEditing({ ...editing, fit: event.target.value })} /></label>
+            <label className="adminField full"><span>Ảnh chính (URL)</span><input required value={editing.image} onChange={(event) => setEditing({ ...editing, image: event.target.value, images: [event.target.value, ...editing.images.slice(1)] })} /></label>
+            <label className="adminField"><span>Style</span><input value={editing.style.join(", ")} onChange={(event) => setEditing({ ...editing, style: event.target.value.split(",").map((item) => item.trim()).filter(Boolean) })} /></label>
+            <label className="adminField"><span>Hoàn cảnh</span><input value={editing.occasion.join(", ")} onChange={(event) => setEditing({ ...editing, occasion: event.target.value.split(",").map((item) => item.trim()).filter(Boolean) })} /></label>
+          </div>
+          <div className="adminChecks"><label><input type="checkbox" checked={editing.active !== false} onChange={(event) => setEditing({ ...editing, active: event.target.checked })} /> Đang bán</label><label><input type="checkbox" checked={Boolean(editing.featured)} onChange={(event) => setEditing({ ...editing, featured: event.target.checked })} /> Best seller</label><label><input type="checkbox" checked={Boolean(editing.isNew)} onChange={(event) => setEditing({ ...editing, isNew: event.target.checked })} /> New arrival</label></div>
+          <div className="adminFormActions"><button type="button" className="btn secondary" onClick={() => setEditing(null)}>Hủy</button><button className="btn" type="submit"><Save size={15} /> Lưu sản phẩm</button></div>
+        </form>
+      </div> : null}
     </section>
   );
 }

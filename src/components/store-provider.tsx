@@ -2,18 +2,18 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { CART_KEY, COUPON_KEY, CartLine, ORDER_KEY, OrderRecord, WISHLIST_KEY } from "@/lib/cart";
-import type { Product } from "@/lib/products";
+import { CART_KEY, CATALOG_KEY, COUPON_KEY, CartLine, ORDER_KEY, OrderRecord, OrderStatus, SETTINGS_KEY, WISHLIST_KEY } from "@/lib/cart";
+import { products as seedProducts, type Product } from "@/lib/products";
 
-type CouponState = {
-  code: string;
-  rate: number;
-};
+type CouponState = { code: string; rate: number };
+export type StoreSettings = { promoText: string };
 
 type StoreContextValue = {
   cart: CartLine[];
   wishlist: string[];
   orders: OrderRecord[];
+  catalog: Product[];
+  settings: StoreSettings;
   cartCount: number;
   coupon: CouponState | null;
   addToCart: (product: Product, size?: string, quantity?: number) => void;
@@ -24,9 +24,17 @@ type StoreContextValue = {
   applyCoupon: (code: string) => boolean;
   clearCoupon: () => void;
   placeOrder: (order: OrderRecord) => void;
+  updateOrderStatus: (id: string, status: OrderStatus) => void;
+  saveProduct: (product: Product) => void;
+  deleteProduct: (id: string) => void;
+  adjustStock: (id: string, delta: number) => void;
+  toggleProductActive: (id: string) => void;
+  resetCatalog: () => void;
+  updateSettings: (next: StoreSettings) => void;
 };
 
 const StoreContext = createContext<StoreContextValue | null>(null);
+const defaultSettings: StoreSettings = { promoText: "FALL / WINTER 2026 · FREESHIP ĐƠN TỪ 699K · ĐỔI SIZE TRONG 7 NGÀY" };
 
 function readLocal<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -42,6 +50,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<CartLine[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [orders, setOrders] = useState<OrderRecord[]>([]);
+  const [catalog, setCatalog] = useState<Product[]>(seedProducts);
+  const [settings, setSettings] = useState<StoreSettings>(defaultSettings);
   const [coupon, setCoupon] = useState<CouponState | null>(null);
   const [hydrated, setHydrated] = useState(false);
 
@@ -49,22 +59,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setCart(readLocal<CartLine[]>(CART_KEY, []));
     setWishlist(readLocal<string[]>(WISHLIST_KEY, []));
     setOrders(readLocal<OrderRecord[]>(ORDER_KEY, []));
+    setCatalog(readLocal<Product[]>(CATALOG_KEY, seedProducts));
+    setSettings(readLocal<StoreSettings>(SETTINGS_KEY, defaultSettings));
     setCoupon(readLocal<CouponState | null>(COUPON_KEY, null));
     setHydrated(true);
   }, []);
 
-  useEffect(() => {
-    if (hydrated) window.localStorage.setItem(CART_KEY, JSON.stringify(cart));
-  }, [cart, hydrated]);
-
-  useEffect(() => {
-    if (hydrated) window.localStorage.setItem(WISHLIST_KEY, JSON.stringify(wishlist));
-  }, [wishlist, hydrated]);
-
-  useEffect(() => {
-    if (hydrated) window.localStorage.setItem(ORDER_KEY, JSON.stringify(orders));
-  }, [orders, hydrated]);
-
+  useEffect(() => { if (hydrated) window.localStorage.setItem(CART_KEY, JSON.stringify(cart)); }, [cart, hydrated]);
+  useEffect(() => { if (hydrated) window.localStorage.setItem(WISHLIST_KEY, JSON.stringify(wishlist)); }, [wishlist, hydrated]);
+  useEffect(() => { if (hydrated) window.localStorage.setItem(ORDER_KEY, JSON.stringify(orders)); }, [orders, hydrated]);
+  useEffect(() => { if (hydrated) window.localStorage.setItem(CATALOG_KEY, JSON.stringify(catalog)); }, [catalog, hydrated]);
+  useEffect(() => { if (hydrated) window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }, [settings, hydrated]);
   useEffect(() => {
     if (!hydrated) return;
     if (coupon) window.localStorage.setItem(COUPON_KEY, JSON.stringify(coupon));
@@ -72,9 +77,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [coupon, hydrated]);
 
   const addToCart = useCallback((product: Product, size?: string, quantity = 1) => {
+    if (product.active === false || product.stock <= 0) return;
     setCart((current) => {
       const index = current.findIndex((line) => line.product.id === product.id && line.size === size);
-      if (index === -1) return [...current, { product, size, quantity }];
+      if (index === -1) return [...current, { product, size, quantity: Math.min(quantity, product.stock) }];
       return current.map((line, i) => i === index ? { ...line, quantity: Math.min(line.quantity + quantity, product.stock) } : line);
     });
   }, []);
@@ -105,18 +111,43 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return true;
   }, []);
 
-  const clearCoupon = useCallback(() => setCoupon(null), []);
-
   const placeOrder = useCallback((order: OrderRecord) => {
     setOrders((current) => [order, ...current]);
     setCart([]);
     setCoupon(null);
   }, []);
 
+  const updateOrderStatus = useCallback((id: string, status: OrderStatus) => {
+    setOrders((current) => current.map((order) => order.id === id ? { ...order, status } : order));
+  }, []);
+
+  const saveProduct = useCallback((product: Product) => {
+    setCatalog((current) => current.some((item) => item.id === product.id)
+      ? current.map((item) => item.id === product.id ? product : item)
+      : [product, ...current]);
+  }, []);
+
+  const deleteProduct = useCallback((id: string) => {
+    setCatalog((current) => current.filter((item) => item.id !== id));
+    setWishlist((current) => current.filter((item) => item !== id));
+  }, []);
+
+  const adjustStock = useCallback((id: string, delta: number) => {
+    setCatalog((current) => current.map((item) => item.id === id ? { ...item, stock: Math.max(0, item.stock + delta) } : item));
+  }, []);
+
+  const toggleProductActive = useCallback((id: string) => {
+    setCatalog((current) => current.map((item) => item.id === id ? { ...item, active: item.active === false } : item));
+  }, []);
+
+  const resetCatalog = useCallback(() => setCatalog(seedProducts), []);
+
   const value = useMemo(() => ({
     cart,
     wishlist,
     orders,
+    catalog,
+    settings,
     cartCount: cart.reduce((sum, line) => sum + line.quantity, 0),
     coupon,
     addToCart,
@@ -125,9 +156,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     clearCart: () => setCart([]),
     toggleWishlist,
     applyCoupon,
-    clearCoupon,
-    placeOrder
-  }), [cart, wishlist, orders, coupon, addToCart, removeFromCart, updateQuantity, toggleWishlist, applyCoupon, clearCoupon, placeOrder]);
+    clearCoupon: () => setCoupon(null),
+    placeOrder,
+    updateOrderStatus,
+    saveProduct,
+    deleteProduct,
+    adjustStock,
+    toggleProductActive,
+    resetCatalog,
+    updateSettings: setSettings
+  }), [cart, wishlist, orders, catalog, settings, coupon, addToCart, removeFromCart, updateQuantity, toggleWishlist, applyCoupon, placeOrder, updateOrderStatus, saveProduct, deleteProduct, adjustStock, toggleProductActive, resetCatalog]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
