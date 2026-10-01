@@ -24,7 +24,7 @@ export function TryOnClient() {
     const file = event.target.files?.[0];
     if (!file) return;
     if (file.size > 3 * 1024 * 1024) {
-      setMessage("Ảnh quá lớn. Demo giới hạn 3MB để request nhanh hơn.");
+      setMessage("Ảnh vượt quá dung lượng cho phép. Vui lòng chọn ảnh dưới 3MB.");
       return;
     }
     const reader = new FileReader();
@@ -49,9 +49,9 @@ export function TryOnClient() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "Không thể tạo ảnh");
-      if (data.mode === "demo") {
+      if (data.mode === "unavailable") {
         setResultImage(null);
-        setMessage("Chế độ demo đang bật vì chưa cấu hình FASHN_API_KEY. Khi thêm key, nút này sẽ gọi cloud Virtual Try-On thật.");
+        setMessage("Dịch vụ thử đồ trực tuyến hiện chưa khả dụng. Vui lòng thử lại sau.");
       } else {
         setResultImage(data.output);
         setMessage("Hoàn tất. Bạn có thể đổi sản phẩm và thử lại.");
@@ -65,7 +65,7 @@ export function TryOnClient() {
 
   return (
     <section className="tryonPage">
-      <div className="tryonHero"><p className="eyebrow">VIRTUAL FITTING ROOM</p><h1>Try it on.</h1><p style={{maxWidth: 720, color: 'var(--muted)', lineHeight: 1.7}}>Luồng cloud API đã được dựng sẵn: ảnh người + ảnh sản phẩm → FASHN Try-On → ảnh kết quả. Không có API key vẫn demo được UX bằng preview song song.</p></div>
+      <div className="tryonHero"><p className="eyebrow">VIRTUAL FITTING ROOM</p><h1>Try it on.</h1><p style={{maxWidth: 720, color: 'var(--muted)', lineHeight: 1.7}}>Tải ảnh của bạn lên, chọn sản phẩm và xem trang phục được thể hiện trực tiếp trên ảnh trước khi quyết định mua.</p></div>
       <div className="tryonGrid">
         <div className="uploadCard">
           <div className="cardTitle"><span>01 / Ảnh của bạn</span><Camera size={17} /></div>
@@ -81,7 +81,7 @@ export function TryOnClient() {
         <div className="resultCard">
           <div className="cardTitle"><span>03 / Kết quả AI</span><span style={{fontWeight: 400}}>{selected.name}</span></div>
           <div className="resultCanvas">
-            {resultImage ? <Image src={resultImage} alt="Kết quả thử đồ AI" fill unoptimized /> : personImage ? <div className="demoCompare"><div><span>YOU</span><Image src={personImage} alt="Ảnh người" fill unoptimized /></div><div><span>GARMENT</span><Image src={selected.image} alt={selected.name} fill /></div></div> : <div><WandSparkles size={30} /><p>Ảnh AI sẽ xuất hiện tại đây.</p></div>}
+            {resultImage ? <Image src={resultImage} alt="Kết quả thử đồ AI" fill unoptimized /> : personImage ? <div className="previewCompare"><div><span>YOU</span><Image src={personImage} alt="Ảnh người" fill unoptimized /></div><div><span>GARMENT</span><Image src={selected.image} alt={selected.name} fill /></div></div> : <div><WandSparkles size={30} /><p>Ảnh AI sẽ xuất hiện tại đây.</p></div>}
           </div>
           <p style={{fontSize: 12, color: 'var(--muted)', lineHeight: 1.55}}>{message}</p>
           <div className="resultActions"><button className="btn block accent" disabled={!canRun || loading} onClick={runTryOn}>{loading ? <LoaderCircle size={17} className="spin" /> : <WandSparkles size={17} />} {loading ? "Đang xử lý..." : "Thử ngay bằng AI"}</button></div>
