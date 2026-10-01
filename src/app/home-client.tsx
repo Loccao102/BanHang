@@ -53,8 +53,8 @@ export function HomeClient() {
       <section className="serviceRail">
         <div><Truck size={21} /><strong>Freeship từ 699K</strong><span>Toàn quốc cho đơn đủ điều kiện</span></div>
         <div><RefreshCcw size={21} /><strong>Đổi size trong 7 ngày</strong><span>Giữ tag và sản phẩm chưa qua sử dụng</span></div>
-        <div><ShieldCheck size={21} /><strong>Checkout an toàn</strong><span>COD hoặc QR chuyển khoản demo</span></div>
-        <div><PackageCheck size={21} /><strong>Theo dõi đơn hàng</strong><span>Lưu lịch sử mua ngay trên trình duyệt</span></div>
+        <div><ShieldCheck size={21} /><strong>Checkout an toàn</strong><span>COD hoặc chuyển khoản nhanh bằng QR</span></div>
+        <div><PackageCheck size={21} /><strong>Theo dõi đơn hàng</strong><span>Tra cứu trạng thái và lịch sử đơn hàng</span></div>
       </section>
 
       <section className="newsletter"><div><p className="eyebrow">ÉLANE LETTER</p><h2>New drops, quietly delivered.</h2></div><form onSubmit={(event) => event.preventDefault()}><input type="email" required placeholder="Email của bạn" aria-label="Email" /><button type="submit">Đăng ký <ArrowRight size={15} /></button></form></section>
