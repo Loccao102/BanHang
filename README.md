@@ -4,7 +4,7 @@ Website thương mại điện tử thời trang nữ xây dựng bằng Next.js
 
 ## Chức năng chính
 
-- Catalog LSOUL với 170 sản phẩm quần áo nữ và tồn kho theo từng size
+- Catalog LSOUL dạng sourced snapshot: SKU/tên/giá/màu/size/ảnh có nguồn đối chiếu, không sinh màu ngẫu nhiên
 - Tìm kiếm, lọc danh mục, loại sản phẩm, màu, giá, sale và new arrivals
 - Product detail, color options, size variant, wishlist, cart, quick view
 - Đăng ký, đăng nhập, session httpOnly, hồ sơ và sổ địa chỉ
@@ -34,7 +34,7 @@ Mở http://localhost:3000
 DATABASE_URL="postgresql://lsoul:lsoul_dev@localhost:5432/lsoul?schema=public"
 ```
 
-Dữ liệu seed gồm 170 sản phẩm, size variants, 4 tài khoản, địa chỉ, cart, wishlist, 24 đơn hàng, coupon, review và social posts.
+Dữ liệu seed dùng snapshot sản phẩm LSOUL có nguồn đối chiếu, cùng size variants, tài khoản demo, địa chỉ, cart, wishlist, order, coupon, review và social posts.
 
 ### Tài khoản seed
 
@@ -135,3 +135,14 @@ Biến môi trường:
 ```env
 GEMINI_API_KEY=...
 ```
+
+
+## Product data integrity
+
+Catalog demo không còn sinh 5 màu ngẫu nhiên cho mỗi thiết kế.
+
+- Mỗi sản phẩm lưu `groupCode`, `colorHex`, `sourceUrl`, `sourceUpdatedAt`.
+- Color switch chỉ nối các record có cùng `groupCode`; không dùng chung `type` để giả lập biến thể.
+- Ảnh gallery thuộc đúng record màu đang xem.
+- Nếu nguồn công khai không công bố số lượng kho chính xác, `stockTracked=false`; storefront chỉ hiển thị size đang có sẵn thay vì bịa số lượng.
+- Quantity nội bộ của seed chỉ là ceiling để test checkout transaction. Muốn stock thực tế phải đồng bộ ERP/WMS/API kho chính thức.

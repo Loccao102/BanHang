@@ -147,6 +147,7 @@ model CartItem {
 model Product {
   id              String              @id
   sku             String              @unique
+  groupCode       String?
   name            String
   subtitle        String
   category        String
@@ -156,8 +157,10 @@ model Product {
   oldPrice        Int?
   color           String
   colorFamily     String
+  colorHex        String?
   sizes           Json
   stock           Int
+  stockTracked    Boolean             @default(true)
   image           String
   images          Json
   style           Json
@@ -167,6 +170,8 @@ model Product {
   featured        Boolean             @default(false)
   isNew           Boolean             @default(false)
   active          Boolean             @default(true)
+  sourceUrl       String?
+  sourceUpdatedAt DateTime?
   createdAt       DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
   variants        ProductVariant[]
@@ -175,6 +180,8 @@ model Product {
   reviews         Review[]
   socialLinks     SocialPostProduct[]
   socialEvents    SocialEvent[]
+
+  @@index([groupCode])
 }
 
 model ProductVariant {

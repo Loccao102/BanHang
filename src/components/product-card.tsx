@@ -30,7 +30,7 @@ export function ProductCard({ product }: { product: Product }) {
           </div>
         </div>
         <div className="productMeta">
-          <div className="productMetaTop"><Link href={`/product/${product.id}`}><h3>{product.name}</h3></Link><span className={`miniSwatch swatch-${product.colorFamily}`} /></div>
+          <div className="productMetaTop"><Link href={`/product/${product.id}`}><h3>{product.name}</h3></Link><span className={`miniSwatch swatch-${product.colorFamily}`} style={product.colorHex ? { backgroundColor: product.colorHex } : undefined} /></div>
           <p>{product.subtitle}</p>
           <div className="priceRow"><strong>{formatPrice(product.price)}</strong>{product.oldPrice ? <del>{formatPrice(product.oldPrice)}</del> : null}</div>
         </div>

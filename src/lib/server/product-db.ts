@@ -12,6 +12,7 @@ type VariantRow = {
 type ProductRow = {
   id: string;
   sku: string;
+  groupCode: string | null;
   name: string;
   subtitle: string;
   category: string;
@@ -21,8 +22,10 @@ type ProductRow = {
   oldPrice: number | null;
   color: string;
   colorFamily: string;
+  colorHex: string | null;
   sizes: Prisma.JsonValue;
   stock: number;
+  stockTracked: boolean;
   image: string;
   images: Prisma.JsonValue;
   style: Prisma.JsonValue;
@@ -32,6 +35,8 @@ type ProductRow = {
   featured: boolean;
   isNew: boolean;
   active: boolean;
+  sourceUrl: string | null;
+  sourceUpdatedAt: Date | null;
   variants?: VariantRow[];
   reviews?: { rating: number }[];
 };
@@ -50,6 +55,7 @@ export function fromProductRow(row: ProductRow): Product {
   return {
     id: row.id,
     sku: row.sku,
+    groupCode: row.groupCode ?? undefined,
     name: row.name,
     subtitle: row.subtitle,
     category: row.category as Product["category"],
@@ -59,8 +65,10 @@ export function fromProductRow(row: ProductRow): Product {
     oldPrice: row.oldPrice ?? undefined,
     color: row.color,
     colorFamily: row.colorFamily as Product["colorFamily"],
+    colorHex: row.colorHex ?? undefined,
     sizes: jsonStrings(row.sizes),
     stock: row.stock,
+    stockTracked: row.stockTracked,
     variants: row.variants?.map((variant): ProductVariant => ({
       id: variant.id,
       sku: variant.sku,
@@ -78,7 +86,9 @@ export function fromProductRow(row: ProductRow): Product {
     fit: row.fit,
     featured: row.featured,
     isNew: row.isNew,
-    active: row.active
+    active: row.active,
+    sourceUrl: row.sourceUrl ?? undefined,
+    sourceUpdatedAt: row.sourceUpdatedAt?.toISOString()
   };
 }
 
@@ -86,6 +96,7 @@ export function toProductRow(product: Product) {
   return {
     id: product.id,
     sku: product.sku ?? product.id,
+    groupCode: product.groupCode ?? null,
     name: product.name,
     subtitle: product.subtitle,
     category: product.category,
@@ -95,8 +106,10 @@ export function toProductRow(product: Product) {
     oldPrice: product.oldPrice ?? null,
     color: product.color,
     colorFamily: product.colorFamily,
+    colorHex: product.colorHex ?? null,
     sizes: product.sizes,
     stock: product.stock,
+    stockTracked: product.stockTracked !== false,
     image: product.image,
     images: product.images,
     style: product.style,
@@ -105,6 +118,8 @@ export function toProductRow(product: Product) {
     fit: product.fit,
     featured: Boolean(product.featured),
     isNew: Boolean(product.isNew),
-    active: product.active !== false
+    active: product.active !== false,
+    sourceUrl: product.sourceUrl ?? null,
+    sourceUpdatedAt: product.sourceUpdatedAt ? new Date(product.sourceUpdatedAt) : null
   };
 }

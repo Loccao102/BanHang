@@ -8,9 +8,9 @@ import { SocialCommerceStrip } from "@/components/social-commerce-strip";
 import { useStore } from "@/components/store-provider";
 
 const categories = [
-  { title: "Dresses", subtitle: "Mini / midi / bodycon", href: "/shop?category=dress", image: "https://images.unsplash.com/photo-1595777457583-95e059d581b8?auto=format&fit=crop&w=1600&q=92" },
-  { title: "Corsets & Tops", subtitle: "Sculpted / cropped / fitted", href: "/shop?category=tops", image: "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1600&q=92" },
-  { title: "Matching Sets", subtitle: "Tailored / denim / knit", href: "/shop?category=set", image: "https://images.unsplash.com/photo-1485968579580-b6d095142e6e?auto=format&fit=crop&w=1600&q=92" }
+  { title: "Dresses", subtitle: "Verified LSOUL dresses", href: "/shop?category=dress", image: "https://down-vn.img.susercontent.com/file/vn-11134207-7ra0g-m6nne8nuelvcba" },
+  { title: "Party Edit", subtitle: "Corset structure / statement silhouettes", href: "/shop?category=dress", image: "https://down-vn.img.susercontent.com/file/vn-11134207-7ras8-m1f1r7brp00o0c" },
+  { title: "Sets", subtitle: "Dress & corset combinations", href: "/shop?category=set", image: "https://down-vn.img.susercontent.com/file/vn-11134207-7ras8-md43u55pmwf045" }
 ];
 
 export function HomeClient() {

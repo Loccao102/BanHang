@@ -64,16 +64,14 @@ export function ProductDetailClient({ productId }: { productId: string }) {
     .slice(0, 4) : [], [catalog, product]);
 
   const colorVariants = useMemo(() => {
-    if (!product) return [];
-    const seen = new Set<string>();
+    if (!product?.groupCode) return product ? [product] : [];
     return catalog
-      .filter((item) => item.active !== false && item.type === product.type && item.stock > 0)
-      .filter((item) => {
-        if (seen.has(item.colorFamily)) return false;
-        seen.add(item.colorFamily);
-        return true;
-      })
-      .slice(0, 8);
+      .filter((item) =>
+        item.active !== false &&
+        item.groupCode === product.groupCode &&
+        item.stock > 0
+      )
+      .sort((a, b) => a.color.localeCompare(b.color, "vi"));
   }, [catalog, product]);
 
   if (!product) return <div className="emptyState"><div><h2>Sản phẩm không còn hiển thị</h2><p>Thiết kế này có thể đã hết mùa hoặc tạm ngừng bán.</p><Link className="btn" href="/shop">Quay lại LSOUL</Link></div></div>;
@@ -143,15 +141,15 @@ export function ProductDetailClient({ productId }: { productId: string }) {
           <div className="ratingLine"><span><Star size={13} fill="currentColor" /> {shownCount ? shownAverage.toFixed(1) : "New"}</span>{shownCount ? <><span>·</span><a href="#reviews">{shownCount} đánh giá</a></> : null}</div>
           <div className="detailPrice">{formatPrice(product.price)} {product.oldPrice ? <><del>{formatPrice(product.oldPrice)}</del><span className="salePercent">-{Math.round((1 - product.price / product.oldPrice) * 100)}%</span></> : null}</div>
           <div className="optionLabel"><span>Màu</span><span>{product.color}</span></div>
-          <div className="colorSwatchRow"><span className={`swatch swatch-${product.colorFamily}`} /><small>{product.color}</small></div>
-          {colorVariants.length > 1 ? <div className="variantSwatches" aria-label="Các màu cùng thiết kế">{colorVariants.map((item) => <Link key={item.id} href={`/product/${item.id}`} className={item.id === product.id ? "active" : ""} title={item.color}><span className={`miniSwatch swatch-${item.colorFamily}`} /><small>{item.color}</small></Link>)}</div> : null}
+          <div className="colorSwatchRow"><span className={`swatch swatch-${product.colorFamily}`} style={product.colorHex ? { backgroundColor: product.colorHex } : undefined} /><small>{product.color}</small></div>
+          {colorVariants.length > 1 ? <div className="variantSwatches" aria-label="Các màu cùng thiết kế">{colorVariants.map((item) => <Link key={item.id} href={`/product/${item.id}`} className={item.id === product.id ? "active" : ""} title={item.color}><span className={`miniSwatch swatch-${item.colorFamily}`} style={item.colorHex ? { backgroundColor: item.colorHex } : undefined} /><small>{item.color}</small></Link>)}</div> : null}
           <div className="optionLabel"><span>Chọn size</span><Link href="/size-guide"><Ruler size={13} /> Size guide</Link></div>
           <div className="sizeGrid">{sizeOptions.map((item) => <button disabled={item.stock <= 0} className={`sizeButton ${size === item.size ? "active" : ""} ${item.stock <= 0 ? "soldOut" : ""}`} key={item.size} onClick={() => setSize(item.size)}>{item.size}{item.stock <= 0 ? <small>Hết</small> : null}</button>)}</div>
-          <div className="stockNote"><span className="statusDot" /> {selectedStock > 0 ? `Còn ${selectedStock} sản phẩm size ${size}` : `Size ${size} tạm hết hàng`}</div>
+          <div className="stockNote"><span className="statusDot" /> {selectedStock > 0 ? (product.stockTracked === false ? `Size ${size} đang có sẵn` : `Còn ${selectedStock} sản phẩm size ${size}`) : `Size ${size} tạm hết hàng`}</div>
           <div className="detailActions"><button className="btn" disabled={selectedStock <= 0} onClick={add}>{added ? <><Check size={17} /> Đã thêm vào giỏ</> : <><ShoppingBag size={17} /> Thêm vào giỏ</>}</button><button className="btn secondary" aria-label="Yêu thích" onClick={() => toggleWishlist(product.id)}><Heart size={18} fill={liked ? "currentColor" : "none"} /></button><button className="btn secondary" aria-label="Chia sẻ" onClick={shareProduct}><Share2 size={18} /></button></div>
           <button className="buyNow" disabled={selectedStock <= 0} onClick={buyNow}>Mua ngay · {formatPrice(product.price)}</button>
           <div className="deliveryHighlights"><div><Truck size={17} /><span><strong>Freeship từ 699K</strong><small>Giao tiêu chuẩn 2–5 ngày</small></span></div><div><Package size={17} /><span><strong>Đổi size trong 7 ngày</strong><small>Áp dụng sản phẩm nguyên tag</small></span></div></div>
-          <div className="productAccordions"><details open><summary>Chi tiết sản phẩm</summary><p>SKU: {product.sku ?? product.id}. Chất liệu: {product.material}. Phom: {product.fit}. Thiết kế theo tinh thần {product.style.join(", ")}.</p></details><details><summary>Chăm sóc sản phẩm</summary><p>Giặt nhẹ với màu tương đồng, tránh sấy nhiệt cao. Ủi mặt trái ở nhiệt độ thấp.</p></details><details><summary>Giao hàng & đổi trả</summary><p>Hỗ trợ COD hoặc chuyển khoản QR. Có thể đổi size trong 7 ngày nếu sản phẩm còn nguyên trạng và nguyên tag.</p></details></div>
+          <div className="productAccordions"><details open><summary>Chi tiết sản phẩm</summary><p>SKU: {product.sku ?? product.id}. Chất liệu: {product.material}. Phom: {product.fit}. Thiết kế theo tinh thần {product.style.join(", ")}.</p>{product.sourceUpdatedAt ? <small className="productSourceNote">Dữ liệu sản phẩm được đối chiếu ngày {new Intl.DateTimeFormat("vi-VN").format(new Date(product.sourceUpdatedAt))}.{product.sourceUrl ? <> <a href={product.sourceUrl} target="_blank" rel="noreferrer">Xem nguồn</a></> : null}</small> : null}</details><details><summary>Chăm sóc sản phẩm</summary><p>Giặt nhẹ với màu tương đồng, tránh sấy nhiệt cao. Ủi mặt trái ở nhiệt độ thấp.</p></details><details><summary>Giao hàng & đổi trả</summary><p>Hỗ trợ COD hoặc chuyển khoản QR. Có thể đổi size trong 7 ngày nếu sản phẩm còn nguyên trạng và nguyên tag.</p></details></div>
         </div>
       </section>
 
