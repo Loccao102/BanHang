@@ -33,3 +33,8 @@ Copy `.env.example` to `.env.local`.
 ## Demo payment
 
 Checkout generates a VietQR image from public bank/account environment values. This is intentionally a demo/manual-confirmation payment flow and does not verify bank transactions.
+
+
+## Deployment trigger
+
+Repository này được deploy qua Vercel; các commit lên `main` sẽ kích hoạt build lại.
