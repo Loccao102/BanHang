@@ -19,14 +19,14 @@ export default function CheckoutPage() {
   const bankId = process.env.NEXT_PUBLIC_BANK_ID ?? "MB";
   const account = process.env.NEXT_PUBLIC_BANK_ACCOUNT ?? "0123456789";
   const accountName = process.env.NEXT_PUBLIC_BANK_ACCOUNT_NAME ?? "ELANE FASHION DEMO";
-  const provisionalOrderId = "EL" + String(Date.now()).slice(-8);
-  const qrUrl = `https://img.vietqr.io/image/${bankId}-${account}-compact2.png?amount=${total}&addInfo=${encodeURIComponent(provisionalOrderId)}&accountName=${encodeURIComponent(accountName)}`;
+  const qrReference = "ELANE-DEMO";
+  const qrUrl = `https://img.vietqr.io/image/${bankId}-${account}-compact2.png?amount=${total}&addInfo=${encodeURIComponent(qrReference)}&accountName=${encodeURIComponent(accountName)}`;
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const order: OrderRecord = {
-      id: provisionalOrderId,
+      id: "EL" + String(Date.now()).slice(-8),
       createdAt: new Date().toISOString(),
       items: cart,
       subtotal,
