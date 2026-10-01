@@ -45,7 +45,7 @@ function blankProduct(): Product {
 }
 
 export default function AdminPage() {
-  const { catalog, orders, settings, persistenceMode, saveProduct, deleteProduct, adjustStock, toggleProductActive, updateOrderStatus, resetCatalog, updateSettings } = useStore();
+  const { catalog, orders, settings, persistenceMode, user, accountLoading, saveProduct, deleteProduct, adjustStock, toggleProductActive, updateOrderStatus, resetCatalog, updateSettings } = useStore();
   const [tab, setTab] = useState<Tab>("overview");
   const [editing, setEditing] = useState<Product | null>(null);
   const [promo, setPromo] = useState(settings.promoText);
@@ -64,6 +64,9 @@ export default function AdminPage() {
   const inventoryValue = catalog.reduce((sum, item) => sum + item.price * item.stock, 0);
   const revenue = orders.filter((order) => order.status !== "cancelled").reduce((sum, order) => sum + order.total, 0);
   const lowStock = catalog.filter((item) => item.stock <= 8).toSorted((a, b) => a.stock - b.stock);
+
+  if (accountLoading) return <div className="accountLoading"><div className="skeletonLine title" /><div className="skeletonBlock detailSkeleton" /></div>;
+  if (!user || user.role !== "admin") return <section className="adminAccessDenied"><div><p className="eyebrow">RESTRICTED AREA</p><h1>Khu vực quản trị</h1><p>Trang này chỉ dành cho tài khoản quản trị ÉLANE.</p><Link className="btn" href={user ? "/account" : "/login?next=/admin"}>{user ? "Về tài khoản" : "Đăng nhập quản trị"}</Link></div></section>;
 
   function openNewProduct() {
     setEditing(blankProduct());
