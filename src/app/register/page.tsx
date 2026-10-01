@@ -47,13 +47,13 @@ export default function RegisterPage() {
   return (
     <section className="authPage registerLayout">
       <div className="authVisual">
-        <div><p className="eyebrow">JOIN ÉLANE</p><h1>Your wardrobe,<br />remembered.</h1><p>Tạo tài khoản để đồng bộ wishlist, giỏ hàng, địa chỉ và lịch sử mua sắm.</p></div>
+        <div><p className="eyebrow">JOIN LSOUL</p><h1>Your wardrobe,<br />remembered.</h1><p>Tạo tài khoản để đồng bộ wishlist, giỏ hàng, địa chỉ và lịch sử mua sắm.</p></div>
       </div>
       <div className="authPanel">
         <form className="authForm" onSubmit={submit}>
           <div className="authIcon"><UserPlus size={19} /></div>
           <p className="eyebrow">TẠO TÀI KHOẢN</p>
-          <h2>Bắt đầu với ÉLANE</h2>
+          <h2>Bắt đầu với LSOUL</h2>
           <div className="authGrid">
             <label><span>Họ tên</span><input name="name" required autoComplete="name" placeholder="Nguyễn Văn A" /></label>
             <label><span>Số điện thoại</span><input name="phone" autoComplete="tel" placeholder="09xxxxxxxx" /></label>

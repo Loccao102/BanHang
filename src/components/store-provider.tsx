@@ -3,10 +3,12 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import type { CustomerAddress, CustomerUser } from "@/lib/account";
-import { CART_KEY, CATALOG_KEY, COUPON_KEY, CartLine, ORDER_KEY, OrderRecord, OrderStatus, SETTINGS_KEY, WISHLIST_KEY } from "@/lib/cart";
+import {
+  CART_KEY, CATALOG_KEY, COUPON_KEY, CartLine, CouponState, ORDER_KEY, OrderRecord,
+  OrderStatus, PaymentStatus, SETTINGS_KEY, WISHLIST_KEY
+} from "@/lib/cart";
 import { products as seedProducts, type Product } from "@/lib/products";
 
-type CouponState = { code: string; rate: number };
 export type StoreSettings = { promoText: string };
 type Notice = { id: number; message: string; detail?: string } | null;
 export type PersistenceMode = "browser" | "database";
@@ -30,10 +32,10 @@ type StoreContextValue = {
   updateQuantity: (productId: string, size: string | undefined, quantity: number) => void;
   clearCart: () => void;
   toggleWishlist: (productId: string) => void;
-  applyCoupon: (code: string) => boolean;
+  applyCoupon: (code: string) => Promise<boolean>;
   clearCoupon: () => void;
-  placeOrder: (order: OrderRecord) => void;
-  updateOrderStatus: (id: string, status: OrderStatus) => void;
+  placeOrder: (order: OrderRecord) => Promise<OrderRecord>;
+  updateOrderStatus: (id: string, status: OrderStatus, extra?: { paymentStatus?: PaymentStatus; shippingCarrier?: string; trackingCode?: string }) => void;
   saveProduct: (product: Product) => void;
   deleteProduct: (id: string) => void;
   adjustStock: (id: string, delta: number) => void;
@@ -48,7 +50,7 @@ type StoreContextValue = {
 };
 
 const StoreContext = createContext<StoreContextValue | null>(null);
-const defaultSettings: StoreSettings = { promoText: "FALL / WINTER 2026 · FREESHIP ĐƠN TỪ 699K · ĐỔI SIZE TRONG 7 NGÀY" };
+const defaultSettings: StoreSettings = { promoText: "NEW DROP · FREESHIP ĐƠN TỪ 699K · ĐỔI SIZE TRONG 7 NGÀY" };
 
 function readLocal<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -60,16 +62,23 @@ function readLocal<T>(key: string, fallback: T): T {
   }
 }
 
+function sizeStock(product: Product, size?: string) {
+  if (!size) return product.stock;
+  const variant = product.variants?.find((item) => item.size === size);
+  return variant ? variant.stock : product.stock;
+}
+
 function mergeCart(primary: CartLine[], secondary: CartLine[]) {
   const map = new Map<string, CartLine>();
   for (const line of [...primary, ...secondary]) {
     const key = `${line.product.id}::${line.size ?? ""}`;
     const existing = map.get(key);
+    const limit = sizeStock(line.product, line.size);
     map.set(key, existing
-      ? { ...existing, quantity: Math.min(existing.quantity + line.quantity, line.product.stock) }
-      : line);
+      ? { ...existing, quantity: Math.min(existing.quantity + line.quantity, limit) }
+      : { ...line, quantity: Math.min(line.quantity, limit) });
   }
-  return Array.from(map.values());
+  return Array.from(map.values()).filter((line) => line.quantity > 0);
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
@@ -94,6 +103,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     window.setTimeout(() => setNotice((current) => current?.id === id ? null : current), 2600);
   }, []);
 
+  const refreshCatalog = useCallback(async () => {
+    try {
+      const response = await fetch("/api/store/bootstrap", { cache: "no-store" });
+      if (!response.ok) return;
+      const data = await response.json() as { mode: PersistenceMode; products?: Product[]; settings?: StoreSettings };
+      if (data.mode === "database") {
+        if (data.products) setCatalog(data.products);
+        if (data.settings) setSettings(data.settings);
+        setPersistenceMode("database");
+      }
+    } catch {
+      // Keep the current catalog if the server is temporarily unavailable.
+    }
+  }, []);
+
   const refreshAccount = useCallback(async (mergeGuest = false) => {
     setAccountLoading(true);
     try {
@@ -113,13 +137,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         orders: OrderRecord[];
         addresses: CustomerAddress[];
       };
-
-      if (!data.authenticated) {
-        setUser(null);
-        setAddresses([]);
-        setAccountReady(true);
-        return;
-      }
 
       const guestCart = mergeGuest ? cart : [];
       const guestWishlist = mergeGuest ? wishlist : [];
@@ -142,18 +159,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (mergeGuest) {
         await Promise.all([
           fetch("/api/account/cart", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
+            method: "PUT", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ items: nextCart })
           }),
           fetch("/api/account/wishlist", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
+            method: "PUT", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ productIds: nextWishlist })
           })
         ]);
       }
-
       setAccountReady(true);
     } catch {
       setAccountReady(true);
@@ -170,28 +184,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setSettings(readLocal<StoreSettings>(SETTINGS_KEY, defaultSettings));
     setCoupon(readLocal<CouponState | null>(COUPON_KEY, null));
     setHydrated(true);
-
-    let cancelled = false;
-    void fetch("/api/store/bootstrap", { cache: "no-store" })
-      .then(async (response) => {
-        if (!response.ok) return;
-        const data = await response.json() as {
-          mode: PersistenceMode;
-          products?: Product[];
-          settings?: StoreSettings;
-        };
-        if (cancelled || data.mode !== "database") return;
-        if (data.products) setCatalog(data.products);
-        if (data.settings) setSettings(data.settings);
-        setPersistenceMode("database");
-      })
-      .catch(() => undefined);
-
+    void refreshCatalog();
     void refreshAccount(false);
-
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
   useEffect(() => { if (hydrated) window.localStorage.setItem(CART_KEY, JSON.stringify(cart)); }, [cart, hydrated]);
@@ -209,9 +203,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (!user || !accountReady) return;
     const timer = window.setTimeout(() => {
       void fetch("/api/account/cart", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: cart })
+        method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: cart })
       });
     }, 250);
     return () => window.clearTimeout(timer);
@@ -221,9 +213,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (!user || !accountReady) return;
     const timer = window.setTimeout(() => {
       void fetch("/api/account/wishlist", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productIds: wishlist })
+        method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ productIds: wishlist })
       });
     }, 250);
     return () => window.clearTimeout(timer);
@@ -232,20 +222,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const persistProduct = useCallback((product: Product) => {
     if (persistenceMode !== "database" || user?.role !== "admin") return;
     void fetch("/api/products", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(product)
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(product)
     }).then((response) => {
       if (!response.ok) throw new Error("save");
-    }).catch(() => showNotice("Không thể lưu thay đổi", "Kiểm tra quyền truy cập và kết nối cơ sở dữ liệu."));
-  }, [persistenceMode, user, showNotice]);
+    }).then(refreshCatalog).catch(() => showNotice("Không thể lưu thay đổi", "Kiểm tra quyền truy cập và kết nối cơ sở dữ liệu."));
+  }, [persistenceMode, user, showNotice, refreshCatalog]);
 
   const addToCart = useCallback((product: Product, size?: string, quantity = 1) => {
-    if (product.active === false || product.stock <= 0) return;
+    const limit = sizeStock(product, size);
+    if (product.active === false || limit <= 0) return;
     setCart((current) => {
       const index = current.findIndex((line) => line.product.id === product.id && line.size === size);
-      if (index === -1) return [...current, { product, size, quantity: Math.min(quantity, product.stock) }];
-      return current.map((line, i) => i === index ? { ...line, quantity: Math.min(line.quantity + quantity, product.stock) } : line);
+      if (index === -1) return [...current, { product, size, quantity: Math.min(quantity, limit) }];
+      return current.map((line, i) => i === index ? { ...line, quantity: Math.min(line.quantity + quantity, limit) } : line);
     });
     showNotice("Đã thêm vào giỏ", `${product.name}${size ? ` · Size ${size}` : ""}`);
     setCartDrawerOpen(true);
@@ -258,7 +247,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const updateQuantity = useCallback((productId: string, size: string | undefined, quantity: number) => {
     setCart((current) => current
       .map((line) => line.product.id === productId && line.size === size
-        ? { ...line, quantity: Math.min(Math.max(quantity, 0), line.product.stock) }
+        ? { ...line, quantity: Math.min(Math.max(quantity, 0), sizeStock(line.product, size)) }
         : line)
       .filter((line) => line.quantity > 0));
   }, []);
@@ -273,39 +262,43 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
   }, [catalog, showNotice]);
 
-  const applyCoupon = useCallback((rawCode: string) => {
-    const code = rawCode.trim().toUpperCase();
-    const rate = code === "ELANE10" ? 0.1 : code === "NEW15" ? 0.15 : 0;
-    if (!rate) return false;
-    setCoupon({ code, rate });
-    showNotice("Đã áp dụng ưu đãi", `${code} · giảm ${Math.round(rate * 100)}%`);
+  const applyCoupon = useCallback(async (rawCode: string) => {
+    const subtotal = cart.reduce((sum, line) => sum + line.product.price * line.quantity, 0);
+    const response = await fetch("/api/coupons/validate", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: rawCode, subtotal })
+    });
+    if (!response.ok) return false;
+    const data = await response.json() as { coupon: CouponState };
+    setCoupon(data.coupon);
+    showNotice("Đã áp dụng ưu đãi", data.coupon.code);
     return true;
-  }, [showNotice]);
+  }, [cart, showNotice]);
 
-  const placeOrder = useCallback((order: OrderRecord) => {
-    setOrders((current) => [order, ...current]);
+  const placeOrder = useCallback(async (draft: OrderRecord) => {
+    if (persistenceMode !== "database") throw new Error("Cơ sở dữ liệu chưa sẵn sàng.");
+
+    const response = await fetch("/api/orders", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...draft, couponCode: coupon?.code })
+    });
+    const data = await response.json() as { order?: OrderRecord; error?: string };
+    if (!response.ok || !data.order) throw new Error(data.error ?? "Không thể tạo đơn hàng.");
+
+    setOrders((current) => [data.order!, ...current.filter((order) => order.id !== data.order!.id)]);
     setCart([]);
     setCoupon(null);
     setCartDrawerOpen(false);
+    await refreshCatalog();
+    return data.order;
+  }, [persistenceMode, coupon, refreshCatalog]);
 
-    if (persistenceMode === "database") {
-      void fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(order)
-      }).then((response) => {
-        if (!response.ok) throw new Error("save");
-      }).catch(() => showNotice("Đơn hàng chưa được đồng bộ", "Vui lòng kiểm tra lại kết nối."));
-    }
-  }, [persistenceMode, showNotice]);
-
-  const updateOrderStatus = useCallback((id: string, status: OrderStatus) => {
-    setOrders((current) => current.map((order) => order.id === id ? { ...order, status } : order));
+  const updateOrderStatus = useCallback((id: string, status: OrderStatus, extra?: { paymentStatus?: PaymentStatus; shippingCarrier?: string; trackingCode?: string }) => {
+    setOrders((current) => current.map((order) => order.id === id ? { ...order, status, ...extra } : order));
     if (persistenceMode === "database" && user?.role === "admin") {
       void fetch(`/api/orders/${encodeURIComponent(id)}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status })
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status, ...extra })
       }).catch(() => undefined);
     }
   }, [persistenceMode, user]);
@@ -323,15 +316,19 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setWishlist((current) => current.filter((item) => item !== id));
     setCart((current) => current.filter((line) => line.product.id !== id));
     if (persistenceMode === "database") {
-      void fetch(`/api/products/${encodeURIComponent(id)}`, { method: "DELETE" }).catch(() => undefined);
+      void fetch(`/api/products/${encodeURIComponent(id)}`, { method: "DELETE" }).then(refreshCatalog).catch(() => undefined);
     }
-  }, [persistenceMode, user]);
+  }, [persistenceMode, user, refreshCatalog]);
 
   const adjustStock = useCallback((id: string, delta: number) => {
     if (user?.role !== "admin") return;
     const product = catalog.find((item) => item.id === id);
     if (!product) return;
-    const next = { ...product, stock: Math.max(0, product.stock + delta) };
+    const sizes = product.sizes.length || 1;
+    const variants = (product.variants ?? product.sizes.map((size) => ({ sku: `${product.sku}-${size}`, size, stock: 0, active: true }))).map((variant, index) =>
+      index === 0 ? { ...variant, stock: Math.max(0, variant.stock + delta), active: Math.max(0, variant.stock + delta) > 0 } : variant
+    );
+    const next = { ...product, variants, stock: variants.reduce((sum, variant) => sum + variant.stock, 0) || Math.max(0, product.stock + delta * sizes) };
     setCatalog((current) => current.map((item) => item.id === id ? next : item));
     persistProduct(next);
   }, [catalog, persistProduct, user]);
@@ -349,18 +346,16 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (user?.role !== "admin") return;
     setCatalog(seedProducts);
     if (persistenceMode === "database") {
-      void fetch("/api/products/reset", { method: "POST" }).catch(() => undefined);
+      void fetch("/api/products/reset", { method: "POST" }).then(refreshCatalog).catch(() => undefined);
     }
-  }, [persistenceMode, user]);
+  }, [persistenceMode, user, refreshCatalog]);
 
   const updateSettings = useCallback((next: StoreSettings) => {
     if (user?.role !== "admin") return;
     setSettings(next);
     if (persistenceMode === "database") {
       void fetch("/api/settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(next)
+        method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(next)
       }).catch(() => undefined);
     }
   }, [persistenceMode, user]);

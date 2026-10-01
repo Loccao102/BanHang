@@ -2,7 +2,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { cookies } from "next/headers";
 import { getDb } from "./db";
 
-const COOKIE_NAME = "elane_session";
+const COOKIE_NAME = "lsoul_session";
 const SESSION_DAYS = 30;
 
 function tokenHash(token: string) {

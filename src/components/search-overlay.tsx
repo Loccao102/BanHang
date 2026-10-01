@@ -32,7 +32,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
 
   return (
     <div className="searchOverlay">
-      <div className="searchOverlayTop"><Link className="brand" href="/" onClick={onClose}>ÉLANE<span>®</span></Link><button className="iconButton" onClick={onClose} aria-label="Đóng tìm kiếm"><X size={22} /></button></div>
+      <div className="searchOverlayTop"><Link className="brand" href="/" onClick={onClose}>LSOUL<span>®</span></Link><button className="iconButton" onClick={onClose} aria-label="Đóng tìm kiếm"><X size={22} /></button></div>
       <div className="searchOverlayInner">
         <div className="searchBigInput"><Search size={22} /><input ref={inputRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tìm áo, quần, màu, chất liệu..." /><span>ESC</span></div>
         <div className="searchOverlayMeta"><span>{query ? `${results.length} kết quả cho “${query}”` : "Đề xuất cho bạn"}</span>{query ? <Link href={`/shop?q=${encodeURIComponent(query)}`} onClick={onClose}>Xem tất cả <ArrowRight size={13} /></Link> : null}</div>

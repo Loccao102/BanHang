@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Check, CreditCard, QrCode, UserRound } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { useStore } from "@/components/store-provider";
-import type { OrderRecord } from "@/lib/cart";
+import { calculateCouponDiscount, type OrderRecord } from "@/lib/cart";
 import { formatPrice } from "@/lib/products";
 
 type Shipping = { name: string; phone: string; address: string; city: string; note: string };
@@ -15,6 +15,8 @@ export default function CheckoutPage() {
   const [payment, setPayment] = useState<"qr" | "cod">("qr");
   const [completedOrder, setCompletedOrder] = useState<OrderRecord | null>(null);
   const [shippingInfo, setShippingInfo] = useState<Shipping>({ name: "", phone: "", address: "", city: "", note: "" });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   useEffect(() => {
     if (!user) return;
@@ -29,22 +31,24 @@ export default function CheckoutPage() {
   }, [user, addresses]);
 
   const subtotal = cart.reduce((sum, line) => sum + line.product.price * line.quantity, 0);
-  const discount = Math.round(subtotal * (coupon?.rate ?? 0));
+  const discount = calculateCouponDiscount(coupon, subtotal);
   const shipping = subtotal >= 699000 ? 0 : 30000;
-  const total = subtotal - discount + shipping;
+  const total = Math.max(0, subtotal - discount + shipping);
   const bankId = process.env.NEXT_PUBLIC_BANK_ID ?? "MB";
   const account = process.env.NEXT_PUBLIC_BANK_ACCOUNT ?? "0123456789";
-  const accountName = process.env.NEXT_PUBLIC_BANK_ACCOUNT_NAME ?? "ELANE FASHION";
-  const qrUrl = "https://img.vietqr.io/image/" + bankId + "-" + account + "-compact2.png?amount=" + total + "&addInfo=" + encodeURIComponent("ELANE-ORDER") + "&accountName=" + encodeURIComponent(accountName);
+  const accountName = process.env.NEXT_PUBLIC_BANK_ACCOUNT_NAME ?? "LSOUL";
+  const qrUrl = "https://img.vietqr.io/image/" + bankId + "-" + account + "-compact2.png?amount=" + total + "&addInfo=" + encodeURIComponent("LSOUL ORDER") + "&accountName=" + encodeURIComponent(accountName);
 
   function change(field: keyof Shipping, value: string) {
     setShippingInfo((current) => ({ ...current, [field]: value }));
   }
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const order: OrderRecord = {
-      id: "EL" + String(Date.now()).slice(-8),
+    setSubmitting(true);
+    setSubmitError("");
+    const draft: OrderRecord = {
+      id: "",
       createdAt: new Date().toISOString(),
       items: cart,
       subtotal,
@@ -53,6 +57,7 @@ export default function CheckoutPage() {
       total,
       payment,
       status: "processing",
+      couponCode: coupon?.code,
       customer: {
         name: shippingInfo.name,
         phone: shippingInfo.phone,
@@ -60,20 +65,26 @@ export default function CheckoutPage() {
         city: shippingInfo.city
       }
     };
-    placeOrder(order);
-    setCompletedOrder(order);
+    try {
+      const order = await placeOrder({ ...draft, couponCode: coupon?.code });
+      setCompletedOrder(order);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Không thể tạo đơn hàng.");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-  if (!cart.length && !completedOrder) return <div className="emptyState"><div><h2>Chưa có sản phẩm để checkout</h2><Link className="btn" href="/shop">Quay lại shop</Link></div></div>;
+  if (!cart.length && !completedOrder) return <div className="emptyState"><div><h2>Chưa có sản phẩm để thanh toán</h2><Link className="btn" href="/shop">Quay lại cửa hàng</Link></div></div>;
 
   if (completedOrder) return (
-    <section className="checkoutPage"><div className="panel successBox"><div className="successIcon"><Check size={26} /></div><p className="eyebrow">ORDER RECEIVED</p><h2>Cảm ơn bạn đã đặt hàng</h2><p>Mã đơn: <strong>{completedOrder.id}</strong></p><p style={{color: "var(--muted)"}}>Đơn hàng đã được tiếp nhận. Chúng tôi sẽ cập nhật trạng thái ngay khi đơn được xác nhận và chuyển sang khâu chuẩn bị hàng.</p><div className="heroActions" style={{justifyContent: "center"}}>{user ? <Link className="btn" href="/account">Theo dõi đơn hàng</Link> : <Link className="btn" href="/login?next=/account">Đăng nhập để quản lý đơn</Link>}<Link className="btn secondary" href="/shop">Tiếp tục mua sắm</Link></div></div></section>
+    <section className="checkoutPage"><div className="panel successBox"><div className="successIcon"><Check size={26} /></div><p className="eyebrow">ORDER RECEIVED</p><h2>Cảm ơn bạn đã đặt hàng</h2><p>Mã đơn: <strong>{completedOrder.id}</strong></p><p style={{color: "var(--muted)"}}>Đơn hàng đã được ghi nhận. Trạng thái thanh toán, đóng gói và vận chuyển sẽ được cập nhật trong tài khoản của bạn.</p><div className="heroActions" style={{justifyContent: "center"}}>{user ? <Link className="btn" href="/account">Theo dõi đơn hàng</Link> : <Link className="btn" href="/login?next=/account">Đăng nhập để quản lý đơn</Link>}<Link className="btn secondary" href="/shop">Tiếp tục mua sắm</Link></div></div></section>
   );
 
   return (
     <section className="checkoutPage">
       <div className="pageHero" style={{padding: 0, border: 0, marginBottom: 30}}><p className="eyebrow">SECURE CHECKOUT</p><h1>Thanh toán</h1></div>
-      {!user ? <div className="checkoutAccountPrompt"><UserRound size={18} /><div><strong>Đã có tài khoản?</strong><span>Đăng nhập để dùng địa chỉ đã lưu và theo dõi đơn hàng trong tài khoản.</span></div><Link href="/login?next=/checkout">Đăng nhập</Link></div> : null}
+      {!user ? <div className="checkoutAccountPrompt"><UserRound size={18} /><div><strong>Đã có tài khoản?</strong><span>Đăng nhập để dùng địa chỉ đã lưu và theo dõi đơn hàng.</span></div><Link href="/login?next=/checkout">Đăng nhập</Link></div> : null}
       <form onSubmit={submit} className="twoCol">
         <div className="panel">
           <div className="checkoutSectionHead"><h2>Thông tin nhận hàng</h2>{user && addresses.length ? <span>Đang dùng địa chỉ đã lưu</span> : null}</div>
@@ -86,7 +97,7 @@ export default function CheckoutPage() {
           </div>
           <h2>Phương thức thanh toán</h2>
           <div className="paymentChoice">
-            <button type="button" className={"paymentCard " + (payment === "qr" ? "active" : "")} onClick={() => setPayment("qr")}><QrCode size={20} /><div><strong>Chuyển khoản QR</strong><div style={{fontSize: 11, color: "var(--muted)"}}>QR tạo theo đúng số tiền đơn hàng</div></div></button>
+            <button type="button" className={"paymentCard " + (payment === "qr" ? "active" : "")} onClick={() => setPayment("qr")}><QrCode size={20} /><div><strong>Chuyển khoản QR</strong><div style={{fontSize: 11, color: "var(--muted)"}}>QR tạo theo đúng giá trị đơn hàng</div></div></button>
             <button type="button" className={"paymentCard " + (payment === "cod" ? "active" : "")} onClick={() => setPayment("cod")}><CreditCard size={20} /><div><strong>COD</strong><div style={{fontSize: 11, color: "var(--muted)"}}>Thanh toán khi nhận hàng</div></div></button>
           </div>
           {payment === "qr" ? <><div className="qrBox"><Image src={qrUrl} alt="QR thanh toán" width={360} height={360} unoptimized /></div><div className="notice">Vui lòng chuyển đúng số tiền hiển thị và giữ nguyên nội dung chuyển khoản để đơn hàng được đối soát nhanh hơn.</div></> : null}
@@ -98,8 +109,9 @@ export default function CheckoutPage() {
           {discount > 0 ? <div className="summaryLine"><span>Mã {coupon?.code}</span><strong>-{formatPrice(discount)}</strong></div> : null}
           <div className="summaryLine"><span>Vận chuyển</span><strong>{shipping ? formatPrice(shipping) : "Miễn phí"}</strong></div>
           <div className="summaryLine total"><span>Tổng</span><strong>{formatPrice(total)}</strong></div>
-          <button className="btn block" type="submit">{payment === "qr" ? "Tôi đã thanh toán" : "Đặt hàng COD"}</button>
-          <p style={{fontSize: 10, color: "var(--muted)", lineHeight: 1.6}}>Bằng việc đặt hàng, bạn đồng ý với chính sách đổi trả và điều khoản mua hàng của ÉLANE.</p>
+          {submitError ? <div className="authError">{submitError}</div> : null}
+          <button className="btn block" type="submit" disabled={submitting}>{submitting ? "Đang tạo đơn..." : payment === "qr" ? "Xác nhận đặt hàng" : "Đặt hàng COD"}</button>
+          <p style={{fontSize: 10, color: "var(--muted)", lineHeight: 1.6}}>Bằng việc đặt hàng, bạn đồng ý với chính sách đổi trả và điều khoản mua hàng của LSOUL.</p>
         </aside>
       </form>
     </section>

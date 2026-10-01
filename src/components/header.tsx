@@ -8,8 +8,9 @@ import { SearchOverlay } from "./search-overlay";
 
 const nav = [
   ["Mới về", "/shop?sort=new"],
-  ["Nữ", "/shop?gender=women"],
-  ["Nam", "/shop?gender=men"],
+  ["Đầm", "/shop?category=dress"],
+  ["Áo", "/shop?category=tops"],
+  ["Set đồ", "/shop?category=set"],
   ["Áo khoác", "/shop?category=outerwear"],
   ["Sale", "/shop?sale=1"]
 ];
@@ -24,7 +25,7 @@ export function Header() {
     <>
       <div className="announcement">{settings.promoText}</div>
       <header className="siteHeader">
-        <Link className="brand" href="/" aria-label="ÉLANE home">ÉLANE<span>®</span></Link>
+        <Link className="brand" href="/" aria-label="LSOUL home">LSOUL<span>®</span></Link>
         <nav className="desktopNav" aria-label="Điều hướng chính">{nav.map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}</nav>
         <div className="headerActions">
           <button className="iconButton" onClick={() => setSearchOpen(true)} aria-label="Tìm kiếm"><Search size={19} /></button>
@@ -34,7 +35,7 @@ export function Header() {
           <button className="iconButton mobileMenu" onClick={() => setOpen(true)} aria-label="Mở menu"><Menu size={21} /></button>
         </div>
       </header>
-      {open ? <div className="mobileDrawer" role="dialog" aria-modal="true"><div className="drawerTop"><span className="brand">ÉLANE®</span><button className="iconButton" onClick={() => setOpen(false)} aria-label="Đóng menu"><X /></button></div><div className="drawerLinks">{nav.map(([label, href]) => <Link key={href} href={href} onClick={() => setOpen(false)}>{label}</Link>)}<button className="drawerSearchLink" onClick={() => { setOpen(false); setSearchOpen(true); }}>Tìm kiếm</button><Link href="/wishlist" onClick={() => setOpen(false)}>Wishlist</Link><Link href={user ? "/account" : "/login"} onClick={() => setOpen(false)}>{user ? "Tài khoản của tôi" : "Đăng nhập"}</Link></div><div className="drawerFeature"><div><strong>ÉLANE SERVICE</strong><p>Freeship từ 699K · đổi size 7 ngày · thanh toán COD hoặc QR.</p></div></div></div> : null}
+      {open ? <div className="mobileDrawer" role="dialog" aria-modal="true"><div className="drawerTop"><span className="brand">LSOUL®</span><button className="iconButton" onClick={() => setOpen(false)} aria-label="Đóng menu"><X /></button></div><div className="drawerLinks">{nav.map(([label, href]) => <Link key={href} href={href} onClick={() => setOpen(false)}>{label}</Link>)}<button className="drawerSearchLink" onClick={() => { setOpen(false); setSearchOpen(true); }}>Tìm kiếm</button><Link href="/social" onClick={() => setOpen(false)}>LSOUL Social</Link><Link href="/wishlist" onClick={() => setOpen(false)}>Wishlist</Link><Link href={user ? "/account" : "/login"} onClick={() => setOpen(false)}>{user ? "Tài khoản của tôi" : "Đăng nhập"}</Link></div><div className="drawerFeature"><div><strong>LSOUL SERVICE</strong><p>Freeship từ 699K · đổi size 7 ngày · thanh toán COD hoặc QR.</p></div></div></div> : null}
       <SearchOverlay open={searchOpen} onClose={closeSearch} />
     </>
   );

@@ -8,14 +8,20 @@ export async function GET() {
   const db = getDb();
   if (!db) return NextResponse.json({ mode: "browser" });
 
-  const rows = await db.product.findMany({ orderBy: { sku: "asc" } });
+  const rows = await db.product.findMany({
+    include: {
+      variants: { orderBy: { size: "asc" } },
+      reviews: { where: { approved: true }, select: { rating: true } }
+    },
+    orderBy: { sku: "asc" }
+  });
   const promo = await db.storeSetting.findUnique({ where: { key: "promoText" } });
 
   return NextResponse.json({
     mode: "database",
     products: rows.map(fromProductRow),
     settings: {
-      promoText: promo?.value ?? "FALL / WINTER 2026 · FREESHIP ĐƠN TỪ 699K · ĐỔI SIZE TRONG 7 NGÀY"
+      promoText: promo?.value ?? "NEW DROP · FREESHIP ĐƠN TỪ 699K · ĐỔI SIZE TRONG 7 NGÀY"
     }
   });
 }

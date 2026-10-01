@@ -40,7 +40,7 @@ export default function LoginPage() {
   return (
     <section className="authPage">
       <div className="authVisual">
-        <div><p className="eyebrow">ÉLANE ACCOUNT</p><h1>Welcome back.</h1><p>Lưu giỏ hàng, wishlist, địa chỉ giao nhận và theo dõi toàn bộ đơn hàng ở một nơi.</p></div>
+        <div><p className="eyebrow">LSOUL ACCOUNT</p><h1>Welcome back.</h1><p>Lưu giỏ hàng, wishlist, địa chỉ giao nhận và theo dõi toàn bộ đơn hàng ở một nơi.</p></div>
       </div>
       <div className="authPanel">
         <form className="authForm" onSubmit={submit}>

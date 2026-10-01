@@ -17,6 +17,7 @@ export default function AccountPage() {
   const [tab, setTab] = useState<Tab>("overview");
   const [addressForm, setAddressForm] = useState(false);
   const [profileMessage, setProfileMessage] = useState("");
+  const [passwordMessage, setPasswordMessage] = useState("");
 
   useEffect(() => {
     if (!accountLoading && !user) router.replace("/login?next=/account");
@@ -36,6 +37,27 @@ export default function AccountPage() {
     });
     setProfileMessage(response.ok ? "Thông tin đã được cập nhật." : "Không thể cập nhật thông tin.");
     if (response.ok) await refreshAccount(false);
+  }
+
+  async function changePassword(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPasswordMessage("");
+    const data = new FormData(event.currentTarget);
+    const currentPassword = String(data.get("currentPassword") ?? "");
+    const newPassword = String(data.get("newPassword") ?? "");
+    const confirmPassword = String(data.get("confirmPassword") ?? "");
+    if (newPassword !== confirmPassword) {
+      setPasswordMessage("Mật khẩu nhập lại chưa khớp.");
+      return;
+    }
+    const response = await fetch("/api/account/password", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ currentPassword, newPassword })
+    });
+    const result = await response.json();
+    setPasswordMessage(response.ok ? "Mật khẩu đã được cập nhật." : result.error ?? "Không thể đổi mật khẩu.");
+    if (response.ok) (event.currentTarget as HTMLFormElement).reset();
   }
 
   async function addAddress(event: FormEvent<HTMLFormElement>) {
@@ -103,6 +125,16 @@ export default function AccountPage() {
           {profileMessage ? <p className="formSuccess">{profileMessage}</p> : null}
           <button className="btn" type="submit">Lưu thay đổi</button>
         </form>
+        <div className="accountDivider" />
+        <form className="accountForm" onSubmit={changePassword}>
+          <p className="eyebrow">SECURITY</p>
+          <h3>Đổi mật khẩu</h3>
+          <label><span>Mật khẩu hiện tại</span><input name="currentPassword" type="password" required autoComplete="current-password" /></label>
+          <label><span>Mật khẩu mới</span><input name="newPassword" type="password" minLength={8} required autoComplete="new-password" /></label>
+          <label><span>Nhập lại mật khẩu mới</span><input name="confirmPassword" type="password" minLength={8} required autoComplete="new-password" /></label>
+          {passwordMessage ? <p className="formSuccess">{passwordMessage}</p> : null}
+          <button className="btn secondary" type="submit">Đổi mật khẩu</button>
+        </form>
       </div> : null}
 
       {tab === "addresses" ? <div className="accountPanel">
@@ -128,7 +160,7 @@ export default function AccountPage() {
         {orders.length ? <div className="accountOrders">{orders.map((order) => <article key={order.id}>
           <div className="accountOrderHead"><div><strong>#{order.id}</strong><small>{new Intl.DateTimeFormat("vi-VN",{dateStyle:"medium"}).format(new Date(order.createdAt))}</small></div><span>{order.status === "processing" ? "Đang xử lý" : order.status === "confirmed" ? "Đã xác nhận" : order.status === "shipping" ? "Đang giao" : order.status === "completed" ? "Hoàn tất" : "Đã hủy"}</span></div>
           <div className="accountOrderItems">{order.items.slice(0,4).map((line) => <div key={`${order.id}-${line.product.id}-${line.size}`} className="accountOrderItem"><div><Image src={line.product.image} alt={line.product.name} fill sizes="64px" /></div><span><strong>{line.product.name}</strong><small>Size {line.size ?? "-"} · SL {line.quantity}</small></span></div>)}</div>
-          <div className="accountOrderFooter"><span>{order.items.reduce((sum,line)=>sum+line.quantity,0)} sản phẩm</span><strong>{formatPrice(order.total)}</strong></div>
+          <div className="accountOrderTracking">{order.trackingCode ? <span>Vận chuyển: <strong>{order.shippingCarrier ?? "Đơn vị vận chuyển"}</strong> · Mã <strong>{order.trackingCode}</strong></span> : <span>Đơn hàng chưa có mã vận đơn.</span>}<span>Thanh toán: <strong>{order.paymentStatus === "paid" ? "Đã thanh toán" : order.paymentStatus === "cod_pending" ? "COD chờ thu" : order.paymentStatus === "refunded" ? "Đã hoàn tiền" : "Chờ xác nhận"}</strong></span></div><div className="accountOrderFooter"><span>{order.items.reduce((sum,line)=>sum+line.quantity,0)} sản phẩm</span><strong>{formatPrice(order.total)}</strong></div>
         </article>)}</div> : <div className="accountEmpty"><Package size={28} /><h3>Chưa có đơn hàng</h3><Link className="btn secondary" href="/shop">Khám phá bộ sưu tập</Link></div>}
       </div> : null}
     </section>

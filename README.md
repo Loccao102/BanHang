@@ -1,22 +1,23 @@
-# ÉLANE Fashion
+# XÂY DỰNG WEBSITE THƯƠNG MẠI ĐIỆN TỬ TÍCH HỢP SOCIAL COMMERCE CHO THƯƠNG HIỆU THỜI TRANG LSOUL
 
-Modern fashion ecommerce experience built with Next.js App Router, Prisma and PostgreSQL.
+Website thương mại điện tử thời trang nữ xây dựng bằng Next.js App Router, Prisma và PostgreSQL, tập trung vào hành trình mua sắm trực tiếp kết hợp Social Commerce.
 
-## Highlights
+## Chức năng chính
 
-- Modern responsive fashion storefront
-- 170 seeded clothing products across T-shirts, shirts, polos, hoodies, knitwear, blazers, jackets, coats, jeans, trousers, chinos, shorts, skirts and dresses
-- Product search, category, clothing type, color and price filters
-- Customer registration, login and persistent sessions
-- Account profile, address book, synced wishlist/cart and order history
-- Product detail, wishlist, cart and checkout
-- VietQR checkout flow
-- Store administration dashboard with role protection
-- AI shopping assistant and Virtual Try-On integration points
+- Catalog LSOUL với 170 sản phẩm quần áo nữ và tồn kho theo từng size
+- Tìm kiếm, lọc danh mục, loại sản phẩm, màu, giá, sale và new arrivals
+- Product detail, color options, size variant, wishlist, cart, quick view
+- Đăng ký, đăng nhập, session httpOnly, hồ sơ và sổ địa chỉ
+- Cart/wishlist đồng bộ theo tài khoản
+- Checkout COD/QR, coupon từ database và tạo order transaction
+- Kiểm tra tồn kho + trừ stock theo size trong PostgreSQL transaction
+- Lịch sử đơn hàng, payment status, carrier và tracking code
+- Review xác thực dành cho khách có đơn đã hoàn tất
+- LSOUL Social feed, UGC, product tagging, shop-the-look và share tracking
+- Admin quản lý sản phẩm, tồn kho, đơn hàng, khách hàng, coupon và nội dung social
+- PostgreSQL + Prisma, CI chạy với PostgreSQL 16
 
-## Local development
-
-PostgreSQL runs locally with Docker.
+## Chạy local
 
 ```bash
 npm install
@@ -25,36 +26,27 @@ npm run db:setup
 npm run dev
 ```
 
-Open http://localhost:3000
-
-Default local connection:
+Mở http://localhost:3000
 
 ```env
-DATABASE_URL="postgresql://elane:elane_dev@localhost:5432/elane?schema=public"
+DATABASE_URL="postgresql://lsoul:lsoul_dev@localhost:5432/lsoul?schema=public"
 ```
 
-`npm run db:setup` creates the schema and seeds:
+Dữ liệu seed gồm 170 sản phẩm, size variants, 4 tài khoản, địa chỉ, cart, wishlist, 24 đơn hàng, coupon, review và social posts.
 
-- 170 clothing products
-- 4 users
-- 6 saved addresses
-- persisted carts and wishlists
-- 24 sample orders
-- store promotion settings
-
-Seed accounts:
+### Tài khoản seed
 
 ```text
 Admin
-admin@elane.local
+admin@lsoul.local
 Admin@123456
 
 Customer
-linh@elane.local
-Elane@123456
+linh@lsoul.local
+Lsoul@123456
 ```
 
-Useful database commands:
+## Lệnh database
 
 ```bash
 npm run db:up
@@ -63,26 +55,10 @@ npm run db:seed
 npm run db:studio
 ```
 
-## Production / Vercel
+## Vercel
 
-Use a hosted PostgreSQL database and set `DATABASE_URL` in Vercel Environment Variables. The application no longer relies on SQLite, so account, cart, wishlist, orders and admin data can persist across serverless deployments.
+Cấu hình một PostgreSQL hosted và thêm `DATABASE_URL` vào Environment Variables của Vercel. Không chạy lại sample seed khi database đã có dữ liệu khách hàng thật.
 
-Before the first production deployment, initialize the target database with the Prisma schema and seed only if you want the sample dataset:
+## AI mở rộng
 
-```bash
-DATABASE_URL="<production-postgres-url>" npx prisma db push
-DATABASE_URL="<production-postgres-url>" npm run db:seed
-```
-
-Do not run the sample seed against a live store after real customer data exists.
-
-## Optional AI integration
-
-Copy `.env.example` to `.env.local`.
-
-- `GEMINI_API_KEY`: enables natural-language styling responses while product retrieval remains grounded in the store catalog.
-- `FASHN_API_KEY`: enables cloud virtual try-on through FASHN Try-On v1.6.
-
-## Payment
-
-Checkout generates a VietQR image from the configured bank account and order total. Bank transfer orders are submitted for payment confirmation and order processing.
+`GEMINI_API_KEY` và `FASHN_API_KEY` vẫn được giữ làm điểm mở rộng cho shopping assistant và virtual try-on sau khi phần ecommerce/social commerce hoàn thiện.

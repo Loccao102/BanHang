@@ -5,31 +5,32 @@ import Link from "next/link";
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { useStore } from "@/components/store-provider";
+import { calculateCouponDiscount } from "@/lib/cart";
 import { formatPrice } from "@/lib/products";
 
 export default function CartPage() {
   const { cart, updateQuantity, removeFromCart, coupon, applyCoupon, clearCoupon } = useStore();
   const [couponInput, setCouponInput] = useState("");
   const [couponMessage, setCouponMessage] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
   const subtotal = cart.reduce((sum, line) => sum + line.product.price * line.quantity, 0);
-  const discount = Math.round(subtotal * (coupon?.rate ?? 0));
+  const discount = calculateCouponDiscount(coupon, subtotal);
   const shipping = subtotal >= 699000 ? 0 : 30000;
-  const total = subtotal - discount + shipping;
+  const total = Math.max(0, subtotal - discount + shipping);
   const remaining = Math.max(0, 699000 - subtotal);
   const progress = Math.min(100, (subtotal / 699000) * 100);
 
-  function submitCoupon(event: FormEvent) {
+  async function submitCoupon(event: FormEvent) {
     event.preventDefault();
-    if (applyCoupon(couponInput)) {
-      setCouponMessage("Mã giảm giá đã được áp dụng.");
-      setCouponInput("");
-    } else {
-      setCouponMessage("Mã ưu đãi chưa hợp lệ hoặc đã hết hạn.");
-    }
+    setCouponLoading(true);
+    const valid = await applyCoupon(couponInput);
+    setCouponMessage(valid ? "Mã ưu đãi đã được áp dụng." : "Mã ưu đãi chưa hợp lệ hoặc chưa đủ điều kiện.");
+    if (valid) setCouponInput("");
+    setCouponLoading(false);
   }
 
   if (!cart.length) return (
-    <div className="emptyState"><div><ShoppingBag size={36} /><h2>Giỏ hàng đang trống</h2><p>Chọn vài món trước khi checkout nhé.</p><Link className="btn" href="/shop">Đi mua sắm</Link></div></div>
+    <div className="emptyState"><div><ShoppingBag size={36} /><h2>Giỏ hàng đang trống</h2><p>Chọn những thiết kế bạn yêu thích trước khi thanh toán.</p><Link className="btn" href="/shop">Khám phá LSOUL</Link></div></div>
   );
 
   return (
@@ -52,16 +53,16 @@ export default function CartPage() {
         <aside className="panel">
           <h2>Tóm tắt đơn hàng</h2>
           <div className="summaryLine"><span>Tạm tính</span><strong>{formatPrice(subtotal)}</strong></div>
-          {discount > 0 ? <div className="summaryLine"><span>Giảm giá ({coupon?.code})</span><strong>-{formatPrice(discount)}</strong></div> : null}
+          {discount > 0 ? <div className="summaryLine"><span>Ưu đãi ({coupon?.code})</span><strong>-{formatPrice(discount)}</strong></div> : null}
           <div className="summaryLine"><span>Vận chuyển</span><strong>{shipping === 0 ? "Miễn phí" : formatPrice(shipping)}</strong></div>
           <div className="summaryLine total"><span>Tổng cộng</span><strong>{formatPrice(total)}</strong></div>
 
           <div className="couponBox">
-            {coupon ? <div className="couponActive"><span><strong>{coupon.code}</strong> · giảm {Math.round(coupon.rate * 100)}%</span><button onClick={clearCoupon}>Bỏ mã</button></div> : <form className="couponForm" onSubmit={submitCoupon}><input value={couponInput} onChange={(event) => setCouponInput(event.target.value)} placeholder="Mã ưu đãi" /><button type="submit">Áp dụng</button></form>}
+            {coupon ? <div className="couponActive"><span><strong>{coupon.code}</strong> · {coupon.type === "percentage" ? `giảm ${coupon.value}%` : `giảm ${formatPrice(coupon.value)}`}</span><button onClick={clearCoupon}>Bỏ mã</button></div> : <form className="couponForm" onSubmit={submitCoupon}><input value={couponInput} onChange={(event) => setCouponInput(event.target.value)} placeholder="Mã ưu đãi" /><button type="submit" disabled={couponLoading}>{couponLoading ? "..." : "Áp dụng"}</button></form>}
             {couponMessage ? <p className="couponMessage">{couponMessage}</p> : null}
           </div>
 
-          <p style={{color: "var(--muted)", fontSize: 12, lineHeight: 1.6}}>Bạn có thể thanh toán khi nhận hàng hoặc chuyển khoản nhanh bằng QR.</p>
+          <p style={{color: "var(--muted)", fontSize: 12, lineHeight: 1.6}}>Thanh toán khi nhận hàng hoặc chuyển khoản nhanh bằng QR.</p>
           <Link className="btn block" href="/checkout">Tiến hành thanh toán</Link>
           <Link className="btn ghost block" href="/shop" style={{marginTop: 8}}>Tiếp tục mua sắm</Link>
         </aside>
