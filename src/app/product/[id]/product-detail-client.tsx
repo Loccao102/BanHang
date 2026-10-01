@@ -135,9 +135,9 @@ export function ProductDetailClient({ productId }: { productId: string }) {
 
   return (
     <>
-      <section className="productDetail">
-        <div className="productGallery">{product.images.map((image, index) => <div className="galleryImage" key={image}><Image src={image} alt={`${product.name} ${index + 1}`} fill priority={index === 0} sizes="(max-width: 760px) 100vw, 50vw" /></div>)}</div>
-        <div className="productInfo">
+      <section className="productDetail immersiveProductDetail">
+        <div className="productGallery immersiveGallery">{product.images.map((image, index) => <div className="galleryImage immersiveGalleryImage" data-reveal key={image}><Image src={image} alt={`${product.name} ${index + 1}`} fill priority={index === 0} sizes="(max-width: 760px) 100vw, 68vw" /><span className="immersiveGalleryIndex">{String(index + 1).padStart(2, "0")} / {String(product.images.length).padStart(2, "0")}</span>{index === 0 ? <div className="immersiveGalleryCaption"><span>LSOUL / PRODUCT STUDY</span><strong>{product.name}</strong></div> : null}</div>)}</div>
+        <div className="productInfo immersiveProductInfo"><div className="immersiveProductRail"><span>LSOUL</span><span>{product.sku ?? product.id}</span></div>
           <p className="eyebrow">{product.isNew ? "NEW IN / LSOUL" : "LSOUL SIGNATURE"}</p>
           <h1>{product.name}</h1><p className="subtitle">{product.subtitle}</p>
           <div className="ratingLine"><span><Star size={13} fill="currentColor" /> {shownCount ? shownAverage.toFixed(1) : "New"}</span>{shownCount ? <><span>·</span><a href="#reviews">{shownCount} đánh giá</a></> : null}</div>
