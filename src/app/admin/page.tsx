@@ -100,7 +100,7 @@ export default function AdminPage() {
           <div className="statCard"><Boxes size={18} /><small>Sản phẩm</small><strong>{catalog.length}</strong><span>{catalog.filter((item) => item.active !== false).length} đang hiển thị</span></div>
           <div className="statCard"><PackageCheck size={18} /><small>Tồn kho</small><strong>{stock}</strong><span>{lowStock.length} SKU sắp hết</span></div>
           <div className="statCard"><ShoppingBag size={18} /><small>Đơn hàng</small><strong>{orders.length}</strong><span>{orders.filter((order) => order.status === "processing").length} chờ xử lý</span></div>
-          <div className="statCard"><TrendingUp size={18} /><small>Doanh thu demo</small><strong className="moneyStat">{formatPrice(revenue)}</strong><span>Giá trị kho {formatPrice(inventoryValue)}</span></div>
+          <div className="statCard"><TrendingUp size={18} /><small>Doanh thu</small><strong className="moneyStat">{formatPrice(revenue)}</strong><span>Giá trị kho {formatPrice(inventoryValue)}</span></div>
         </div>
 
         <div className="adminOverviewGrid">
@@ -110,7 +110,7 @@ export default function AdminPage() {
           </div>
           <div className="adminPanel">
             <div className="adminPanelHead"><div><p className="eyebrow">LATEST ORDERS</p><h2>Đơn gần đây</h2></div><button onClick={() => setTab("orders")}>Quản lý →</button></div>
-            {orders.length ? <div className="compactOrders">{orders.slice(0, 5).map((order) => <div key={order.id}><span><strong>#{order.id}</strong><small>{order.customer.name} · {order.items.length} sản phẩm</small></span><span><b>{formatPrice(order.total)}</b><small>{statusLabel[order.status]}</small></span></div>)}</div> : <div className="adminEmpty">Chưa có đơn hàng demo.</div>}
+            {orders.length ? <div className="compactOrders">{orders.slice(0, 5).map((order) => <div key={order.id}><span><strong>#{order.id}</strong><small>{order.customer.name} · {order.items.length} sản phẩm</small></span><span><b>{formatPrice(order.total)}</b><small>{statusLabel[order.status]}</small></span></div>)}</div> : <div className="adminEmpty">Chưa có đơn hàng.</div>}
           </div>
         </div>
       </> : null}
@@ -137,7 +137,7 @@ export default function AdminPage() {
           <div><strong>{order.items.reduce((sum, line) => sum + line.quantity, 0)} sản phẩm</strong><small>{order.payment === "qr" ? "QR chuyển khoản" : "COD"}</small></div>
           <div><strong>{formatPrice(order.total)}</strong><small>{order.customer.address}</small></div>
           <label className="statusSelect"><select value={order.status} onChange={(event) => updateOrderStatus(order.id, event.target.value as OrderStatus)}>{Object.entries(statusLabel).map(([value,label]) => <option value={value} key={value}>{label}</option>)}</select><ChevronDown size={14} /></label>
-        </article>)}</div> : <div className="adminEmpty large">Chưa có đơn hàng. Hãy thử checkout một đơn ở storefront.</div>}
+        </article>)}</div> : <div className="adminEmpty large">Chưa có đơn hàng. Đơn hàng mới sẽ xuất hiện tại đây sau khi khách hoàn tất checkout.</div>}
       </div> : null}
 
       {tab === "settings" ? <div className="adminSettingsGrid">
@@ -147,7 +147,7 @@ export default function AdminPage() {
           <button className="btn" onClick={() => updateSettings({ promoText: promo.trim() || settings.promoText })}><Save size={15} /> Lưu thông báo</button>
         </div>
         <div className="adminPanel dangerPanel">
-          <div className="adminPanelHead"><div><p className="eyebrow">DEMO DATA</p><h2>Khôi phục catalog</h2></div><RefreshCcw size={19} /></div>
+          <div className="adminPanelHead"><div><p className="eyebrow">CATALOG DATA</p><h2>Khôi phục catalog</h2></div><RefreshCcw size={19} /></div>
           <p>Đưa toàn bộ sản phẩm, giá và tồn kho về dữ liệu seed ban đầu. Đơn hàng và wishlist không bị xóa.</p>
           <button className="btn secondary" onClick={() => { if (window.confirm("Khôi phục catalog mặc định?")) resetCatalog(); }}><RefreshCcw size={15} /> Reset catalog</button>
         </div>
