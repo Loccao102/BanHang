@@ -100,7 +100,7 @@ export default function AccountPage() {
   return (
     <section className="accountPage">
       <div className="accountHero">
-        <div><p className="eyebrow">MY ÉLANE</p><h1>Xin chào, {user.name.split(" ").slice(-1)[0]}.</h1><p>{user.email}</p></div>
+        <div><p className="eyebrow">MY LSOUL</p><h1>Xin chào, {user.name.split(" ").slice(-1)[0]}.</h1><p>{user.email}</p></div>
         <button className="btn ghost small" onClick={signOut}><LogOut size={15} /> Đăng xuất</button>
       </div>
 
