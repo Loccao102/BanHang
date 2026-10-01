@@ -3,12 +3,11 @@
 import Link from "next/link";
 import { ArrowRight, LockKeyhole } from "lucide-react";
 import { FormEvent, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useStore } from "@/components/store-provider";
 
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { refreshAccount } = useStore();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -33,7 +32,8 @@ export default function LoginPage() {
     }
 
     await refreshAccount(true);
-    router.push(searchParams.get("next") || "/account");
+    const next = new URLSearchParams(window.location.search).get("next");
+    router.push(next || "/account");
     router.refresh();
   }
 
