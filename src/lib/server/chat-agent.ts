@@ -156,7 +156,7 @@ export function buildAgentPlan(args: AgentPlanArgs) {
     });
   }
 
-  const couponTokens = args.message.toUpperCase().match(/\b[A-Z][A-Z0-9_-]{2,23}\b/g) ?? [];
+  const couponTokens: string[] = args.message.toUpperCase().match(/\b[A-Z][A-Z0-9_-]{2,23}\b/g) ?? [];
   const coupon = args.coupons.find((item) => couponTokens.includes(item.code));
   if (coupon && /(ap|apply|dung|nhap|coupon|ma)/.test(text)) {
     if (coupon.active) {
