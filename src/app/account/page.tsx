@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { AddressBook, ArrowRight, LogOut, MapPin, Package, Plus, ShieldCheck, Trash2, UserRound } from "lucide-react";
+import { Home, ArrowRight, LogOut, MapPin, Package, Plus, ShieldCheck, Trash2, UserRound } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/components/store-provider";
@@ -89,7 +89,7 @@ export default function AccountPage() {
 
       {tab === "overview" ? <div className="accountOverview">
         <div className="accountStat"><Package size={20} /><span>Đơn hàng</span><strong>{orders.length}</strong><button onClick={() => setTab("orders")}>Xem lịch sử</button></div>
-        <div className="accountStat"><AddressBook size={20} /><span>Địa chỉ đã lưu</span><strong>{addresses.length}</strong><button onClick={() => setTab("addresses")}>Quản lý</button></div>
+        <div className="accountStat"><Home size={20} /><span>Địa chỉ đã lưu</span><strong>{addresses.length}</strong><button onClick={() => setTab("addresses")}>Quản lý</button></div>
         <div className="accountStat"><UserRound size={20} /><span>Wishlist</span><strong>{wishlist.length}</strong><Link href="/wishlist">Xem wishlist</Link></div>
         <div className="accountStat"><ShieldCheck size={20} /><span>Giỏ hàng</span><strong>{cartCount}</strong><Link href="/cart">Xem giỏ hàng</Link></div>
       </div> : null}
