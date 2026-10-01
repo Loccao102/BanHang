@@ -7,6 +7,14 @@ export type CartLine = {
 };
 
 export type OrderStatus = "processing" | "confirmed" | "shipping" | "completed" | "cancelled";
+export type PaymentStatus = "pending" | "paid" | "cod_pending" | "failed" | "refunded";
+export type CouponState = {
+  code: string;
+  type: "percentage" | "fixed";
+  value: number;
+  minOrder: number;
+  maxDiscount?: number;
+};
 
 export type OrderRecord = {
   id: string;
@@ -17,7 +25,11 @@ export type OrderRecord = {
   discount: number;
   total: number;
   payment: "qr" | "cod";
+  paymentStatus?: PaymentStatus;
   status: OrderStatus;
+  couponCode?: string;
+  shippingCarrier?: string;
+  trackingCode?: string;
   customer: {
     name: string;
     phone: string;
@@ -26,10 +38,18 @@ export type OrderRecord = {
   };
 };
 
-export const CART_KEY = "elane-cart-v2";
-export const WISHLIST_KEY = "elane-wishlist-v1";
-export const ORDER_KEY = "elane-orders-v1";
-export const COUPON_KEY = "elane-coupon-v1";
-export const CATALOG_KEY = "elane-catalog-v1";
-export const SETTINGS_KEY = "elane-settings-v1";
-export const CHAT_KEY = "elane-chat-v1";
+export function calculateCouponDiscount(coupon: CouponState | null, subtotal: number) {
+  if (!coupon || subtotal < coupon.minOrder) return 0;
+  const raw = coupon.type === "percentage"
+    ? Math.round(subtotal * (coupon.value / 100))
+    : coupon.value;
+  return coupon.maxDiscount ? Math.min(raw, coupon.maxDiscount) : raw;
+}
+
+export const CART_KEY = "lsoul-cart-v1";
+export const WISHLIST_KEY = "lsoul-wishlist-v1";
+export const ORDER_KEY = "lsoul-orders-v1";
+export const COUPON_KEY = "lsoul-coupon-v1";
+export const CATALOG_KEY = "lsoul-catalog-v1";
+export const SETTINGS_KEY = "lsoul-settings-v1";
+export const CHAT_KEY = "lsoul-chat-v1";

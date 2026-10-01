@@ -1,5 +1,13 @@
 import type { Prisma } from "@prisma/client";
-import type { Product } from "@/lib/products";
+import type { Product, ProductVariant } from "@/lib/products";
+
+type VariantRow = {
+  id: string;
+  sku: string;
+  size: string;
+  stock: number;
+  active: boolean;
+};
 
 type ProductRow = {
   id: string;
@@ -24,6 +32,8 @@ type ProductRow = {
   featured: boolean;
   isNew: boolean;
   active: boolean;
+  variants?: VariantRow[];
+  reviews?: { rating: number }[];
 };
 
 function jsonStrings(value: Prisma.JsonValue): string[] {
@@ -32,6 +42,11 @@ function jsonStrings(value: Prisma.JsonValue): string[] {
 }
 
 export function fromProductRow(row: ProductRow): Product {
+  const reviewCount = row.reviews?.length ?? 0;
+  const rating = reviewCount
+    ? row.reviews!.reduce((sum, review) => sum + review.rating, 0) / reviewCount
+    : undefined;
+
   return {
     id: row.id,
     sku: row.sku,
@@ -39,13 +54,22 @@ export function fromProductRow(row: ProductRow): Product {
     subtitle: row.subtitle,
     category: row.category as Product["category"],
     type: row.type as Product["type"],
-    gender: row.gender as Product["gender"],
+    gender: "women",
     price: row.price,
     oldPrice: row.oldPrice ?? undefined,
     color: row.color,
     colorFamily: row.colorFamily as Product["colorFamily"],
     sizes: jsonStrings(row.sizes),
     stock: row.stock,
+    variants: row.variants?.map((variant): ProductVariant => ({
+      id: variant.id,
+      sku: variant.sku,
+      size: variant.size,
+      stock: variant.stock,
+      active: variant.active
+    })),
+    rating,
+    reviewCount,
     image: row.image,
     images: jsonStrings(row.images),
     style: jsonStrings(row.style),
@@ -66,7 +90,7 @@ export function toProductRow(product: Product) {
     subtitle: product.subtitle,
     category: product.category,
     type: product.type,
-    gender: product.gender,
+    gender: "women",
     price: product.price,
     oldPrice: product.oldPrice ?? null,
     color: product.color,
