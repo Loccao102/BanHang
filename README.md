@@ -9,7 +9,8 @@ Website thương mại điện tử thời trang nữ xây dựng bằng Next.js
 - Product detail, color options, size variant, wishlist, cart, quick view
 - Đăng ký, đăng nhập, session httpOnly, hồ sơ và sổ địa chỉ
 - Cart/wishlist đồng bộ theo tài khoản
-- Checkout COD/QR, coupon từ database và tạo order transaction
+- Checkout COD/VietQR, coupon từ database và tạo order transaction
+- SePay webhook xác minh giao dịch tự động bằng HMAC-SHA256, chống replay và chống webhook trùng
 - Kiểm tra tồn kho + trừ stock theo size trong PostgreSQL transaction
 - Lịch sử đơn hàng, payment status, carrier và tracking code
 - Review xác thực dành cho khách có đơn đã hoàn tất
@@ -62,3 +63,42 @@ Cấu hình một PostgreSQL hosted và thêm `DATABASE_URL` vào Environment Va
 ## AI mở rộng
 
 `GEMINI_API_KEY` và `FASHN_API_KEY` vẫn được giữ làm điểm mở rộng cho shopping assistant và virtual try-on sau khi phần ecommerce/social commerce hoàn thiện.
+
+
+## Thanh toán VietQR + SePay
+
+Luồng QR production:
+
+```text
+Tạo order
+→ sinh VietQR theo đúng tổng tiền + nội dung = Order ID
+→ khách chuyển khoản
+→ SePay nhận biến động số dư
+→ POST /api/payments/sepay/webhook
+→ verify HMAC-SHA256
+→ deduplicate transaction ID
+→ đối chiếu Order ID + số tiền
+→ paymentStatus = paid
+→ order status = confirmed
+→ checkout tự nhận trạng thái thành công
+```
+
+Biến môi trường trên Vercel:
+
+```env
+NEXT_PUBLIC_BANK_ID=MB
+NEXT_PUBLIC_BANK_ACCOUNT=...
+NEXT_PUBLIC_BANK_ACCOUNT_NAME=LSOUL
+SEPAY_WEBHOOK_SECRET=...
+```
+
+Trên SePay tạo webhook:
+
+- URL: `https://<domain>/api/payments/sepay/webhook`
+- Sự kiện: tiền vào
+- Authentication: HMAC-SHA256
+- Nên lọc mã thanh toán theo tiền tố `LS`
+- Lưu Secret Key của webhook vào `SEPAY_WEBHOOK_SECRET`
+- Dùng chức năng gửi thử/Test mode trước, sau đó thử lại bằng một giao dịch thật.
+
+Webhook không đánh dấu thanh toán nếu sai số tiền, sai mã đơn, đơn COD hoặc đơn đã hủy. Mọi giao dịch nhận được đều được lưu trong `PaymentTransaction` để đối soát và chống xử lý trùng.

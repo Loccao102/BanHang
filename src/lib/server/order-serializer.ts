@@ -14,6 +14,8 @@ type OrderWithItems = {
   couponCode: string | null;
   shippingCarrier: string | null;
   trackingCode: string | null;
+  paidAt?: Date | null;
+  paymentProvider?: string | null;
   customerName: string;
   phone: string;
   address: string;
@@ -67,6 +69,8 @@ export function serializeOrder(order: OrderWithItems, productMap: Map<string, Pr
     couponCode: order.couponCode ?? undefined,
     shippingCarrier: order.shippingCarrier ?? undefined,
     trackingCode: order.trackingCode ?? undefined,
+    paidAt: order.paidAt?.toISOString(),
+    paymentProvider: order.paymentProvider ?? undefined,
     customer: {
       name: order.customerName,
       phone: order.phone,

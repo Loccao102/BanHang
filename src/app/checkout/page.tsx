@@ -17,6 +17,7 @@ export default function CheckoutPage() {
   const [shippingInfo, setShippingInfo] = useState<Shipping>({ name: "", phone: "", address: "", city: "", note: "" });
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [paymentIssue, setPaymentIssue] = useState("");
 
   useEffect(() => {
     if (!user) return;

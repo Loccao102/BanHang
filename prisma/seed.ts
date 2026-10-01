@@ -15,6 +15,7 @@ const cities = ["Hà Nội","TP. Hồ Chí Minh","Hải Phòng","Đà Nẵng","N
 const statuses = ["processing","confirmed","shipping","completed","completed","completed"] as const;
 
 async function reset() {
+  await prisma.paymentTransaction.deleteMany();
   await prisma.socialEvent.deleteMany();
   await prisma.socialPostProduct.deleteMany();
   await prisma.socialPost.deleteMany();

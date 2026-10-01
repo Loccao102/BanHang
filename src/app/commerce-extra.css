@@ -82,3 +82,5 @@
   .adminFormGrid .full { grid-column:auto; }
   .adminProductForm { padding:18px; }
 }
+
+.paymentIssue{margin:0 0 14px;padding:12px 13px;border:1px solid #e4b9b9;background:#fff1f1;color:#8b1e1e;font-size:10px;line-height:1.55}

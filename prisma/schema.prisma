@@ -202,14 +202,39 @@ model Order {
   note            String?
   shippingCarrier String?
   trackingCode    String?
+  paidAt          DateTime?
+  paymentProvider String?
   user            User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
   coupon          Coupon?       @relation(fields: [couponCode], references: [code], onDelete: SetNull)
   items           OrderItem[]
+  paymentTransactions PaymentTransaction[]
 
   @@index([userId])
   @@index([createdAt])
   @@index([status])
   @@index([paymentStatus])
+}
+
+model PaymentTransaction {
+  id                    String   @id @default(uuid())
+  provider              String
+  providerTransactionId String
+  orderId               String?
+  referenceCode         String?
+  amount                Int
+  transferType          String
+  content               String
+  gateway               String?
+  accountNumber         String?
+  matched               Boolean  @default(false)
+  failureReason         String?
+  rawPayload            Json
+  receivedAt            DateTime @default(now())
+  order                 Order?   @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@unique([provider, providerTransactionId])
+  @@index([orderId])
+  @@index([matched, receivedAt])
 }
 
 model OrderItem {

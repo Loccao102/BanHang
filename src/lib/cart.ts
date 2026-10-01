@@ -30,6 +30,9 @@ export type OrderRecord = {
   couponCode?: string;
   shippingCarrier?: string;
   trackingCode?: string;
+  paymentProvider?: string;
+  paidAt?: string;
+  note?: string;
   customer: {
     name: string;
     phone: string;
