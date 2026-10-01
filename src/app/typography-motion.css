@@ -1,0 +1,377 @@
+/* Vietnamese-first typography + App Router motion */
+
+:root {
+  --ease-standard: cubic-bezier(.2,.65,.25,1);
+  --ease-emphasized: cubic-bezier(.16,1,.3,1);
+  --duration-fast: 180ms;
+  --duration-normal: 320ms;
+  --duration-slow: 560ms;
+}
+
+html {
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body,
+button,
+input,
+select,
+textarea {
+  font-family: var(--font-sans), system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+body {
+  font-weight: 400;
+  line-height: 1.55;
+}
+
+h1,
+h2,
+h3,
+.brand,
+.hero h1,
+.pageHero h1,
+.builderHero h1,
+.tryonHero h1,
+.adminHero h1,
+.sectionHead h2,
+.productInfo h1,
+.panel h2,
+.emptyState h2,
+.lookInfo h2,
+.categoryEditorialOverlay h2,
+.campaignCopy h2,
+.newsletter h2,
+.wishlistHeader h1,
+.ordersHeader h1,
+.guideHeader h1,
+.aboutHeader h1,
+.aboutStory h2,
+.adminPanelHead h2,
+.adminFormHead h2,
+.drawerCommerceHead h2,
+.drawerSubtotal strong,
+.drawerEmpty h3,
+.searchBigInput input,
+.searchNoResult h3,
+.quickViewInfo h2 {
+  font-family: var(--font-serif), "Times New Roman", serif !important;
+  font-optical-sizing: auto;
+}
+
+.brand {
+  font-weight: 700;
+  letter-spacing: .08em;
+}
+
+.eyebrow,
+.announcement,
+.desktopNav,
+.productBadges,
+.optionLabel,
+.adminTable th,
+.quickViewDetail,
+.productHoverActions button,
+.searchOverlayMeta,
+.cardTitle {
+  font-family: var(--font-sans), system-ui, sans-serif !important;
+  letter-spacing: .08em;
+}
+
+.hero h1,
+.pageHero h1,
+.builderHero h1,
+.tryonHero h1,
+.adminHero h1,
+.sectionHead h2,
+.campaignCopy h2,
+.newsletter h2,
+.wishlistHeader h1,
+.ordersHeader h1,
+.guideHeader h1,
+.aboutHeader h1 {
+  letter-spacing: -.035em;
+}
+
+p,
+span,
+small,
+label,
+input,
+select,
+textarea,
+button,
+a {
+  font-feature-settings: "kern" 1, "liga" 1;
+}
+
+.routeShell {
+  min-height: 60vh;
+  animation: routeEnter var(--duration-slow) var(--ease-emphasized) both;
+  transform-origin: 50% 0%;
+}
+
+.siteHeader {
+  transition:
+    background-color var(--duration-normal) var(--ease-standard),
+    border-color var(--duration-normal) var(--ease-standard),
+    box-shadow var(--duration-normal) var(--ease-standard),
+    backdrop-filter var(--duration-normal) var(--ease-standard);
+}
+
+.siteHeader:hover {
+  box-shadow: 0 10px 30px rgba(26,22,18,.035);
+}
+
+.heroCopy > *,
+.pageHero > *,
+.sectionHead > *,
+.productInfo > * {
+  animation: softRise var(--duration-slow) var(--ease-emphasized) both;
+}
+
+.heroCopy > *:nth-child(2),
+.pageHero > *:nth-child(2),
+.sectionHead > *:nth-child(2),
+.productInfo > *:nth-child(2) {
+  animation-delay: 45ms;
+}
+
+.heroCopy > *:nth-child(3),
+.pageHero > *:nth-child(3),
+.productInfo > *:nth-child(3) {
+  animation-delay: 90ms;
+}
+
+.heroCopy > *:nth-child(4),
+.productInfo > *:nth-child(4) {
+  animation-delay: 135ms;
+}
+
+.productCard {
+  transition:
+    transform var(--duration-normal) var(--ease-standard),
+    opacity var(--duration-normal) var(--ease-standard);
+}
+
+.productCard:hover {
+  transform: translateY(-3px);
+}
+
+.productMedia,
+.galleryImage,
+.categoryEditorialCard,
+.campaignImage,
+.searchResultImage,
+.quickViewImage {
+  isolation: isolate;
+}
+
+.productMedia::after,
+.galleryImage::after,
+.categoryEditorialCard::after,
+.campaignImage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 35%, rgba(255,255,255,.13) 50%, transparent 65%);
+  transform: translateX(-140%);
+  transition: transform 850ms var(--ease-emphasized);
+}
+
+.productCard:hover .productMedia::after,
+.galleryImage:hover::after,
+.categoryEditorialCard:hover::after,
+.campaignImage:hover::after {
+  transform: translateX(140%);
+}
+
+.btn,
+.buyNow,
+.iconButton,
+.heartButton,
+.sizeButton,
+.paymentCard,
+.variantSwatches a,
+.adminTabs button,
+.visibilityButton,
+.rowActions button {
+  transition:
+    transform var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard),
+    opacity var(--duration-fast) var(--ease-standard);
+}
+
+.btn:hover,
+.buyNow:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 9px 24px rgba(20,18,16,.08);
+}
+
+.btn:active,
+.buyNow:active:not(:disabled),
+.iconButton:active,
+.heartButton:active,
+.sizeButton:active {
+  transform: translateY(0) scale(.97);
+}
+
+input,
+select,
+textarea,
+.searchInput,
+.adminField input,
+.adminField select,
+.adminField textarea {
+  transition:
+    border-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard),
+    background-color var(--duration-fast) var(--ease-standard);
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+.searchInput:focus,
+.adminField input:focus,
+.adminField select:focus,
+.adminField textarea:focus {
+  border-color: #8f877d;
+  box-shadow: 0 0 0 3px rgba(23,22,20,.055);
+  outline: none;
+}
+
+.cartDrawer,
+.quickView,
+.searchOverlay,
+.storeToast,
+.mobileDrawer,
+.filterDrawer,
+.adminProductForm {
+  will-change: transform, opacity;
+}
+
+.cartDrawer {
+  animation-duration: 420ms;
+  animation-timing-function: var(--ease-emphasized);
+}
+
+.quickView {
+  animation-duration: 380ms;
+  animation-timing-function: var(--ease-emphasized);
+}
+
+.searchOverlay {
+  animation: overlayReveal 360ms var(--ease-emphasized) both;
+}
+
+.mobileDrawer,
+.filterDrawer {
+  animation: drawerReveal 360ms var(--ease-emphasized) both;
+}
+
+.storeToast {
+  animation-duration: 360ms;
+  animation-timing-function: var(--ease-emphasized);
+}
+
+.productGrid > .productCard:nth-child(2),
+.searchResultGrid > *:nth-child(2) { animation-delay: 35ms; }
+.productGrid > .productCard:nth-child(3),
+.searchResultGrid > *:nth-child(3) { animation-delay: 70ms; }
+.productGrid > .productCard:nth-child(4),
+.searchResultGrid > *:nth-child(4) { animation-delay: 105ms; }
+.productGrid > .productCard:nth-child(5),
+.searchResultGrid > *:nth-child(5) { animation-delay: 140ms; }
+.productGrid > .productCard:nth-child(6),
+.searchResultGrid > *:nth-child(6) { animation-delay: 175ms; }
+
+@keyframes routeEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes softRise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes overlayReveal {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes drawerReveal {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@media (max-width: 760px) {
+  body {
+    font-size: 14px;
+  }
+
+  .hero h1 {
+    line-height: .97;
+  }
+
+  .announcement {
+    letter-spacing: .05em;
+  }
+
+  .desktopNav,
+  .eyebrow,
+  .optionLabel {
+    letter-spacing: .06em;
+  }
+
+  .routeShell {
+    animation-duration: 420ms;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .routeShell,
+  .heroCopy > *,
+  .pageHero > *,
+  .sectionHead > *,
+  .productInfo > * {
+    animation: none !important;
+  }
+
+  .productCard:hover,
+  .btn:hover,
+  .buyNow:hover:not(:disabled) {
+    transform: none;
+  }
+}
