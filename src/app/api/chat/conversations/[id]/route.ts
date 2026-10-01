@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { ChatAgentAction } from "@/lib/chat";
 import { requireUser } from "@/lib/server/auth";
 import { getDb } from "@/lib/server/db";
 import { fromProductRow } from "@/lib/server/product-db";
@@ -8,6 +9,10 @@ export const runtime = "nodejs";
 async function ownedConversation(id: string, userId: string) {
   const db = getDb()!;
   return db.chatConversation.findFirst({ where: { id, userId } });
+}
+
+function parsedActions(value: unknown): ChatAgentAction[] {
+  return Array.isArray(value) ? value as ChatAgentAction[] : [];
 }
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -47,6 +52,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
         role: message.role,
         text: message.content,
         createdAt: message.createdAt.toISOString(),
+        actions: parsedActions(message.actions),
         products: (Array.isArray(message.productIds) ? message.productIds.map(String) : []).flatMap((productId) => {
           const product = productMap.get(productId);
           return product ? [product] : [];

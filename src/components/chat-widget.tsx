@@ -3,19 +3,20 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
-  Bot, Check, ChevronRight, Clock3, History, MessageCircle, MoreHorizontal,
+  Bot, Check, ChevronRight, Clock3, History, MessageCircle,
   Pencil, Plus, Send, ShoppingBag, Sparkles, Trash2, X
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { CHAT_KEY } from "@/lib/cart";
-import type { ChatConversationSummary, ChatMessageView } from "@/lib/chat";
+import type { ChatAgentAction, ChatConversationSummary, ChatMessageView } from "@/lib/chat";
 import { formatPrice, type Product } from "@/lib/products";
 import { useStore } from "./store-provider";
 
 const welcome: ChatMessageView = {
   id: "welcome",
   role: "assistant",
-  text: "Chào bạn, mình là LSOUL Stylist AI. Mình có thể tìm sản phẩm đang còn hàng, phối outfit, tư vấn size, chính sách mua hàng và kiểm tra đơn của bạn khi đã đăng nhập."
+  text: "Chào bạn, mình là LSOUL Stylist AI. Mình có thể tìm đồ, phối outfit và thực hiện các thao tác mua sắm như thêm vào giỏ, áp coupon, mở đơn hàng hoặc đưa bạn tới checkout."
 };
 
 function firstAvailableSize(product: Product) {
@@ -34,7 +35,8 @@ function readGuestHistory() {
 }
 
 export function ChatWidget() {
-  const { user, addToCart } = useStore();
+  const router = useRouter();
+  const { user, catalog, addToCart, addBundleToCart, applyCoupon } = useStore();
   const [open, setOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessageView[]>([welcome]);
@@ -46,6 +48,7 @@ export function ChatWidget() {
   const [error, setError] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
+  const [actionState, setActionState] = useState<Record<string, "running" | "done" | "failed">>({});
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -72,6 +75,7 @@ export function ChatWidget() {
       setActiveConversationId(null);
       setConversations([]);
     }
+    setActionState({});
   }, [user?.id]);
 
   useEffect(() => {
@@ -101,6 +105,7 @@ export function ChatWidget() {
       setMessages(data.messages.length ? data.messages : [welcome]);
       setActiveConversationId(id);
       setHistoryOpen(false);
+      setActionState({});
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Không thể tải lịch sử.");
     } finally {
@@ -114,7 +119,57 @@ export function ChatWidget() {
     setInput("");
     setError("");
     setHistoryOpen(false);
+    setActionState({});
     inputRef.current?.focus();
+  }
+
+  async function executeAction(action: ChatAgentAction) {
+    if (actionState[action.id] === "running" || actionState[action.id] === "done") return;
+    setActionState((current) => ({ ...current, [action.id]: "running" }));
+
+    try {
+      if (action.type === "add_to_cart") {
+        const product = catalog.find((item) => item.id === action.productId && item.active !== false);
+        const variant = product?.variants?.find((item) => item.size === action.size && item.stock >= action.quantity);
+        if (!product || !variant) throw new Error("Sản phẩm hoặc size vừa hết hàng.");
+        addToCart(product, action.size, action.quantity);
+      }
+
+      if (action.type === "add_bundle") {
+        const bundle = action.items.flatMap((item) => {
+          const product = catalog.find((candidate) => candidate.id === item.productId && candidate.active !== false);
+          const variant = product?.variants?.find((candidate) => candidate.size === item.size && candidate.stock >= item.quantity);
+          return product && variant ? [{ product, size: item.size, quantity: item.quantity }] : [];
+        });
+        if (bundle.length !== action.items.length) throw new Error("Một món trong outfit vừa hết size.");
+        addBundleToCart(bundle);
+      }
+
+      if (action.type === "apply_coupon") {
+        const applied = await applyCoupon(action.code);
+        if (!applied) throw new Error("Coupon chưa đủ điều kiện cho giỏ hàng hiện tại.");
+      }
+
+      if (action.type === "open_order") {
+        setOpen(false);
+        router.push(`/orders#order-${encodeURIComponent(action.orderId)}`);
+      }
+
+      if (action.type === "open_product") {
+        setOpen(false);
+        router.push(`/product/${encodeURIComponent(action.productId)}`);
+      }
+
+      if (action.type === "open_checkout") {
+        setOpen(false);
+        router.push("/checkout");
+      }
+
+      setActionState((current) => ({ ...current, [action.id]: "done" }));
+    } catch (cause) {
+      setActionState((current) => ({ ...current, [action.id]: "failed" }));
+      setError(cause instanceof Error ? cause.message : "Không thể thực hiện thao tác.");
+    }
   }
 
   async function send(text: string) {
@@ -147,21 +202,28 @@ export function ChatWidget() {
         error?: string;
         message?: string;
         products?: Product[];
+        actions?: ChatAgentAction[];
         conversationId?: string | null;
       };
       if (!response.ok) throw new Error(data.error ?? "Không thể gửi tin nhắn.");
 
-      setMessages((current) => [...current, {
+      const assistantMessage: ChatMessageView = {
         id: crypto.randomUUID(),
         role: "assistant",
-        text: data.message ?? "Mình đã tìm được một vài lựa chọn phù hợp.",
+        text: data.message ?? "Mình đã xử lý yêu cầu của bạn.",
         products: data.products ?? [],
+        actions: data.actions ?? [],
         createdAt: new Date().toISOString()
-      }]);
+      };
+      setMessages((current) => [...current, assistantMessage]);
 
       if (user && data.conversationId) {
         setActiveConversationId(data.conversationId);
         await loadConversations();
+      }
+
+      for (const action of data.actions ?? []) {
+        if (action.autoExecute) await executeAction(action);
       }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Mình đang mất kết nối. Bạn thử lại nhé.");
@@ -203,6 +265,14 @@ export function ChatWidget() {
     if (size) addToCart(product, size);
   }
 
+  function actionLabel(action: ChatAgentAction) {
+    const state = actionState[action.id];
+    if (state === "running") return "Đang thực hiện...";
+    if (state === "done") return "Đã thực hiện";
+    if (state === "failed") return "Thử lại";
+    return action.label;
+  }
+
   return (
     <>
       <button className="chatLauncher" onClick={() => setOpen((value) => !value)} aria-label="Mở LSOUL Stylist AI">
@@ -212,11 +282,9 @@ export function ChatWidget() {
       {open ? (
         <aside className="chatPanel" aria-label="LSOUL Stylist AI">
           <div className="chatHead">
-            <button className="chatHistoryButton" onClick={() => setHistoryOpen((value) => !value)} aria-label="Lịch sử trò chuyện">
-              <History size={18} />
-            </button>
+            <button className="chatHistoryButton" onClick={() => setHistoryOpen((value) => !value)} aria-label="Lịch sử trò chuyện"><History size={18} /></button>
             <div className="chatAvatar"><Sparkles size={17} /></div>
-            <div className="chatHeadTitle"><strong>{activeTitle}</strong><small><span className="statusDot" /> AI shopping assistant</small></div>
+            <div className="chatHeadTitle"><strong>{activeTitle}</strong><small><span className="statusDot" /> AI shopping agent</small></div>
             <button className="chatNewButton" onClick={newChat} title="Cuộc trò chuyện mới"><Plus size={17} /></button>
             <button className="iconButton" onClick={() => setOpen(false)} aria-label="Đóng chatbot"><X size={18} /></button>
           </div>
@@ -262,9 +330,12 @@ export function ChatWidget() {
           ) : null}
 
           <div className="chatSuggestions">
-            {["Tìm corset đen dưới 900k", "Phối set đi date 2 triệu", "Tư vấn size cho mình", ...(user ? ["Đơn gần nhất của mình đâu rồi?"] : [])].map((prompt) => (
-              <button key={prompt} disabled={loading} onClick={() => void send(prompt)}>{prompt}</button>
-            ))}
+            {[
+              "Phối outfit đi date dưới 2 triệu",
+              "Thêm cái thứ 2 size M vào giỏ",
+              "Áp mã LSOUL10",
+              ...(user ? ["Mở đơn gần nhất của mình"] : ["Tìm corset đen dưới 900k"])
+            ].map((prompt) => <button key={prompt} disabled={loading} onClick={() => void send(prompt)}>{prompt}</button>)}
           </div>
 
           <div className="chatBody">
@@ -274,9 +345,10 @@ export function ChatWidget() {
                 {message.role === "assistant" ? <Bot size={16} /> : null}
                 <div className="messageBubble">
                   <p>{message.text}</p>
+
                   {message.products?.length ? (
                     <div className="chatProducts">
-                      {message.products.slice(0, 4).map((product) => (
+                      {message.products.slice(0, 6).map((product) => (
                         <div className="chatProduct" key={product.id}>
                           <Link href={`/product/${product.id}`} onClick={() => setOpen(false)}>
                             <Image src={product.image} alt={product.name} width={58} height={72} />
@@ -288,6 +360,20 @@ export function ChatWidget() {
                       ))}
                     </div>
                   ) : null}
+
+                  {message.actions?.length ? (
+                    <div className="chatAgentActions">
+                      {message.actions.map((action) => {
+                        const state = actionState[action.id];
+                        return <button key={action.id} className={state ? `state-${state}` : ""} disabled={state === "running" || state === "done"} onClick={() => void executeAction(action)}>
+                          {state === "done" ? <Check size={12} /> : <Sparkles size={12} />}
+                          <span>{actionLabel(action)}</span>
+                          {!state ? <ChevronRight size={12} /> : null}
+                        </button>;
+                      })}
+                    </div>
+                  ) : null}
+
                   {message.createdAt ? <time>{new Intl.DateTimeFormat("vi-VN", { hour: "2-digit", minute: "2-digit" }).format(new Date(message.createdAt))}</time> : null}
                 </div>
               </div>
@@ -298,10 +384,10 @@ export function ChatWidget() {
           </div>
 
           <form className="chatForm" onSubmit={handleSubmit}>
-            <input ref={inputRef} value={input} onChange={(event) => setInput(event.target.value)} maxLength={2000} placeholder="Hỏi LSOUL Stylist..." />
+            <input ref={inputRef} value={input} onChange={(event) => setInput(event.target.value)} maxLength={2000} placeholder='Ví dụ: "thêm cái thứ 2 size M vào giỏ"' />
             <button disabled={loading || !input.trim()} aria-label="Gửi"><Send size={17} /></button>
           </form>
-          <div className="chatFoot">{user ? "Lịch sử được lưu vào tài khoản LSOUL." : "Guest mode · lịch sử lưu trên trình duyệt."}</div>
+          <div className="chatFoot">{user ? "Shopping agent · lịch sử lưu vào tài khoản LSOUL." : "Guest shopping agent · lịch sử lưu trên trình duyệt."}</div>
         </aside>
       ) : null}
     </>

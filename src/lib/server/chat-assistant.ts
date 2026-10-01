@@ -42,7 +42,7 @@ export async function loadAvailableProducts(db: PrismaClient | null): Promise<Pr
   return rows.map(fromProductRow);
 }
 
-export function retrieveProducts(message: string, catalog: Product[], limit = 5) {
+export function retrieveProducts(message: string, catalog: Product[], limit = 5, contextProducts: Product[] = []) {
   const text = message.toLowerCase();
   const budget = parseBudget(text);
   const colors = Object.entries(colorKeywords).filter(([word]) => text.includes(word)).map(([, value]) => value);
@@ -54,6 +54,10 @@ export function retrieveProducts(message: string, catalog: Product[], limit = 5)
     text.includes("áo khoác") || text.includes("blazer") || text.includes("jacket") || text.includes("cardigan") ? "outerwear" :
     text.includes("set") ? "set" :
     text.includes("áo") || text.includes("corset") || text.includes("top") || text.includes("bodysuit") ? "tops" : undefined;
+
+  const refinement = /(đổi|doi|khác|khac|màu|mau|rẻ hơn|re hon|đắt hơn|dat hon|cái khác|cai khac)/.test(text);
+  const contextTypes = new Set(contextProducts.map((item) => item.type));
+  const contextCategories = new Set(contextProducts.map((item) => item.category));
 
   const occasions = [
     text.includes("date") || text.includes("hẹn hò") ? "date" : "",
@@ -72,6 +76,8 @@ export function retrieveProducts(message: string, catalog: Product[], limit = 5)
       if (budget) score += item.price <= budget ? 5 : -8;
       if (text.includes("sale") && item.oldPrice) score += 5;
       if (text.includes("mới") && item.isNew) score += 5;
+      if (refinement && contextTypes.has(item.type)) score += 7;
+      else if (refinement && contextCategories.has(item.category)) score += 4;
       if (item.featured) score += 1;
       if ((item.rating ?? 0) >= 4.5) score += 1;
       return { item, score };
@@ -94,6 +100,7 @@ export async function askGemini(args: {
   products: Product[];
   history: HistoryItem[];
   orderContext?: string;
+  agentContext?: string;
 }) {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return null;
@@ -125,6 +132,9 @@ ${history || "(Cuộc trò chuyện mới)"}
 
 Context đơn hàng của khách:
 ${args.orderContext || "(Không có hoặc khách chưa hỏi về đơn hàng)"}
+
+Context hành động của shopping agent:
+${args.agentContext || "(Không có action đặc biệt)"}
 
 Các sản phẩm phù hợp được hệ thống truy xuất:
 ${catalog}

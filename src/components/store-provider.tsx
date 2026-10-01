@@ -28,6 +28,7 @@ type StoreContextValue = {
   cartDrawerOpen: boolean;
   notice: Notice;
   addToCart: (product: Product, size?: string, quantity?: number) => void;
+  addBundleToCart: (items: Array<{ product: Product; size?: string; quantity?: number }>) => void;
   removeFromCart: (productId: string, size?: string) => void;
   updateQuantity: (productId: string, size: string | undefined, quantity: number) => void;
   clearCart: () => void;
@@ -240,6 +241,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setCartDrawerOpen(true);
   }, [showNotice]);
 
+  const addBundleToCart = useCallback((items: Array<{ product: Product; size?: string; quantity?: number }>) => {
+    const valid = items.filter(({ product, size }) => product.active !== false && sizeStock(product, size) > 0);
+    if (!valid.length) return;
+    setCart((current) => mergeCart(current, valid.map(({ product, size, quantity = 1 }) => ({ product, size, quantity }))));
+    showNotice("Đã thêm outfit vào giỏ", `${valid.length} sản phẩm từ LSOUL Stylist`);
+    setCartDrawerOpen(true);
+  }, [showNotice]);
+
   const removeFromCart = useCallback((productId: string, size?: string) => {
     setCart((current) => current.filter((line) => !(line.product.id === productId && line.size === size)));
   }, []);
@@ -377,13 +386,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const value = useMemo(() => ({
     cart, wishlist, orders, catalog, settings, persistenceMode, user, addresses, accountLoading,
     cartCount: cart.reduce((sum, line) => sum + line.quantity, 0),
-    coupon, cartDrawerOpen, notice, addToCart, removeFromCart, updateQuantity,
+    coupon, cartDrawerOpen, notice, addToCart, addBundleToCart, removeFromCart, updateQuantity,
     clearCart: () => setCart([]), toggleWishlist, applyCoupon, clearCoupon: () => setCoupon(null),
     placeOrder, updateOrderStatus, saveProduct, deleteProduct, adjustStock, toggleProductActive,
     resetCatalog, updateSettings, refreshAccount, logout,
     openCartDrawer: () => setCartDrawerOpen(true), closeCartDrawer: () => setCartDrawerOpen(false),
     dismissNotice: () => setNotice(null)
-  }), [cart, wishlist, orders, catalog, settings, persistenceMode, user, addresses, accountLoading, coupon, cartDrawerOpen, notice, addToCart, removeFromCart, updateQuantity, toggleWishlist, applyCoupon, placeOrder, updateOrderStatus, saveProduct, deleteProduct, adjustStock, toggleProductActive, resetCatalog, updateSettings, refreshAccount, logout]);
+  }), [cart, wishlist, orders, catalog, settings, persistenceMode, user, addresses, accountLoading, coupon, cartDrawerOpen, notice, addToCart, addBundleToCart, removeFromCart, updateQuantity, toggleWishlist, applyCoupon, placeOrder, updateOrderStatus, saveProduct, deleteProduct, adjustStock, toggleProductActive, resetCatalog, updateSettings, refreshAccount, logout]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
