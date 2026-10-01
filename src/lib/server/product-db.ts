@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import type { Product } from "@/lib/products";
 
 type ProductRow = {
@@ -12,18 +13,23 @@ type ProductRow = {
   oldPrice: number | null;
   color: string;
   colorFamily: string;
-  sizes: string;
+  sizes: Prisma.JsonValue;
   stock: number;
   image: string;
-  images: string;
-  style: string;
-  occasion: string;
+  images: Prisma.JsonValue;
+  style: Prisma.JsonValue;
+  occasion: Prisma.JsonValue;
   material: string;
   fit: string;
   featured: boolean;
   isNew: boolean;
   active: boolean;
 };
+
+function jsonStrings(value: Prisma.JsonValue): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => String(item));
+}
 
 export function fromProductRow(row: ProductRow): Product {
   return {
@@ -38,12 +44,12 @@ export function fromProductRow(row: ProductRow): Product {
     oldPrice: row.oldPrice ?? undefined,
     color: row.color,
     colorFamily: row.colorFamily as Product["colorFamily"],
-    sizes: JSON.parse(row.sizes) as string[],
+    sizes: jsonStrings(row.sizes),
     stock: row.stock,
     image: row.image,
-    images: JSON.parse(row.images) as string[],
-    style: JSON.parse(row.style) as string[],
-    occasion: JSON.parse(row.occasion) as string[],
+    images: jsonStrings(row.images),
+    style: jsonStrings(row.style),
+    occasion: jsonStrings(row.occasion),
     material: row.material,
     fit: row.fit,
     featured: row.featured,
@@ -65,12 +71,12 @@ export function toProductRow(product: Product) {
     oldPrice: product.oldPrice ?? null,
     color: product.color,
     colorFamily: product.colorFamily,
-    sizes: JSON.stringify(product.sizes),
+    sizes: product.sizes,
     stock: product.stock,
     image: product.image,
-    images: JSON.stringify(product.images),
-    style: JSON.stringify(product.style),
-    occasion: JSON.stringify(product.occasion),
+    images: product.images,
+    style: product.style,
+    occasion: product.occasion,
     material: product.material,
     fit: product.fit,
     featured: Boolean(product.featured),

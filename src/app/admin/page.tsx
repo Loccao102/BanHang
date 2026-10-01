@@ -92,7 +92,7 @@ export default function AdminPage() {
     <section className="adminPage adminConsole">
       <div className="adminHero">
         <div><p className="eyebrow">ÉLANE COMMERCE CONSOLE</p><h1>Store operations.</h1></div>
-        <div className="adminHeroActions"><span className={`dbStatus ${persistenceMode === "database" ? "connected" : ""}`}>{persistenceMode === "database" ? "SQLite · Đã kết nối" : "Bộ nhớ trình duyệt"}</span><Link className="btn ghost small" href="/">Xem cửa hàng</Link><button className="btn small" onClick={openNewProduct}><Plus size={15} /> Thêm sản phẩm</button></div>
+        <div className="adminHeroActions"><span className={`dbStatus ${persistenceMode === "database" ? "connected" : ""}`}>{persistenceMode === "database" ? "PostgreSQL · Đã kết nối" : "Bộ nhớ trình duyệt"}</span><Link className="btn ghost small" href="/">Xem cửa hàng</Link><button className="btn small" onClick={openNewProduct}><Plus size={15} /> Thêm sản phẩm</button></div>
       </div>
 
       <div className="adminTabs">

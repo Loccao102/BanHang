@@ -3,12 +3,12 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id           String         @id
+  id           String         @id @default(uuid())
   email        String         @unique
   passwordHash String
   name         String
@@ -24,7 +24,7 @@ model User {
 }
 
 model Session {
-  id        String   @id
+  id        String   @id @default(uuid())
   tokenHash String   @unique
   userId    String
   expiresAt DateTime
@@ -36,7 +36,7 @@ model Session {
 }
 
 model Address {
-  id            String   @id
+  id            String   @id @default(uuid())
   userId        String
   label         String
   recipientName String
@@ -88,12 +88,12 @@ model Product {
   oldPrice    Int?
   color       String
   colorFamily String
-  sizes       String
+  sizes       Json
   stock       Int
   image       String
-  images      String
-  style       String
-  occasion    String
+  images      Json
+  style       Json
+  occasion    Json
   material    String
   fit         String
   featured    Boolean  @default(false)
@@ -121,6 +121,8 @@ model Order {
   items        OrderItem[]
 
   @@index([userId])
+  @@index([createdAt])
+  @@index([status])
 }
 
 model OrderItem {
@@ -134,6 +136,9 @@ model OrderItem {
   size         String?
   quantity     Int
   order        Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([productId])
 }
 
 model StoreSetting {
