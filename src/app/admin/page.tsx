@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Boxes, ChevronDown, Eye, EyeOff, PackageCheck, Pencil, Plus, RefreshCcw, Save, Settings2, ShoppingBag, Trash2, TrendingUp } from "lucide-react";
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useStore } from "@/components/store-provider";
 import type { OrderStatus } from "@/lib/cart";
 import { categoryLabels, formatPrice, type Product, type ProductCategory } from "@/lib/products";
@@ -49,6 +49,10 @@ export default function AdminPage() {
   const [editing, setEditing] = useState<Product | null>(null);
   const [promo, setPromo] = useState(settings.promoText);
   const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    setPromo(settings.promoText);
+  }, [settings.promoText]);
 
   const visibleCatalog = useMemo(() => {
     const q = query.trim().toLowerCase();
