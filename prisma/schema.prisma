@@ -7,13 +7,31 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  customer
+  admin
+}
+
+enum PaymentMethod {
+  qr
+  cod
+}
+
+enum OrderStatus {
+  processing
+  confirmed
+  shipping
+  completed
+  cancelled
+}
+
 model User {
   id           String         @id @default(uuid())
   email        String         @unique
   passwordHash String
   name         String
   phone        String?
-  role         String         @default("customer")
+  role         UserRole       @default(customer)
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   sessions     Session[]
@@ -57,6 +75,7 @@ model WishlistItem {
   productId String
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId])
   @@index([userId])
@@ -71,6 +90,7 @@ model CartItem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([userId, productId, size])
   @@index([userId])
@@ -98,9 +118,11 @@ model Product {
   fit         String
   featured    Boolean  @default(false)
   isNew       Boolean  @default(false)
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  active        Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  wishlistItems WishlistItem[]
+  cartItems     CartItem[]
 }
 
 model Order {
@@ -111,8 +133,8 @@ model Order {
   shipping     Int
   discount     Int
   total        Int
-  payment      String
-  status       String
+  payment      PaymentMethod
+  status       OrderStatus   @default(processing)
   customerName String
   phone        String
   address      String
