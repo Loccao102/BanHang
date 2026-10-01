@@ -18,8 +18,8 @@ export default function CheckoutPage() {
   const total = subtotal - discount + shipping;
   const bankId = process.env.NEXT_PUBLIC_BANK_ID ?? "MB";
   const account = process.env.NEXT_PUBLIC_BANK_ACCOUNT ?? "0123456789";
-  const accountName = process.env.NEXT_PUBLIC_BANK_ACCOUNT_NAME ?? "ELANE FASHION DEMO";
-  const qrReference = "ELANE-DEMO";
+  const accountName = process.env.NEXT_PUBLIC_BANK_ACCOUNT_NAME ?? "ELANE FASHION";
+  const qrReference = "ELANE-ORDER";
   const qrUrl = `https://img.vietqr.io/image/${bankId}-${account}-compact2.png?amount=${total}&addInfo=${encodeURIComponent(qrReference)}&accountName=${encodeURIComponent(accountName)}`;
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -49,7 +49,7 @@ export default function CheckoutPage() {
   if (!cart.length && !completedOrder) return <div className="emptyState"><div><h2>Chưa có sản phẩm để checkout</h2><Link className="btn" href="/shop">Quay lại shop</Link></div></div>;
 
   if (completedOrder) return (
-    <section className="checkoutPage"><div className="panel successBox"><div className="successIcon"><Check size={26} /></div><p className="eyebrow">ORDER RECEIVED</p><h2>Cảm ơn bạn đã đặt hàng</h2><p>Mã đơn: <strong>{completedOrder.id}</strong></p><p style={{color: "var(--muted)"}}>Đơn đã được lưu vào lịch sử trên trình duyệt. Bản demo chưa xác minh giao dịch ngân hàng tự động.</p><div className="heroActions" style={{justifyContent: "center"}}><Link className="btn" href="/orders">Xem đơn hàng</Link><Link className="btn secondary" href="/shop">Tiếp tục mua sắm</Link></div></div></section>
+    <section className="checkoutPage"><div className="panel successBox"><div className="successIcon"><Check size={26} /></div><p className="eyebrow">ORDER RECEIVED</p><h2>Cảm ơn bạn đã đặt hàng</h2><p>Mã đơn: <strong>{completedOrder.id}</strong></p><p style={{color: "var(--muted)"}}>Đơn hàng đã được tiếp nhận. Chúng tôi sẽ cập nhật trạng thái ngay khi đơn được xác nhận và chuyển sang khâu chuẩn bị hàng.</p><div className="heroActions" style={{justifyContent: "center"}}><Link className="btn" href="/orders">Xem đơn hàng</Link><Link className="btn secondary" href="/shop">Tiếp tục mua sắm</Link></div></div></section>
   );
 
   return (
@@ -70,7 +70,7 @@ export default function CheckoutPage() {
             <button type="button" className={`paymentCard ${payment === "qr" ? "active" : ""}`} onClick={() => setPayment("qr")}><QrCode size={20} /><div><strong>Chuyển khoản QR</strong><div style={{fontSize: 11, color: "var(--muted)"}}>QR tạo theo đúng số tiền đơn hàng</div></div></button>
             <button type="button" className={`paymentCard ${payment === "cod" ? "active" : ""}`} onClick={() => setPayment("cod")}><CreditCard size={20} /><div><strong>COD</strong><div style={{fontSize: 11, color: "var(--muted)"}}>Thanh toán khi nhận hàng</div></div></button>
           </div>
-          {payment === "qr" ? <><div className="qrBox"><Image src={qrUrl} alt="QR thanh toán demo" width={360} height={360} unoptimized /></div><div className="notice">QR phục vụ demo đồ án. Trạng thái thanh toán được người dùng xác nhận thủ công.</div></> : null}
+          {payment === "qr" ? <><div className="qrBox"><Image src={qrUrl} alt="QR thanh toán" width={360} height={360} unoptimized /></div><div className="notice">Vui lòng chuyển đúng số tiền hiển thị và giữ nguyên nội dung chuyển khoản để đơn hàng được đối soát nhanh hơn.</div></> : null}
         </div>
         <aside className="panel">
           <h2>Đơn hàng</h2>
@@ -80,7 +80,7 @@ export default function CheckoutPage() {
           <div className="summaryLine"><span>Vận chuyển</span><strong>{shipping ? formatPrice(shipping) : "Miễn phí"}</strong></div>
           <div className="summaryLine total"><span>Tổng</span><strong>{formatPrice(total)}</strong></div>
           <button className="btn block" type="submit">{payment === "qr" ? "Tôi đã thanh toán" : "Đặt hàng COD"}</button>
-          <p style={{fontSize: 10, color: "var(--muted)", lineHeight: 1.6}}>Bằng việc đặt hàng, bạn đồng ý với chính sách đổi trả và điều khoản mua hàng demo.</p>
+          <p style={{fontSize: 10, color: "var(--muted)", lineHeight: 1.6}}>Bằng việc đặt hàng, bạn đồng ý với chính sách đổi trả và điều khoản mua hàng của ÉLANE.</p>
         </aside>
       </form>
     </section>
