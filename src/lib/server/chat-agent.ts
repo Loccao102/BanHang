@@ -40,8 +40,8 @@ export function buildOutfit(message: string, catalog: Product[]) {
   const text = normalize(message);
 
   const topCandidates = retrieveProducts(message + " ao corset top", catalog, 20).filter((item) => item.category === "tops");
-  const bottomCandidates = retrieveProducts(message + " quan chan vay", catalog, 20).filter((item) => item.category === "bottoms");
-  const dressCandidates = retrieveProducts(message + " dam dress", catalog, 20).filter((item) => item.category === "dress");
+  const bottomCandidates = retrieveProducts(message + " quần chân váy", catalog, 20).filter((item) => item.category === "bottoms");
+  const dressCandidates = retrieveProducts(message + " đầm dress", catalog, 20).filter((item) => item.category === "dress");
   const outerCandidates = retrieveProducts(message + " blazer ao khoac", catalog, 10).filter((item) => item.category === "outerwear");
 
   if (text.includes("dam") || text.includes("vay") || text.includes("dress")) {

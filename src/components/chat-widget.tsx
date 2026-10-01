@@ -332,7 +332,7 @@ export function ChatWidget() {
           <div className="chatSuggestions">
             {[
               "Phối outfit đi date dưới 2 triệu",
-              "Thêm cái thứ 2 size M vào giỏ",
+              "Thêm corset đen size M vào giỏ",
               "Áp mã LSOUL10",
               ...(user ? ["Mở đơn gần nhất của mình"] : ["Tìm corset đen dưới 900k"])
             ].map((prompt) => <button key={prompt} disabled={loading} onClick={() => void send(prompt)}>{prompt}</button>)}
