@@ -56,3 +56,10 @@
 .accountLoading{padding:80px 4vw;min-height:500px}
 @media(max-width:900px){.authPage{grid-template-columns:1fr}.authVisual{min-height:390px}.accountOverview{grid-template-columns:1fr 1fr}.addressGrid{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.authVisual{min-height:340px;padding:38px 18px}.authPanel{padding:42px 18px}.authGrid{grid-template-columns:1fr}.accountPage{padding:45px 16px 75px}.accountHero{display:block}.accountHero>button{margin-top:18px}.accountOverview,.addressGrid{grid-template-columns:1fr}.accountTabs a{margin-left:0}.addressForm{grid-template-columns:1fr}.addressForm .full{grid-column:auto}.accountPanel{padding:17px}}
+
+.accountIcon.signedIn{background:var(--ink);color:white}.userInitial{font-size:11px;font-weight:800}
+.checkoutAccountPrompt{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;margin:0 0 18px;padding:14px 16px;border:1px solid var(--line);background:var(--paper)}
+.checkoutAccountPrompt strong,.checkoutAccountPrompt span{display:block}.checkoutAccountPrompt strong{font-size:11px}.checkoutAccountPrompt span{font-size:9px;color:var(--muted);margin-top:3px}.checkoutAccountPrompt a{font-size:10px;font-weight:800;text-decoration:underline;text-underline-offset:3px}
+.checkoutSectionHead{display:flex;justify-content:space-between;gap:15px;align-items:center}.checkoutSectionHead>span{font-size:9px;color:#176948;background:#edf8f3;padding:6px 8px}
+.adminAccessDenied{min-height:65vh;display:grid;place-items:center;padding:50px 20px;text-align:center}.adminAccessDenied>div{max-width:560px}.adminAccessDenied h1{font-family:var(--font-serif);font-size:58px;font-weight:400;letter-spacing:-.04em;margin:0 0 12px}.adminAccessDenied p:not(.eyebrow){color:var(--muted);margin-bottom:22px}
+@media(max-width:600px){.checkoutAccountPrompt{grid-template-columns:auto 1fr}.checkoutAccountPrompt a{grid-column:2}.checkoutSectionHead{display:block}.checkoutSectionHead>span{display:inline-block;margin:-8px 0 15px}.adminAccessDenied h1{font-size:44px}}
