@@ -24,7 +24,7 @@ export default function CartPage() {
       setCouponMessage("Mã giảm giá đã được áp dụng.");
       setCouponInput("");
     } else {
-      setCouponMessage("Mã chưa hợp lệ. Demo thử ELANE10 hoặc NEW15.");
+      setCouponMessage("Mã ưu đãi chưa hợp lệ hoặc đã hết hạn.");
     }
   }
 
@@ -61,7 +61,7 @@ export default function CartPage() {
             {couponMessage ? <p className="couponMessage">{couponMessage}</p> : null}
           </div>
 
-          <p style={{color: "var(--muted)", fontSize: 12, lineHeight: 1.6}}>Checkout không cần tài khoản. Bạn có thể thanh toán COD hoặc QR demo.</p>
+          <p style={{color: "var(--muted)", fontSize: 12, lineHeight: 1.6}}>Bạn có thể thanh toán khi nhận hàng hoặc chuyển khoản nhanh bằng QR.</p>
           <Link className="btn block" href="/checkout">Tiến hành thanh toán</Link>
           <Link className="btn ghost block" href="/shop" style={{marginTop: 8}}>Tiếp tục mua sắm</Link>
         </aside>
