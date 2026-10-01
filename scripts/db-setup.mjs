@@ -8,7 +8,7 @@ const env = {
 
 for (const args of [
   ["prisma", "generate"],
-  ["prisma", "db", "push", "--accept-data-loss"],
+  ["prisma", "db", "push"],
   ["tsx", "prisma/seed.ts"]
 ]) {
   const result = spawnSync(npx, args, { stdio: "inherit", env });
