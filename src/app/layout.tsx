@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import "./commerce-extra.css";
+import "./storefront-modern.css";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { StoreProvider } from "@/components/store-provider";
+import { CartDrawer } from "@/components/cart-drawer";
+import { StoreToast } from "@/components/store-toast";
 
 export const metadata: Metadata = {
   title: "ÉLANE — Modern Fashion Store",
@@ -18,6 +21,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <Header />
           <main>{children}</main>
           <Footer />
+          <CartDrawer />
+          <StoreToast />
         </StoreProvider>
       </body>
     </html>

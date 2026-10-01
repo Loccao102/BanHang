@@ -7,6 +7,7 @@ import { products as seedProducts, type Product } from "@/lib/products";
 
 type CouponState = { code: string; rate: number };
 export type StoreSettings = { promoText: string };
+type Notice = { id: number; message: string; detail?: string } | null;
 
 type StoreContextValue = {
   cart: CartLine[];
@@ -16,6 +17,8 @@ type StoreContextValue = {
   settings: StoreSettings;
   cartCount: number;
   coupon: CouponState | null;
+  cartDrawerOpen: boolean;
+  notice: Notice;
   addToCart: (product: Product, size?: string, quantity?: number) => void;
   removeFromCart: (productId: string, size?: string) => void;
   updateQuantity: (productId: string, size: string | undefined, quantity: number) => void;
@@ -31,6 +34,9 @@ type StoreContextValue = {
   toggleProductActive: (id: string) => void;
   resetCatalog: () => void;
   updateSettings: (next: StoreSettings) => void;
+  openCartDrawer: () => void;
+  closeCartDrawer: () => void;
+  dismissNotice: () => void;
 };
 
 const StoreContext = createContext<StoreContextValue | null>(null);
@@ -53,6 +59,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [catalog, setCatalog] = useState<Product[]>(seedProducts);
   const [settings, setSettings] = useState<StoreSettings>(defaultSettings);
   const [coupon, setCoupon] = useState<CouponState | null>(null);
+  const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
+  const [notice, setNotice] = useState<Notice>(null);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -76,6 +84,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     else window.localStorage.removeItem(COUPON_KEY);
   }, [coupon, hydrated]);
 
+  const showNotice = useCallback((message: string, detail?: string) => {
+    const id = Date.now();
+    setNotice({ id, message, detail });
+    window.setTimeout(() => setNotice((current) => current?.id === id ? null : current), 2600);
+  }, []);
+
   const addToCart = useCallback((product: Product, size?: string, quantity = 1) => {
     if (product.active === false || product.stock <= 0) return;
     setCart((current) => {
@@ -83,7 +97,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (index === -1) return [...current, { product, size, quantity: Math.min(quantity, product.stock) }];
       return current.map((line, i) => i === index ? { ...line, quantity: Math.min(line.quantity + quantity, product.stock) } : line);
     });
-  }, []);
+    showNotice("Đã thêm vào giỏ", `${product.name}${size ? ` · Size ${size}` : ""}`);
+    setCartDrawerOpen(true);
+  }, [showNotice]);
 
   const removeFromCart = useCallback((productId: string, size?: string) => {
     setCart((current) => current.filter((line) => !(line.product.id === productId && line.size === size)));
@@ -98,23 +114,29 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toggleWishlist = useCallback((productId: string) => {
-    setWishlist((current) => current.includes(productId)
-      ? current.filter((id) => id !== productId)
-      : [...current, productId]);
-  }, []);
+    setWishlist((current) => {
+      const liked = current.includes(productId);
+      const next = liked ? current.filter((id) => id !== productId) : [...current, productId];
+      const product = catalog.find((item) => item.id === productId);
+      showNotice(liked ? "Đã bỏ khỏi wishlist" : "Đã lưu vào wishlist", product?.name);
+      return next;
+    });
+  }, [catalog, showNotice]);
 
   const applyCoupon = useCallback((rawCode: string) => {
     const code = rawCode.trim().toUpperCase();
     const rate = code === "ELANE10" ? 0.1 : code === "NEW15" ? 0.15 : 0;
     if (!rate) return false;
     setCoupon({ code, rate });
+    showNotice("Đã áp dụng ưu đãi", `${code} · giảm ${Math.round(rate * 100)}%`);
     return true;
-  }, []);
+  }, [showNotice]);
 
   const placeOrder = useCallback((order: OrderRecord) => {
     setOrders((current) => [order, ...current]);
     setCart([]);
     setCoupon(null);
+    setCartDrawerOpen(false);
   }, []);
 
   const updateOrderStatus = useCallback((id: string, status: OrderStatus) => {
@@ -151,6 +173,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     settings,
     cartCount: cart.reduce((sum, line) => sum + line.quantity, 0),
     coupon,
+    cartDrawerOpen,
+    notice,
     addToCart,
     removeFromCart,
     updateQuantity,
@@ -165,8 +189,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     adjustStock,
     toggleProductActive,
     resetCatalog,
-    updateSettings: setSettings
-  }), [cart, wishlist, orders, catalog, settings, coupon, addToCart, removeFromCart, updateQuantity, toggleWishlist, applyCoupon, placeOrder, updateOrderStatus, saveProduct, deleteProduct, adjustStock, toggleProductActive, resetCatalog]);
+    updateSettings: setSettings,
+    openCartDrawer: () => setCartDrawerOpen(true),
+    closeCartDrawer: () => setCartDrawerOpen(false),
+    dismissNotice: () => setNotice(null)
+  }), [cart, wishlist, orders, catalog, settings, coupon, cartDrawerOpen, notice, addToCart, removeFromCart, updateQuantity, toggleWishlist, applyCoupon, placeOrder, updateOrderStatus, saveProduct, deleteProduct, adjustStock, toggleProductActive, resetCatalog]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }

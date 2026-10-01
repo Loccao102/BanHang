@@ -4,12 +4,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { Check, Heart, Package, Ruler, ShoppingBag, Star, Truck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { formatPrice } from "@/lib/products";
 import { useStore } from "@/components/store-provider";
 import { ProductCard } from "@/components/product-card";
 
 export function ProductDetailClient({ productId }: { productId: string }) {
-  const { addToCart, toggleWishlist, wishlist, catalog } = useStore();
+  const { addToCart, toggleWishlist, wishlist, catalog, closeCartDrawer } = useStore();
+  const router = useRouter();
   const product = catalog.find((item) => item.id === productId && item.active !== false);
   const [size, setSize] = useState("");
   const [added, setAdded] = useState(false);
@@ -22,6 +24,19 @@ export function ProductDetailClient({ productId }: { productId: string }) {
     .filter((item) => item.active !== false && item.id !== product.id && (item.category === product.category || item.style.some((style) => product.style.includes(style))))
     .slice(0, 4) : [], [catalog, product]);
 
+  const colorVariants = useMemo(() => {
+    if (!product) return [];
+    const seen = new Set<string>();
+    return catalog
+      .filter((item) => item.active !== false && item.category === product.category && item.stock > 0)
+      .filter((item) => {
+        if (seen.has(item.colorFamily)) return false;
+        seen.add(item.colorFamily);
+        return true;
+      })
+      .slice(0, 6);
+  }, [catalog, product]);
+
   if (!product) return <div className="emptyState"><div><h2>Sản phẩm không còn hiển thị</h2><p>Sản phẩm có thể đã được ẩn hoặc xóa trong trang quản trị.</p><Link className="btn" href="/shop">Quay lại shop</Link></div></div>;
 
   const liked = wishlist.includes(product.id);
@@ -30,6 +45,13 @@ export function ProductDetailClient({ productId }: { productId: string }) {
     addToCart(product, size);
     setAdded(true);
     window.setTimeout(() => setAdded(false), 1800);
+  }
+
+  function buyNow() {
+    if (!product || product.stock <= 0) return;
+    addToCart(product, size);
+    closeCartDrawer();
+    router.push("/checkout");
   }
 
   return (
@@ -43,11 +65,12 @@ export function ProductDetailClient({ productId }: { productId: string }) {
           <div className="detailPrice">{formatPrice(product.price)} {product.oldPrice ? <><del>{formatPrice(product.oldPrice)}</del><span className="salePercent">-{Math.round((1 - product.price / product.oldPrice) * 100)}%</span></> : null}</div>
           <div className="optionLabel"><span>Màu</span><span>{product.color}</span></div>
           <div className="colorSwatchRow"><span className={`swatch swatch-${product.colorFamily}`} /><small>{product.color}</small></div>
+          {colorVariants.length > 1 ? <div className="variantSwatches" aria-label="Các màu cùng danh mục">{colorVariants.map((item) => <Link key={item.id} href={`/product/${item.id}`} className={item.id === product.id ? "active" : ""} title={item.color}><span className={`miniSwatch swatch-${item.colorFamily}`} /><small>{item.color}</small></Link>)}</div> : null}
           <div className="optionLabel"><span>Chọn size</span><Link href="/size-guide"><Ruler size={13} /> Size guide</Link></div>
           <div className="sizeGrid">{product.sizes.map((value) => <button className={`sizeButton ${size === value ? "active" : ""}`} key={value} onClick={() => setSize(value)}>{value}</button>)}</div>
           <div className="stockNote"><span className="statusDot" /> Còn {product.stock} sản phẩm · {product.stock > 0 ? "sẵn sàng giao" : "tạm hết hàng"}</div>
           <div className="detailActions"><button className="btn" disabled={product.stock <= 0} onClick={add}>{added ? <><Check size={17} /> Đã thêm vào giỏ</> : <><ShoppingBag size={17} /> Thêm vào giỏ</>}</button><button className="btn secondary" aria-label="Yêu thích" onClick={() => toggleWishlist(product.id)}><Heart size={18} fill={liked ? "currentColor" : "none"} /></button></div>
-          <button className="buyNow" disabled={product.stock <= 0} onClick={add}>Mua ngay · {formatPrice(product.price)}</button>
+          <button className="buyNow" disabled={product.stock <= 0} onClick={buyNow}>Mua ngay · {formatPrice(product.price)}</button>
           <div className="deliveryHighlights"><div><Truck size={17} /><span><strong>Freeship từ 699K</strong><small>Giao tiêu chuẩn 2–5 ngày</small></span></div><div><Package size={17} /><span><strong>Đổi size trong 7 ngày</strong><small>Áp dụng sản phẩm nguyên tag</small></span></div></div>
           <div className="productAccordions"><details open><summary>Chi tiết sản phẩm</summary><p>SKU: {product.sku ?? product.id}. Chất liệu: {product.material}. Phom: {product.fit}. Thiết kế theo hướng {product.style.join(", ")}.</p></details><details><summary>Chăm sóc sản phẩm</summary><p>Giặt nhẹ với màu tương đồng, tránh sấy nhiệt cao. Ủi mặt trái ở nhiệt độ thấp.</p></details><details><summary>Giao hàng & đổi trả</summary><p>Đơn demo hỗ trợ COD hoặc QR. Có thể đổi size trong 7 ngày nếu sản phẩm còn nguyên trạng và còn tag.</p></details></div>
         </div>

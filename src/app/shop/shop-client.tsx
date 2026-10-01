@@ -12,7 +12,8 @@ export function ShopClient() {
   const initialGender = searchParams.get("gender") ?? "all";
   const initialCategory = searchParams.get("category") ?? "all";
   const saleOnly = searchParams.get("sale") === "1";
-  const [query, setQuery] = useState("");
+  const initialQuery = searchParams.get("q") ?? "";
+  const [query, setQuery] = useState(initialQuery);
   const [category, setCategory] = useState(initialCategory);
   const [color, setColor] = useState("all");
   const [gender, setGender] = useState(initialGender);

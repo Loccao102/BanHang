@@ -1,0 +1,3 @@
+export default function ShopLoading() {
+  return <><section className="pageHero skeletonHero"><div className="skeletonLine short" /><div className="skeletonLine title" /><div className="skeletonLine medium" /></section><div className="shopShell"><aside className="filters desktopFilters"><div className="skeletonBlock filterSkeleton" /></aside><section><div className="shopTop"><div className="skeletonLine short" /></div><div className="productGrid">{Array.from({length:8}).map((_,index) => <div className="productSkeleton" key={index}><div className="skeletonProductImage" /><div className="skeletonLine medium" /><div className="skeletonLine short" /></div>)}</div></section></div></>;
+}
