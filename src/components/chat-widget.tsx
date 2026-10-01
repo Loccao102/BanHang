@@ -31,7 +31,7 @@ export function ChatWidget() {
     try {
       const saved = window.localStorage.getItem(CHAT_KEY);
       if (saved) setMessages(JSON.parse(saved) as ChatMessage[]);
-    } catch { /* demo history is non-critical */ }
+    } catch { /* Conversation history is non-critical */ }
   }, []);
 
   useEffect(() => {
