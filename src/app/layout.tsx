@@ -3,11 +3,10 @@ import "./globals.css";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { StoreProvider } from "@/components/store-provider";
-import { ChatWidget } from "@/components/chat-widget";
 
 export const metadata: Metadata = {
-  title: "ÉLANE — Modern Fashion & AI Stylist",
-  description: "Fashion ecommerce demo với AI stylist, outfit recommendation và virtual try-on."
+  title: "ÉLANE — Modern Fashion Store",
+  description: "Thời trang tối giản hiện đại: bộ sưu tập mới, mua sắm, wishlist, giỏ hàng và thanh toán QR demo."
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -18,7 +17,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <Header />
           <main>{children}</main>
           <Footer />
-          <ChatWidget />
         </StoreProvider>
       </body>
     </html>

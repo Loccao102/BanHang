@@ -2,45 +2,80 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, ShoppingBag, Sparkles, WandSparkles } from "lucide-react";
-import { useState } from "react";
+import { Check, Heart, Package, Ruler, ShoppingBag, Star, Truck } from "lucide-react";
+import { useMemo, useState } from "react";
 import type { Product } from "@/lib/products";
-import { formatPrice } from "@/lib/products";
+import { formatPrice, products } from "@/lib/products";
 import { useStore } from "@/components/store-provider";
+import { ProductCard } from "@/components/product-card";
 
 export function ProductDetailClient({ product }: { product: Product }) {
   const [size, setSize] = useState(product.sizes[0]);
+  const [added, setAdded] = useState(false);
   const { addToCart, toggleWishlist, wishlist } = useStore();
   const liked = wishlist.includes(product.id);
 
+  const related = useMemo(() => products
+    .filter((item) => item.id !== product.id && (item.category === product.category || item.style.some((style) => product.style.includes(style))))
+    .slice(0, 4), [product]);
+
+  function add() {
+    addToCart(product, size);
+    setAdded(true);
+    window.setTimeout(() => setAdded(false), 1800);
+  }
+
   return (
-    <section className="productDetail">
-      <div className="productGallery">
-        {product.images.map((image, index) => <div className="galleryImage" key={image}><Image src={image} alt={`${product.name} ${index + 1}`} fill priority={index === 0} sizes="(max-width: 760px) 100vw, 50vw" /></div>)}
-      </div>
-      <div className="productInfo">
-        <p className="eyebrow">{product.isNew ? "NEW ARRIVAL" : "ÉLANE ESSENTIAL"}</p>
-        <h1>{product.name}</h1>
-        <p className="subtitle">{product.subtitle}</p>
-        <div className="detailPrice">{formatPrice(product.price)} {product.oldPrice ? <del>{formatPrice(product.oldPrice)}</del> : null}</div>
-        <div className="optionLabel"><span>Màu</span><span>{product.color}</span></div>
-        <div className="optionLabel"><span>Chọn size</span><span>Còn {product.stock}</span></div>
-        <div className="sizeGrid">{product.sizes.map((value) => <button className={`sizeButton ${size === value ? "active" : ""}`} key={value} onClick={() => setSize(value)}>{value}</button>)}</div>
-        <div className="detailActions">
-          <button className="btn" onClick={() => addToCart(product, size)}><ShoppingBag size={17} /> Thêm vào giỏ</button>
-          <button className="btn secondary" aria-label="Yêu thích" onClick={() => toggleWishlist(product.id)}><Heart size={18} fill={liked ? "currentColor" : "none"} /></button>
+    <>
+      <section className="productDetail">
+        <div className="productGallery">
+          {product.images.map((image, index) => <div className="galleryImage" key={image}><Image src={image} alt={`${product.name} ${index + 1}`} fill priority={index === 0} sizes="(max-width: 760px) 100vw, 50vw" /></div>)}
         </div>
-        <div className="heroActions">
-          <Link className="btn ghost small" href={`/outfit?product=${product.id}`}><Sparkles size={15} /> Phối với món này</Link>
-          {product.category !== "shoes" && product.category !== "accessory" ? <Link className="btn ghost small" href={`/try-on?product=${product.id}`}><WandSparkles size={15} /> Thử đồ AI</Link> : null}
+        <div className="productInfo">
+          <p className="eyebrow">{product.isNew ? "NEW ARRIVAL" : "ÉLANE ESSENTIAL"}</p>
+          <h1>{product.name}</h1>
+          <p className="subtitle">{product.subtitle}</p>
+          <div className="ratingLine"><span><Star size={13} fill="currentColor" /> 4.8</span><span>·</span><a href="#reviews">24 đánh giá</a></div>
+          <div className="detailPrice">{formatPrice(product.price)} {product.oldPrice ? <><del>{formatPrice(product.oldPrice)}</del><span className="salePercent">-{Math.round((1 - product.price / product.oldPrice) * 100)}%</span></> : null}</div>
+
+          <div className="optionLabel"><span>Màu</span><span>{product.color}</span></div>
+          <div className="colorSwatchRow"><span className={`swatch swatch-${product.colorFamily}`} /><small>{product.color}</small></div>
+
+          <div className="optionLabel"><span>Chọn size</span><Link href="/size-guide"><Ruler size={13} /> Size guide</Link></div>
+          <div className="sizeGrid">{product.sizes.map((value) => <button className={`sizeButton ${size === value ? "active" : ""}`} key={value} onClick={() => setSize(value)}>{value}</button>)}</div>
+          <div className="stockNote"><span className="statusDot" /> Còn {product.stock} sản phẩm · sẵn sàng giao</div>
+
+          <div className="detailActions">
+            <button className="btn" onClick={add}>{added ? <><Check size={17} /> Đã thêm vào giỏ</> : <><ShoppingBag size={17} /> Thêm vào giỏ</>}</button>
+            <button className="btn secondary" aria-label="Yêu thích" onClick={() => toggleWishlist(product.id)}><Heart size={18} fill={liked ? "currentColor" : "none"} /></button>
+          </div>
+          <button className="buyNow" onClick={add}>Mua ngay · {formatPrice(product.price)}</button>
+
+          <div className="deliveryHighlights">
+            <div><Truck size={17} /><span><strong>Freeship từ 699K</strong><small>Giao tiêu chuẩn 2–5 ngày</small></span></div>
+            <div><Package size={17} /><span><strong>Đổi size trong 7 ngày</strong><small>Áp dụng sản phẩm nguyên tag</small></span></div>
+          </div>
+
+          <div className="productAccordions">
+            <details open><summary>Chi tiết sản phẩm</summary><p>Chất liệu: {product.material}. Phom: {product.fit}. Thiết kế theo hướng {product.style.join(", ")}; phù hợp cho {product.occasion.join(", ")}.</p></details>
+            <details><summary>Chăm sóc sản phẩm</summary><p>Giặt nhẹ với màu tương đồng, tránh sấy nhiệt cao. Ủi mặt trái ở nhiệt độ thấp để giữ bề mặt và form tốt hơn.</p></details>
+            <details><summary>Giao hàng & đổi trả</summary><p>Đơn demo hỗ trợ COD hoặc QR. Có thể đổi size trong 7 ngày nếu sản phẩm còn nguyên trạng và còn tag.</p></details>
+          </div>
         </div>
-        <div className="infoList">
-          <div><span>Chất liệu</span><strong>{product.material}</strong></div>
-          <div><span>Phom dáng</span><strong>{product.fit}</strong></div>
-          <div><span>Phong cách</span><strong>{product.style.join(" · ")}</strong></div>
-          <div><span>Phù hợp</span><strong>{product.occasion.join(" · ")}</strong></div>
+      </section>
+
+      <section className="section relatedSection">
+        <div className="sectionHead"><div><p className="eyebrow">YOU MAY ALSO LIKE</p><h2>Complete the wardrobe</h2></div></div>
+        <div className="productGrid">{related.map((item) => <ProductCard product={item} key={item.id} />)}</div>
+      </section>
+
+      <section className="reviewsSection" id="reviews">
+        <div><p className="eyebrow">CUSTOMER NOTES</p><h2>4.8 / 5</h2><p>24 đánh giá · 92% khách hàng khuyên mua</p></div>
+        <div className="reviewCards">
+          <article><div>★★★★★</div><strong>Form đẹp, dễ phối</strong><p>Chất vải ổn và lên dáng đúng như ảnh. Size khá chuẩn.</p><small>Minh · Đã mua hàng</small></article>
+          <article><div>★★★★★</div><strong>Mặc đi làm rất hợp</strong><p>Thiết kế tối giản nên phối với nhiều quần và giày khác nhau.</p><small>An · Đã mua hàng</small></article>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 }

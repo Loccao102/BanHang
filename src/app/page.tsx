@@ -1,61 +1,101 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Box, Sparkles, WandSparkles } from "lucide-react";
+import { ArrowRight, PackageCheck, RefreshCcw, ShieldCheck, Truck } from "lucide-react";
 import { ProductCard } from "@/components/product-card";
 import { products } from "@/lib/products";
 
+const categories = [
+  {
+    title: "Women",
+    subtitle: "Soft tailoring / fluid form",
+    href: "/shop?gender=women",
+    image: "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1100&q=88"
+  },
+  {
+    title: "Men",
+    subtitle: "Clean layers / modern utility",
+    href: "/shop?gender=men",
+    image: "https://images.unsplash.com/photo-1617137968427-85924c800a22?auto=format&fit=crop&w=1100&q=88"
+  },
+  {
+    title: "Accessories",
+    subtitle: "The finishing layer",
+    href: "/shop?category=accessory",
+    image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=1100&q=88"
+  }
+];
+
 export default function HomePage() {
   const featured = products.filter((item) => item.featured).slice(0, 4);
+  const newArrivals = products.filter((item) => item.isNew).slice(0, 4);
+
   return (
     <>
       <section className="hero">
         <div className="heroCopy">
           <p className="eyebrow">ÉLANE / FALL 2026</p>
           <h1>Quiet form.<br />Bold presence.</h1>
-          <p className="heroLead">Một cửa hàng thời trang tối giản được thiết kế quanh trải nghiệm chọn đồ nhanh hơn — từ tìm sản phẩm, phối outfit đến thử đồ bằng AI.</p>
+          <p className="heroLead">Những thiết kế tối giản, sắc nét và dễ mặc — được xây dựng cho nhịp sống hiện đại, từ văn phòng đến cuối tuần.</p>
           <div className="heroActions">
-            <Link className="btn" href="/shop">Khám phá bộ sưu tập <ArrowRight size={17} /></Link>
-            <Link className="btn secondary" href="/outfit"><Sparkles size={17} /> Phối đồ AI</Link>
+            <Link className="btn" href="/shop?sort=new">Shop new arrivals <ArrowRight size={17} /></Link>
+            <Link className="btn secondary" href="/shop">Xem toàn bộ</Link>
           </div>
         </div>
         <div className="heroImage">
           <Image src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=1400&q=90" alt="ÉLANE editorial fashion" fill priority sizes="(max-width: 760px) 100vw, 45vw" />
-          <div className="heroTag"><div><strong>THE NEW UNIFORM</strong><span>Minimal essentials / 2026</span></div><ArrowRight size={18} /></div>
+          <div className="heroTag"><div><strong>THE NEW UNIFORM</strong><span>Fall / Winter 2026</span></div><ArrowRight size={18} /></div>
+        </div>
+      </section>
+
+      <section className="categoryEditorial">
+        {categories.map((category) => (
+          <Link className="categoryEditorialCard" href={category.href} key={category.title}>
+            <Image src={category.image} alt={category.title} fill sizes="(max-width: 760px) 100vw, 33vw" />
+            <div className="categoryEditorialOverlay">
+              <span>{category.subtitle}</span>
+              <h2>{category.title}</h2>
+              <strong>Shop collection <ArrowRight size={14} /></strong>
+            </div>
+          </Link>
+        ))}
+      </section>
+
+      <section className="section">
+        <div className="sectionHead">
+          <div><p className="eyebrow">MOST WANTED</p><h2>Best sellers</h2></div>
+          <div><p>Những món chủ lực dễ phối, giữ phom tốt và có thể đi xuyên nhiều hoàn cảnh trong tuần.</p><Link className="textLink" href="/shop">Xem tất cả <ArrowRight size={14} /></Link></div>
+        </div>
+        <div className="productGrid">{featured.map((product) => <ProductCard key={product.id} product={product} />)}</div>
+      </section>
+
+      <section className="campaignSplit">
+        <div className="campaignImage"><Image src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1400&q=88" alt="ÉLANE campaign" fill sizes="(max-width: 760px) 100vw, 55vw" /></div>
+        <div className="campaignCopy">
+          <p className="eyebrow">EDITORIAL 01</p>
+          <h2>City, after five.</h2>
+          <p>Từ tailoring mềm đến denim wash nhẹ, bộ sưu tập được cân bằng để chuyển từ giờ làm sang một cuộc hẹn tối mà không cần thay đổi quá nhiều.</p>
+          <Link className="btn secondary" href="/shop?gender=unisex">Khám phá edit <ArrowRight size={16} /></Link>
         </div>
       </section>
 
       <section className="section">
         <div className="sectionHead">
-          <div><p className="eyebrow">CURATED FOR NOW</p><h2>New essentials</h2></div>
-          <div><p>Những phom dáng dễ mặc, bảng màu trung tính và chi tiết đủ khác biệt để dùng cả đi làm lẫn đi chơi.</p><Link className="textLink" href="/shop">Xem tất cả <ArrowRight size={14} /></Link></div>
+          <div><p className="eyebrow">JUST LANDED</p><h2>New arrivals</h2></div>
+          <Link className="textLink" href="/shop?sort=new">Xem mới nhất <ArrowRight size={14} /></Link>
         </div>
-        <div className="productGrid">{featured.map((product) => <ProductCard key={product.id} product={product} />)}</div>
+        <div className="productGrid">{newArrivals.map((product) => <ProductCard key={product.id} product={product} />)}</div>
       </section>
 
-      <section className="aiStrip">
-        <div className="aiCopy">
-          <p className="eyebrow">ÉLANE INTELLIGENCE</p>
-          <h2>Your wardrobe,<br />less guesswork.</h2>
-          <p>Chọn dịp, phong cách và ngân sách. Hệ thống chỉ phối từ sản phẩm đang còn hàng, chấm điểm độ tương thích và cho phép đổi outfit liên tục.</p>
-          <div className="heroActions">
-            <Link className="btn ghost" href="/outfit"><WandSparkles size={17} /> Tạo outfit</Link>
-            <Link className="btn ghost" href="/try-on">Thử đồ online <ArrowRight size={16} /></Link>
-          </div>
-        </div>
-        <div className="aiVisual">
-          <div className="outfitMini">
-            {products.slice(0, 4).map((product) => <div key={product.id}><Image src={product.image} alt={product.name} fill sizes="160px" /></div>)}
-          </div>
-        </div>
+      <section className="serviceRail">
+        <div><Truck size={21} /><strong>Freeship từ 699K</strong><span>Toàn quốc cho đơn đủ điều kiện</span></div>
+        <div><RefreshCcw size={21} /><strong>Đổi size trong 7 ngày</strong><span>Giữ tag và sản phẩm chưa qua sử dụng</span></div>
+        <div><ShieldCheck size={21} /><strong>Checkout an toàn</strong><span>COD hoặc QR chuyển khoản demo</span></div>
+        <div><PackageCheck size={21} /><strong>Theo dõi đơn hàng</strong><span>Lưu lịch sử mua ngay trên trình duyệt</span></div>
       </section>
 
-      <section className="section" style={{paddingTop: 0}}>
-        <div className="sectionHead"><div><p className="eyebrow">SHOP SMARTER</p><h2>Built for the full flow</h2></div></div>
-        <div className="valueGrid">
-          <div className="valueCard"><Box size={24} /><h3>Kho hàng thật</h3><p>Phối đồ và chatbot chỉ trả về sản phẩm có trong catalog, có tồn kho và có link mua trực tiếp.</p></div>
-          <div className="valueCard"><Sparkles size={24} /><h3>AI Stylist</h3><p>Tìm áo, quần, màu sắc, ngân sách bằng hội thoại tự nhiên và lưu lịch sử trò chuyện ngay trên trình duyệt.</p></div>
-          <div className="valueCard"><WandSparkles size={24} /><h3>Virtual Try-On</h3><p>Trang thử đồ đã sẵn integration FASHN Cloud API; không có API key vẫn chạy được chế độ demo.</p></div>
-        </div>
+      <section className="newsletter">
+        <div><p className="eyebrow">ÉLANE LETTER</p><h2>New drops, quietly delivered.</h2></div>
+        <form action="/"><input type="email" required placeholder="Email của bạn" aria-label="Email" /><button type="submit">Đăng ký <ArrowRight size={15} /></button></form>
       </section>
     </>
   );
