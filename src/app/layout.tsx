@@ -26,7 +26,7 @@ const serif = Noto_Serif({
 
 export const metadata: Metadata = {
   title: "ÉLANE — Modern Fashion Store",
-  description: "Thời trang tối giản hiện đại: bộ sưu tập mới, mua sắm, wishlist, giỏ hàng và thanh toán QR demo."
+  description: "Thời trang tối giản hiện đại với những thiết kế dễ mặc, dễ phối và trải nghiệm mua sắm trực tuyến liền mạch."
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
