@@ -14,12 +14,16 @@ export function ProductCard({ product }: { product: Product }) {
   const [quickView, setQuickView] = useState(false);
   const liked = wishlist.includes(product.id);
   const quickSize = product.variants?.find((variant) => variant.stock > 0)?.size ?? product.sizes[0];
+  const secondaryImage = product.images.find((image) => image !== product.image);
 
   return (
     <>
       <article className="productCard">
         <div className="productMedia">
-          <Link href={`/product/${product.id}`}><Image src={product.image} alt={product.name} fill sizes="(max-width: 760px) 50vw, 25vw" /></Link>
+          <Link href={`/product/${product.id}`} aria-label={product.name}>
+            <Image className="productImagePrimary" src={product.image} alt={product.name} fill sizes="(max-width: 760px) 50vw, 25vw" />
+            {secondaryImage ? <Image className="productImageSecondary" src={secondaryImage} alt="" fill sizes="(max-width: 760px) 50vw, 25vw" /> : null}
+          </Link>
           <div className="productBadges">{product.isNew ? <span>NEW</span> : null}{product.oldPrice ? <span>SALE</span> : null}{product.stock <= 5 ? <span>LOW STOCK</span> : null}</div>
           <button className={`heartButton ${liked ? "active" : ""}`} aria-label="Yêu thích" onClick={() => toggleWishlist(product.id)}><Heart size={18} fill={liked ? "currentColor" : "none"} /></button>
           <div className="productHoverActions">

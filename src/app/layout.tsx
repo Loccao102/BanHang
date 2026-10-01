@@ -7,12 +7,14 @@ import "./typography-motion.css";
 import "./catalog-db.css";
 import "./account.css";
 import "./chat-assistant.css";
+import "./luxury-motion.css";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { StoreProvider } from "@/components/store-provider";
 import { CartDrawer } from "@/components/cart-drawer";
 import { StoreToast } from "@/components/store-toast";
 import { ChatWidget } from "@/components/chat-widget";
+import { SiteMotion } from "@/components/site-motion";
 
 const sans = Be_Vietnam_Pro({
   subsets: ["latin", "vietnamese"],
@@ -38,6 +40,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="vi" className={`${sans.variable} ${serif.variable}`}>
       <body>
         <StoreProvider>
+          <SiteMotion />
           <Header />
           <main>{children}</main>
           <Footer />
