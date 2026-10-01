@@ -7,7 +7,7 @@ export async function POST(request: Request) {
   if (!modelImage || !garmentImage) return NextResponse.json({ error: "Thiếu ảnh người hoặc ảnh sản phẩm." }, { status: 400 });
 
   const apiKey = process.env.FASHN_API_KEY;
-  if (!apiKey) return NextResponse.json({ mode: "demo", message: "FASHN_API_KEY chưa được cấu hình." });
+  if (!apiKey) return NextResponse.json({ mode: "unavailable", message: "Dịch vụ thử đồ trực tuyến hiện chưa khả dụng." }, { status: 503 });
 
   const run = await fetch("https://api.fashn.ai/v1/run", {
     method: "POST",
