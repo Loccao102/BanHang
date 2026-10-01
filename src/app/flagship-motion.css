@@ -11,3 +11,42 @@ body[data-custom-cursor="true"],body[data-custom-cursor="true"] a,body[data-cust
 @media(max-width:1050px){.luxMegaMenu{display:none}.immersiveProductDetail{grid-template-columns:1.35fr .65fr}.immersiveProductInfo{padding:7vh 28px!important}.immersiveProductInfo h1{font-size:52px!important}}
 @media(max-width:760px){body[data-custom-cursor="true"],body[data-custom-cursor="true"] a,body[data-custom-cursor="true"] button{cursor:auto!important}.luxCursor{display:none}.routeTransitionWord{font-size:27vw}.immersiveProductDetail{grid-template-columns:1fr}.immersiveGalleryImage{min-height:78svh!important}.immersiveProductInfo{position:relative!important;top:auto!important;min-height:auto;padding:48px 18px 60px!important}.immersiveProductInfo h1{font-size:13vw!important}.immersiveProductRail{display:none}.luxMobileDrawer{background:#f2ede5}.luxMobileDrawer .drawerLinks a,.luxMobileDrawer .drawerSearchLink{font-size:12vw;letter-spacing:-.05em}}
 @media(prefers-reduced-motion:reduce){.routeTransition{display:none}.luxCursor{display:none}.luxMegaMenu,.luxMegaCampaign img,.immersiveGalleryImage img{transition:none!important}}
+
+/* UI regression fixes after flagship motion */
+body[data-page="home"] .siteHeader{transition:top .32s var(--lux-ease),height .4s var(--lux-ease),background .4s ease,color .4s ease,border-color .4s ease,backdrop-filter .4s ease}
+body[data-page="home"][data-scrolled="true"] .siteHeader{top:0!important}
+body[data-page="home"]:not([data-scrolled="true"]) .luxMegaMenu{top:106px}
+body[data-page="home"][data-scrolled="true"] .luxMegaMenu{top:64px}
+body[data-page="inner"] .luxMegaMenu{top:76px}
+
+/* Homepage product sections: editorial spacing without broken masonry */
+.luxProductGrid,.luxProductGridReverse{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:10px!important;align-items:start}
+.luxProductGrid .productCard:nth-child(n),.luxProductGridReverse .productCard:nth-child(n){grid-column:auto!important;margin-top:0!important}
+.luxProductGrid .productCard:nth-child(n) .productMedia,.luxProductGridReverse .productCard:nth-child(n) .productMedia{aspect-ratio:.78!important}
+
+/* Catalog is a commerce grid, never inherits editorial proportions */
+.shopProductGrid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:14px!important;align-items:start}
+.shopProductGrid>.productCard{grid-column:auto!important;margin:0!important;min-width:0}
+.shopProductGrid .productMedia{aspect-ratio:.78!important;min-height:0!important}
+.shopProductGrid .productMedia img{object-fit:cover!important;object-position:center top!important;transform:none}
+.shopProductGrid .productCard:hover .productImagePrimary{opacity:1!important;transform:scale(1.018)!important}
+
+/* Disable image crossfade until catalog has curated look-2 assets */
+.productImageSecondary{display:none!important}
+.productCard:hover .productImagePrimary{opacity:1!important}
+
+/* Prevent service rail from visually slicing around fixed header */
+.luxServiceRail{position:relative;z-index:1}
+body[data-page="home"][data-scrolled="true"] .luxServiceRail{scroll-margin-top:70px}
+
+@media(max-width:1180px){
+  .shopProductGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:760px){
+  .luxProductGrid,.luxProductGridReverse{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:5px!important}
+  .luxProductGrid .productCard:nth-child(n),.luxProductGridReverse .productCard:nth-child(n){grid-column:auto!important;margin:0!important}
+  .shopProductGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important}
+  .shopProductGrid .productMeta{padding:10px 2px 7px}
+  .shopProductGrid .productMeta h3{font-size:11px}
+  .shopProductGrid .productMeta p{font-size:9px}
+}
