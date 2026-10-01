@@ -2,16 +2,32 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Check, CreditCard, QrCode } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { Check, CreditCard, QrCode, UserRound } from "lucide-react";
+import { FormEvent, useEffect, useState } from "react";
 import { useStore } from "@/components/store-provider";
 import type { OrderRecord } from "@/lib/cart";
 import { formatPrice } from "@/lib/products";
 
+type Shipping = { name: string; phone: string; address: string; city: string; note: string };
+
 export default function CheckoutPage() {
-  const { cart, coupon, placeOrder } = useStore();
+  const { cart, coupon, placeOrder, user, addresses } = useStore();
   const [payment, setPayment] = useState<"qr" | "cod">("qr");
   const [completedOrder, setCompletedOrder] = useState<OrderRecord | null>(null);
+  const [shippingInfo, setShippingInfo] = useState<Shipping>({ name: "", phone: "", address: "", city: "", note: "" });
+
+  useEffect(() => {
+    if (!user) return;
+    const address = addresses.find((item) => item.isDefault) ?? addresses[0];
+    setShippingInfo((current) => ({
+      ...current,
+      name: address?.recipientName ?? user.name,
+      phone: address?.phone ?? user.phone ?? "",
+      address: address?.address ?? "",
+      city: address?.city ?? ""
+    }));
+  }, [user, addresses]);
+
   const subtotal = cart.reduce((sum, line) => sum + line.product.price * line.quantity, 0);
   const discount = Math.round(subtotal * (coupon?.rate ?? 0));
   const shipping = subtotal >= 699000 ? 0 : 30000;
@@ -19,12 +35,14 @@ export default function CheckoutPage() {
   const bankId = process.env.NEXT_PUBLIC_BANK_ID ?? "MB";
   const account = process.env.NEXT_PUBLIC_BANK_ACCOUNT ?? "0123456789";
   const accountName = process.env.NEXT_PUBLIC_BANK_ACCOUNT_NAME ?? "ELANE FASHION";
-  const qrReference = "ELANE-ORDER";
-  const qrUrl = `https://img.vietqr.io/image/${bankId}-${account}-compact2.png?amount=${total}&addInfo=${encodeURIComponent(qrReference)}&accountName=${encodeURIComponent(accountName)}`;
+  const qrUrl = "https://img.vietqr.io/image/" + bankId + "-" + account + "-compact2.png?amount=" + total + "&addInfo=" + encodeURIComponent("ELANE-ORDER") + "&accountName=" + encodeURIComponent(accountName);
+
+  function change(field: keyof Shipping, value: string) {
+    setShippingInfo((current) => ({ ...current, [field]: value }));
+  }
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
     const order: OrderRecord = {
       id: "EL" + String(Date.now()).slice(-8),
       createdAt: new Date().toISOString(),
@@ -36,10 +54,10 @@ export default function CheckoutPage() {
       payment,
       status: "processing",
       customer: {
-        name: String(data.get("name") ?? ""),
-        phone: String(data.get("phone") ?? ""),
-        address: String(data.get("address") ?? ""),
-        city: String(data.get("city") ?? "")
+        name: shippingInfo.name,
+        phone: shippingInfo.phone,
+        address: shippingInfo.address,
+        city: shippingInfo.city
       }
     };
     placeOrder(order);
@@ -49,32 +67,33 @@ export default function CheckoutPage() {
   if (!cart.length && !completedOrder) return <div className="emptyState"><div><h2>Chưa có sản phẩm để checkout</h2><Link className="btn" href="/shop">Quay lại shop</Link></div></div>;
 
   if (completedOrder) return (
-    <section className="checkoutPage"><div className="panel successBox"><div className="successIcon"><Check size={26} /></div><p className="eyebrow">ORDER RECEIVED</p><h2>Cảm ơn bạn đã đặt hàng</h2><p>Mã đơn: <strong>{completedOrder.id}</strong></p><p style={{color: "var(--muted)"}}>Đơn hàng đã được tiếp nhận. Chúng tôi sẽ cập nhật trạng thái ngay khi đơn được xác nhận và chuyển sang khâu chuẩn bị hàng.</p><div className="heroActions" style={{justifyContent: "center"}}><Link className="btn" href="/orders">Xem đơn hàng</Link><Link className="btn secondary" href="/shop">Tiếp tục mua sắm</Link></div></div></section>
+    <section className="checkoutPage"><div className="panel successBox"><div className="successIcon"><Check size={26} /></div><p className="eyebrow">ORDER RECEIVED</p><h2>Cảm ơn bạn đã đặt hàng</h2><p>Mã đơn: <strong>{completedOrder.id}</strong></p><p style={{color: "var(--muted)"}}>Đơn hàng đã được tiếp nhận. Chúng tôi sẽ cập nhật trạng thái ngay khi đơn được xác nhận và chuyển sang khâu chuẩn bị hàng.</p><div className="heroActions" style={{justifyContent: "center"}}>{user ? <Link className="btn" href="/account">Theo dõi đơn hàng</Link> : <Link className="btn" href="/login?next=/account">Đăng nhập để quản lý đơn</Link>}<Link className="btn secondary" href="/shop">Tiếp tục mua sắm</Link></div></div></section>
   );
 
   return (
     <section className="checkoutPage">
       <div className="pageHero" style={{padding: 0, border: 0, marginBottom: 30}}><p className="eyebrow">SECURE CHECKOUT</p><h1>Thanh toán</h1></div>
+      {!user ? <div className="checkoutAccountPrompt"><UserRound size={18} /><div><strong>Đã có tài khoản?</strong><span>Đăng nhập để dùng địa chỉ đã lưu và theo dõi đơn hàng trong tài khoản.</span></div><Link href="/login?next=/checkout">Đăng nhập</Link></div> : null}
       <form onSubmit={submit} className="twoCol">
         <div className="panel">
-          <h2>Thông tin nhận hàng</h2>
+          <div className="checkoutSectionHead"><h2>Thông tin nhận hàng</h2>{user && addresses.length ? <span>Đang dùng địa chỉ đã lưu</span> : null}</div>
           <div className="formGrid">
-            <div className="field"><label>Họ tên</label><input name="name" required placeholder="Nguyễn Văn A" /></div>
-            <div className="field"><label>Số điện thoại</label><input name="phone" required placeholder="09xxxxxxxx" /></div>
-            <div className="field full"><label>Địa chỉ</label><input name="address" required placeholder="Số nhà, đường, phường/xã..." /></div>
-            <div className="field"><label>Tỉnh / Thành</label><input name="city" required placeholder="Hà Nội" /></div>
-            <div className="field"><label>Ghi chú</label><input name="note" placeholder="Giao giờ hành chính..." /></div>
+            <div className="field"><label>Họ tên</label><input required value={shippingInfo.name} onChange={(e)=>change("name",e.target.value)} placeholder="Nguyễn Văn A" /></div>
+            <div className="field"><label>Số điện thoại</label><input required value={shippingInfo.phone} onChange={(e)=>change("phone",e.target.value)} placeholder="09xxxxxxxx" /></div>
+            <div className="field full"><label>Địa chỉ</label><input required value={shippingInfo.address} onChange={(e)=>change("address",e.target.value)} placeholder="Số nhà, đường, phường/xã..." /></div>
+            <div className="field"><label>Tỉnh / Thành</label><input required value={shippingInfo.city} onChange={(e)=>change("city",e.target.value)} placeholder="Hà Nội" /></div>
+            <div className="field"><label>Ghi chú</label><input value={shippingInfo.note} onChange={(e)=>change("note",e.target.value)} placeholder="Giao giờ hành chính..." /></div>
           </div>
           <h2>Phương thức thanh toán</h2>
           <div className="paymentChoice">
-            <button type="button" className={`paymentCard ${payment === "qr" ? "active" : ""}`} onClick={() => setPayment("qr")}><QrCode size={20} /><div><strong>Chuyển khoản QR</strong><div style={{fontSize: 11, color: "var(--muted)"}}>QR tạo theo đúng số tiền đơn hàng</div></div></button>
-            <button type="button" className={`paymentCard ${payment === "cod" ? "active" : ""}`} onClick={() => setPayment("cod")}><CreditCard size={20} /><div><strong>COD</strong><div style={{fontSize: 11, color: "var(--muted)"}}>Thanh toán khi nhận hàng</div></div></button>
+            <button type="button" className={"paymentCard " + (payment === "qr" ? "active" : "")} onClick={() => setPayment("qr")}><QrCode size={20} /><div><strong>Chuyển khoản QR</strong><div style={{fontSize: 11, color: "var(--muted)"}}>QR tạo theo đúng số tiền đơn hàng</div></div></button>
+            <button type="button" className={"paymentCard " + (payment === "cod" ? "active" : "")} onClick={() => setPayment("cod")}><CreditCard size={20} /><div><strong>COD</strong><div style={{fontSize: 11, color: "var(--muted)"}}>Thanh toán khi nhận hàng</div></div></button>
           </div>
           {payment === "qr" ? <><div className="qrBox"><Image src={qrUrl} alt="QR thanh toán" width={360} height={360} unoptimized /></div><div className="notice">Vui lòng chuyển đúng số tiền hiển thị và giữ nguyên nội dung chuyển khoản để đơn hàng được đối soát nhanh hơn.</div></> : null}
         </div>
         <aside className="panel">
           <h2>Đơn hàng</h2>
-          {cart.map((line) => <div className="summaryLine" key={`${line.product.id}-${line.size}`}><span>{line.quantity} × {line.product.name}</span><strong>{formatPrice(line.product.price * line.quantity)}</strong></div>)}
+          {cart.map((line) => <div className="summaryLine" key={line.product.id + "-" + (line.size ?? "")}><span>{line.quantity} × {line.product.name}</span><strong>{formatPrice(line.product.price * line.quantity)}</strong></div>)}
           <div className="summaryLine"><span>Tạm tính</span><strong>{formatPrice(subtotal)}</strong></div>
           {discount > 0 ? <div className="summaryLine"><span>Mã {coupon?.code}</span><strong>-{formatPrice(discount)}</strong></div> : null}
           <div className="summaryLine"><span>Vận chuyển</span><strong>{shipping ? formatPrice(shipping) : "Miễn phí"}</strong></div>
