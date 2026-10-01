@@ -49,8 +49,7 @@ export function generateOutfit(options?: {
   const available = products.filter((item) => item.stock > 0 && !exclude.has(item.id));
   const tops = available.filter((item) => ["tops", "dress"].includes(item.category));
   const bottoms = available.filter((item) => item.category === "bottoms");
-  const shoes = available.filter((item) => item.category === "shoes");
-  const extras = available.filter((item) => ["outerwear", "accessory"].includes(item.category));
+  const extras = available.filter((item) => item.category === "outerwear");
 
   const pick = (pool: Product[], salt: number) => {
     const sorted = [...pool].sort((a, b) => {
@@ -73,10 +72,6 @@ export function generateOutfit(options?: {
     const bottom = pick(bottoms, seed + 2);
     if (bottom) items.push(bottom);
   }
-  if (!required || required.category !== "shoes") {
-    const shoe = pick(shoes, seed + 3);
-    if (shoe) items.push(shoe);
-  }
   const extra = pick(extras.filter((item) => !items.some((chosen) => chosen.id === item.id)), seed + 5);
   if (extra) items.push(extra);
 
@@ -86,7 +81,7 @@ export function generateOutfit(options?: {
   if (budget) {
     let total = budgetItems.reduce((sum, item) => sum + item.price, 0);
     while (total > budget && budgetItems.length > 2) {
-      const removableIndex = budgetItems.findIndex((item) => ["outerwear", "accessory", "shoes"].includes(item.category));
+      const removableIndex = budgetItems.findIndex((item) => item.category === "outerwear");
       if (removableIndex === -1) break;
       budgetItems = budgetItems.filter((_, index) => index !== removableIndex);
       total = budgetItems.reduce((sum, item) => sum + item.price, 0);

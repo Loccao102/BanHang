@@ -9,7 +9,7 @@ import { useStore } from "@/components/store-provider";
 const categories = [
   { title: "Women", subtitle: "Soft tailoring / fluid form", href: "/shop?gender=women", image: "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=1100&q=88" },
   { title: "Men", subtitle: "Clean layers / modern utility", href: "/shop?gender=men", image: "https://images.unsplash.com/photo-1617137968427-85924c800a22?auto=format&fit=crop&w=1100&q=88" },
-  { title: "Accessories", subtitle: "The finishing layer", href: "/shop?category=accessory", image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=1100&q=88" }
+  { title: "Outerwear", subtitle: "Blazers / jackets / coats", href: "/shop?category=outerwear", image: "https://images.unsplash.com/photo-1507679799987-c73779587ccf?auto=format&fit=crop&w=1100&q=88" }
 ];
 
 export function HomeClient() {

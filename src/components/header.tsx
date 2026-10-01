@@ -10,7 +10,7 @@ const nav = [
   ["Mới về", "/shop?sort=new"],
   ["Nữ", "/shop?gender=women"],
   ["Nam", "/shop?gender=men"],
-  ["Phụ kiện", "/shop?category=accessory"],
+  ["Áo khoác", "/shop?category=outerwear"],
   ["Sale", "/shop?sale=1"]
 ];
 
@@ -34,7 +34,7 @@ export function Header() {
           <button className="iconButton mobileMenu" onClick={() => setOpen(true)} aria-label="Mở menu"><Menu size={21} /></button>
         </div>
       </header>
-      {open ? <div className="mobileDrawer" role="dialog" aria-modal="true"><div className="drawerTop"><span className="brand">ÉLANE®</span><button className="iconButton" onClick={() => setOpen(false)} aria-label="Đóng menu"><X /></button></div><div className="drawerLinks">{nav.map(([label, href]) => <Link key={href} href={href} onClick={() => setOpen(false)}>{label}</Link>)}<button className="drawerSearchLink" onClick={() => { setOpen(false); setSearchOpen(true); }}>Tìm kiếm</button><Link href="/wishlist" onClick={() => setOpen(false)}>Wishlist</Link><Link href="/orders" onClick={() => setOpen(false)}>Đơn hàng</Link></div><div className="drawerFeature"><div><strong>ÉLANE SERVICE</strong><p>Freeship từ 699K · đổi size 7 ngày · checkout không cần tài khoản.</p></div></div></div> : null}
+      {open ? <div className="mobileDrawer" role="dialog" aria-modal="true"><div className="drawerTop"><span className="brand">ÉLANE®</span><button className="iconButton" onClick={() => setOpen(false)} aria-label="Đóng menu"><X /></button></div><div className="drawerLinks">{nav.map(([label, href]) => <Link key={href} href={href} onClick={() => setOpen(false)}>{label}</Link>)}<button className="drawerSearchLink" onClick={() => { setOpen(false); setSearchOpen(true); }}>Tìm kiếm</button><Link href="/wishlist" onClick={() => setOpen(false)}>Wishlist</Link><Link href="/orders" onClick={() => setOpen(false)}>Đơn hàng</Link></div><div className="drawerFeature"><div><strong>ÉLANE SERVICE</strong><p>Freeship từ 699K · đổi size 7 ngày · thanh toán COD hoặc QR.</p></div></div></div> : null}
       <SearchOverlay open={searchOpen} onClose={closeSearch} />
     </>
   );

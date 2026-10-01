@@ -1,0 +1,6 @@
+.swatch-gray{background:#777a7e}.swatch-pink{background:#c98f98}
+.dbStatus{display:inline-flex;align-items:center;min-height:36px;padding:0 11px;border:1px solid var(--line);background:var(--paper);font-size:9px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.dbStatus::before{content:"";width:7px;height:7px;border-radius:50%;background:#aaa39a;margin-right:7px}
+.dbStatus.connected{color:#176948;border-color:#b6d9ca;background:#edf8f3}
+.dbStatus.connected::before{background:#25966c}
+@media(max-width:760px){.dbStatus{order:3;width:100%;justify-content:center}}

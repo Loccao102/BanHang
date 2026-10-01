@@ -1,11 +1,12 @@
 # ÉLANE Fashion
 
-Modern fashion ecommerce experience built with Next.js App Router, focused on a clean storefront, fast shopping flow, inventory management and extensible AI-assisted fashion features.
+Modern fashion ecommerce experience built with Next.js App Router. The local development environment uses SQLite + Prisma for persistent product, inventory, order and store-setting data.
 
 ## Highlights
 
 - Modern responsive fashion storefront
-- Product search, category and color filters
+- 170 seeded clothing products across T-shirts, shirts, polos, hoodies, knitwear, blazers, jackets, coats, jeans, trousers, chinos, shorts, skirts and dresses
+- Product search, category, clothing type, color and price filters
 - Product detail, wishlist, cart and checkout
 - VietQR checkout flow
 - AI shopping assistant with product cards and conversation history
@@ -38,3 +39,29 @@ Checkout generates a VietQR image from the configured bank account and order tot
 ## Deployment trigger
 
 Repository này được deploy qua Vercel; các commit lên `main` sẽ kích hoạt build lại.
+
+
+## Local database
+
+The local app uses SQLite through Prisma. No external database account is required.
+
+```bash
+npm install
+npm run db:setup
+npm run dev
+```
+
+`npm run db:setup` creates `prisma/dev.db` and seeds:
+
+- 170 clothing products
+- 24 sample orders
+- store promotion settings
+- varied stock levels, sizes, colors, pricing, sale items, new arrivals and featured products
+
+Product and order changes made from the admin page are persisted to SQLite while running locally. Cart and wishlist remain browser-side until customer authentication is introduced.
+
+To reset the local dataset:
+
+```bash
+npm run db:seed
+```

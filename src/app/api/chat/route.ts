@@ -20,7 +20,7 @@ function retrieve(message: string) {
   const text = message.toLowerCase();
   const budget = parseBudget(text);
   const requestedColors = Object.entries(colorKeywords).filter(([key]) => text.includes(key)).map(([, value]) => value);
-  const category = text.includes("quần") ? "bottoms" : text.includes("váy") ? "dress" : text.includes("giày") ? "shoes" : text.includes("áo khoác") ? "outerwear" : text.includes("áo") ? "tops" : undefined;
+  const category = text.includes("quần") || text.includes("chân váy") ? "bottoms" : text.includes("váy") ? "dress" : text.includes("áo khoác") || text.includes("blazer") || text.includes("jacket") ? "outerwear" : text.includes("áo") || text.includes("hoodie") || text.includes("polo") ? "tops" : undefined;
   const occasion = text.includes("date") || text.includes("hẹn hò") ? "date" : text.includes("đi làm") || text.includes("công sở") ? "work" : text.includes("đi chơi") ? "casual" : undefined;
 
   const ranked = products

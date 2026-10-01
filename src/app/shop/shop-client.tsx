@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { SlidersHorizontal, X } from "lucide-react";
 import { ProductCard } from "@/components/product-card";
 import { useStore } from "@/components/store-provider";
-import { categoryLabels } from "@/lib/products";
+import { categoryLabels, typeLabels } from "@/lib/products";
 
 export function ShopClient() {
   const searchParams = useSearchParams();
@@ -15,6 +15,7 @@ export function ShopClient() {
   const initialQuery = searchParams.get("q") ?? "";
   const [query, setQuery] = useState(initialQuery);
   const [category, setCategory] = useState(initialCategory);
+  const [productType, setProductType] = useState("all");
   const [color, setColor] = useState("all");
   const [gender, setGender] = useState(initialGender);
   const [price, setPrice] = useState("all");
@@ -28,23 +29,25 @@ export function ShopClient() {
     let result = catalog.filter((product) => {
       const matchText = !normalized || `${product.name} ${product.subtitle} ${product.color} ${product.material} ${product.sku ?? ""}`.toLowerCase().includes(normalized);
       const matchCategory = category === "all" || product.category === category;
+      const matchType = productType === "all" || product.type === productType;
       const matchColor = color === "all" || product.colorFamily === color;
       const matchGender = gender === "all" || product.gender === gender || product.gender === "unisex";
       const matchSale = !saleOnly || Boolean(product.oldPrice);
       const matchStock = !stockOnly || product.stock > 0;
       const matchPrice = price === "all" || (price === "under500" && product.price < 500000) || (price === "500to700" && product.price >= 500000 && product.price <= 700000) || (price === "over700" && product.price > 700000);
-      return product.active !== false && matchText && matchCategory && matchColor && matchGender && matchSale && matchStock && matchPrice;
+      return product.active !== false && matchText && matchCategory && matchType && matchColor && matchGender && matchSale && matchStock && matchPrice;
     });
     if (sort === "price-low") result = result.toSorted((a, b) => a.price - b.price);
     if (sort === "price-high") result = result.toSorted((a, b) => b.price - a.price);
     if (sort === "new") result = result.toSorted((a, b) => Number(b.isNew) - Number(a.isNew));
     return result;
-  }, [catalog, query, category, color, gender, price, stockOnly, sort, saleOnly]);
+  }, [catalog, query, category, productType, color, gender, price, stockOnly, sort, saleOnly]);
 
   const filters = <>
     <div className="filterGroup"><strong>Tìm kiếm</strong><input className="searchInput" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tên sản phẩm, SKU, màu..." /></div>
     <div className="filterGroup"><strong>Danh mục</strong><label><input type="radio" checked={category === "all"} onChange={() => setCategory("all")} /> Tất cả</label>{Object.entries(categoryLabels).map(([key, label]) => <label key={key}><input type="radio" checked={category === key} onChange={() => setCategory(key)} /> {label}</label>)}</div>
-    <div className="filterGroup"><strong>Màu sắc</strong>{["all","black","white","navy","beige","blue","brown","green"].map((value) => <label key={value}><input type="radio" checked={color === value} onChange={() => setColor(value)} /> {value === "all" ? "Tất cả" : value}</label>)}</div>
+    <div className="filterGroup"><strong>Loại sản phẩm</strong><label><input type="radio" checked={productType === "all"} onChange={() => setProductType("all")} /> Tất cả</label>{Object.entries(typeLabels).map(([key, label]) => <label key={key}><input type="radio" checked={productType === key} onChange={() => setProductType(key)} /> {label}</label>)}</div>
+    <div className="filterGroup"><strong>Màu sắc</strong>{["all","black","white","navy","beige","blue","brown","red","green","gray","pink"].map((value) => <label key={value}><input type="radio" checked={color === value} onChange={() => setColor(value)} /> {value === "all" ? "Tất cả" : value}</label>)}</div>
     <div className="filterGroup"><strong>Giá</strong>{[["all","Tất cả"],["under500","Dưới 500K"],["500to700","500K – 700K"],["over700","Trên 700K"]].map(([value,label]) => <label key={value}><input type="radio" checked={price === value} onChange={() => setPrice(value)} /> {label}</label>)}</div>
     <div className="filterGroup"><strong>Đối tượng</strong>{[["all","Tất cả"],["men","Nam"],["women","Nữ"]].map(([value,label]) => <label key={value}><input type="radio" checked={gender === value} onChange={() => setGender(value)} /> {label}</label>)}</div>
     <div className="filterGroup"><label className="switchLabel"><input type="checkbox" checked={stockOnly} onChange={(event) => setStockOnly(event.target.checked)} /> Chỉ hiện sản phẩm còn hàng</label></div>
@@ -52,12 +55,12 @@ export function ShopClient() {
 
   return (
     <>
-      <section className="pageHero"><p className="eyebrow">{saleOnly ? "SEASONAL EDIT" : "ONLINE STORE"}</p><h1>{saleOnly ? "Sale selection" : "The collection"}</h1><p>Khám phá toàn bộ catalog với bộ lọc theo danh mục, màu sắc, mức giá, đối tượng và tình trạng tồn kho.</p></section>
+      <section className="pageHero"><p className="eyebrow">{saleOnly ? "SEASONAL EDIT" : "ONLINE STORE"}</p><h1>{saleOnly ? "Sale selection" : "The collection"}</h1><p>Khám phá bộ sưu tập quần áo với đầy đủ T-shirt, sơ mi, polo, hoodie, knitwear, blazer, jacket, jeans, quần tây, chân váy và váy liền.</p></section>
       <div className="shopShell">
         <aside className="filters desktopFilters">{filters}</aside>
         <section>
           <div className="shopTop"><span>{filtered.length} sản phẩm</span><div className="shopTopActions"><button className="mobileFilterButton" onClick={() => setMobileFilters(true)}><SlidersHorizontal size={16} /> Bộ lọc</button><select value={sort} onChange={(event) => setSort(event.target.value)}><option value="featured">Nổi bật</option><option value="new">Mới nhất</option><option value="price-low">Giá thấp → cao</option><option value="price-high">Giá cao → thấp</option></select></div></div>
-          {filtered.length ? <div className="productGrid">{filtered.map((product) => <ProductCard key={product.id} product={product} />)}</div> : <div className="catalogEmpty"><h3>Chưa tìm thấy sản phẩm</h3><p>Thử thay đổi màu, mức giá hoặc từ khóa tìm kiếm.</p><button className="btn secondary" onClick={() => { setQuery(""); setCategory("all"); setColor("all"); setPrice("all"); setGender("all"); }}>Xóa bộ lọc</button></div>}
+          {filtered.length ? <div className="productGrid">{filtered.map((product) => <ProductCard key={product.id} product={product} />)}</div> : <div className="catalogEmpty"><h3>Chưa tìm thấy sản phẩm</h3><p>Thử thay đổi màu, mức giá hoặc từ khóa tìm kiếm.</p><button className="btn secondary" onClick={() => { setQuery(""); setCategory("all"); setProductType("all"); setColor("all"); setPrice("all"); setGender("all"); }}>Xóa bộ lọc</button></div>}
         </section>
       </div>
       {mobileFilters ? <div className="filterDrawer"><div className="drawerTop"><strong>Bộ lọc</strong><button className="iconButton" onClick={() => setMobileFilters(false)}><X size={20} /></button></div>{filters}<button className="btn block" onClick={() => setMobileFilters(false)}>Xem {filtered.length} sản phẩm</button></div> : null}

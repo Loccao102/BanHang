@@ -28,7 +28,7 @@ export function ProductDetailClient({ productId }: { productId: string }) {
     if (!product) return [];
     const seen = new Set<string>();
     return catalog
-      .filter((item) => item.active !== false && item.category === product.category && item.stock > 0)
+      .filter((item) => item.active !== false && item.type === product.type && item.stock > 0)
       .filter((item) => {
         if (seen.has(item.colorFamily)) return false;
         seen.add(item.colorFamily);

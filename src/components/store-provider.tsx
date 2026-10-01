@@ -8,6 +8,7 @@ import { products as seedProducts, type Product } from "@/lib/products";
 type CouponState = { code: string; rate: number };
 export type StoreSettings = { promoText: string };
 type Notice = { id: number; message: string; detail?: string } | null;
+export type PersistenceMode = "browser" | "database";
 
 type StoreContextValue = {
   cart: CartLine[];
@@ -15,6 +16,7 @@ type StoreContextValue = {
   orders: OrderRecord[];
   catalog: Product[];
   settings: StoreSettings;
+  persistenceMode: PersistenceMode;
   cartCount: number;
   coupon: CouponState | null;
   cartDrawerOpen: boolean;
@@ -58,6 +60,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [catalog, setCatalog] = useState<Product[]>(seedProducts);
   const [settings, setSettings] = useState<StoreSettings>(defaultSettings);
+  const [persistenceMode, setPersistenceMode] = useState<PersistenceMode>("browser");
   const [coupon, setCoupon] = useState<CouponState | null>(null);
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
   const [notice, setNotice] = useState<Notice>(null);
@@ -71,6 +74,28 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setSettings(readLocal<StoreSettings>(SETTINGS_KEY, defaultSettings));
     setCoupon(readLocal<CouponState | null>(COUPON_KEY, null));
     setHydrated(true);
+
+    let cancelled = false;
+    void fetch("/api/store/bootstrap", { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) return;
+        const data = await response.json() as {
+          mode: PersistenceMode;
+          products?: Product[];
+          orders?: OrderRecord[];
+          settings?: StoreSettings;
+        };
+        if (cancelled || data.mode !== "database") return;
+        if (data.products) setCatalog(data.products);
+        if (data.orders) setOrders(data.orders);
+        if (data.settings) setSettings(data.settings);
+        setPersistenceMode("database");
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => { if (hydrated) window.localStorage.setItem(CART_KEY, JSON.stringify(cart)); }, [cart, hydrated]);
@@ -89,6 +114,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setNotice({ id, message, detail });
     window.setTimeout(() => setNotice((current) => current?.id === id ? null : current), 2600);
   }, []);
+
+  const persistProduct = useCallback((product: Product) => {
+    if (persistenceMode !== "database") return;
+    void fetch("/api/products", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(product)
+    }).then((response) => {
+      if (!response.ok) throw new Error("save");
+    }).catch(() => showNotice("Không thể lưu thay đổi", "Kiểm tra kết nối cơ sở dữ liệu."));
+  }, [persistenceMode, showNotice]);
 
   const addToCart = useCallback((product: Product, size?: string, quantity = 1) => {
     if (product.active === false || product.stock <= 0) return;
@@ -137,33 +173,78 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setCart([]);
     setCoupon(null);
     setCartDrawerOpen(false);
-  }, []);
+
+    if (persistenceMode === "database") {
+      void fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(order)
+      }).then((response) => {
+        if (!response.ok) throw new Error("save");
+      }).catch(() => showNotice("Đơn hàng chưa được đồng bộ", "Vui lòng kiểm tra lại kết nối."));
+    }
+  }, [persistenceMode, showNotice]);
 
   const updateOrderStatus = useCallback((id: string, status: OrderStatus) => {
     setOrders((current) => current.map((order) => order.id === id ? { ...order, status } : order));
-  }, []);
+    if (persistenceMode === "database") {
+      void fetch(`/api/orders/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status })
+      }).catch(() => undefined);
+    }
+  }, [persistenceMode]);
 
   const saveProduct = useCallback((product: Product) => {
     setCatalog((current) => current.some((item) => item.id === product.id)
       ? current.map((item) => item.id === product.id ? product : item)
       : [product, ...current]);
-  }, []);
+    persistProduct(product);
+  }, [persistProduct]);
 
   const deleteProduct = useCallback((id: string) => {
     setCatalog((current) => current.filter((item) => item.id !== id));
     setWishlist((current) => current.filter((item) => item !== id));
     setCart((current) => current.filter((line) => line.product.id !== id));
-  }, []);
+    if (persistenceMode === "database") {
+      void fetch(`/api/products/${encodeURIComponent(id)}`, { method: "DELETE" }).catch(() => undefined);
+    }
+  }, [persistenceMode]);
 
   const adjustStock = useCallback((id: string, delta: number) => {
-    setCatalog((current) => current.map((item) => item.id === id ? { ...item, stock: Math.max(0, item.stock + delta) } : item));
-  }, []);
+    const product = catalog.find((item) => item.id === id);
+    if (!product) return;
+    const next = { ...product, stock: Math.max(0, product.stock + delta) };
+    setCatalog((current) => current.map((item) => item.id === id ? next : item));
+    persistProduct(next);
+  }, [catalog, persistProduct]);
 
   const toggleProductActive = useCallback((id: string) => {
-    setCatalog((current) => current.map((item) => item.id === id ? { ...item, active: item.active === false } : item));
-  }, []);
+    const product = catalog.find((item) => item.id === id);
+    if (!product) return;
+    const next = { ...product, active: product.active === false };
+    setCatalog((current) => current.map((item) => item.id === id ? next : item));
+    persistProduct(next);
+  }, [catalog, persistProduct]);
 
-  const resetCatalog = useCallback(() => setCatalog(seedProducts), []);
+  const resetCatalog = useCallback(() => {
+    setCatalog(seedProducts);
+    if (persistenceMode === "database") {
+      void fetch("/api/products/reset", { method: "POST" }).catch(() => undefined);
+    }
+  }, [persistenceMode]);
+
+  const updateSettings = useCallback((next: StoreSettings) => {
+    setSettings(next);
+    if (persistenceMode === "database") {
+      void fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(next)
+      }).catch(() => undefined);
+    }
+  }, [persistenceMode]);
 
   const value = useMemo(() => ({
     cart,
@@ -171,6 +252,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     orders,
     catalog,
     settings,
+    persistenceMode,
     cartCount: cart.reduce((sum, line) => sum + line.quantity, 0),
     coupon,
     cartDrawerOpen,
@@ -189,11 +271,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     adjustStock,
     toggleProductActive,
     resetCatalog,
-    updateSettings: setSettings,
+    updateSettings,
     openCartDrawer: () => setCartDrawerOpen(true),
     closeCartDrawer: () => setCartDrawerOpen(false),
     dismissNotice: () => setNotice(null)
-  }), [cart, wishlist, orders, catalog, settings, coupon, cartDrawerOpen, notice, addToCart, removeFromCart, updateQuantity, toggleWishlist, applyCoupon, placeOrder, updateOrderStatus, saveProduct, deleteProduct, adjustStock, toggleProductActive, resetCatalog]);
+  }), [cart, wishlist, orders, catalog, settings, persistenceMode, coupon, cartDrawerOpen, notice, addToCart, removeFromCart, updateQuantity, toggleWishlist, applyCoupon, placeOrder, updateOrderStatus, saveProduct, deleteProduct, adjustStock, toggleProductActive, resetCatalog, updateSettings]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
