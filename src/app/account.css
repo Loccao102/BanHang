@@ -1,0 +1,58 @@
+/* Customer account */
+.authPage{min-height:calc(100vh - 106px);display:grid;grid-template-columns:1.05fr .95fr}
+.authVisual{min-height:680px;padding:7vw;display:flex;align-items:flex-end;color:white;background:linear-gradient(180deg,rgba(20,18,17,.08),rgba(20,18,17,.64)),url("https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=1400&q=88") center/cover}
+.authVisual h1{font-family:var(--font-serif);font-size:clamp(58px,7vw,105px);line-height:.9;letter-spacing:-.05em;margin:0 0 22px;font-weight:400}
+.authVisual p:not(.eyebrow){max-width:520px;line-height:1.7;color:#ece7e0}
+.authPanel{display:grid;place-items:center;padding:50px 7vw;background:var(--paper)}
+.authForm{width:min(460px,100%)}
+.authIcon{width:42px;height:42px;border:1px solid var(--line);border-radius:50%;display:grid;place-items:center;margin-bottom:28px}
+.authForm h2{font-family:var(--font-serif);font-size:42px;font-weight:400;letter-spacing:-.035em;margin:0 0 28px}
+.authForm label,.accountForm label,.addressForm label{display:grid;gap:7px;margin-bottom:13px}
+.authForm label span,.accountForm label span,.addressForm label span{font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.authForm input,.accountForm input,.addressForm input{height:46px;border:1px solid var(--line);background:white;padding:0 12px;outline:none}
+.authGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.authError{padding:11px 12px;background:#f8e7e7;color:#9b1c1c;font-size:11px;margin:8px 0 14px}
+.authSwitch{text-align:center;font-size:11px;color:var(--muted);margin-top:18px}
+.authSwitch a{color:var(--ink);font-weight:700;text-decoration:underline;text-underline-offset:3px}
+
+.accountPage{padding:65px 4vw 100px;max-width:1500px;margin:0 auto}
+.accountHero{display:flex;justify-content:space-between;align-items:end;gap:25px;padding-bottom:32px;border-bottom:1px solid var(--line)}
+.accountHero h1{font-family:var(--font-serif);font-weight:400;font-size:clamp(52px,7vw,92px);letter-spacing:-.05em;line-height:.95;margin:0 0 10px}
+.accountHero>div>p:last-child{color:var(--muted)}
+.accountTabs{display:flex;gap:5px;padding:18px 0 30px;overflow:auto}
+.accountTabs button,.accountTabs a{height:40px;border:1px solid var(--line);background:var(--paper);padding:0 15px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;font-size:10px;font-weight:800}
+.accountTabs button.active{background:var(--ink);color:white;border-color:var(--ink)}
+.accountTabs a{margin-left:auto}
+.accountOverview{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.accountStat{min-height:210px;border:1px solid var(--line);background:var(--paper);padding:23px;display:flex;flex-direction:column;align-items:flex-start}
+.accountStat>span{margin-top:32px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em}
+.accountStat>strong{font-family:var(--font-serif);font-size:46px;font-weight:400;margin:5px 0 auto}
+.accountStat button,.accountStat a{border:0;background:transparent;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:4px;font-size:10px;font-weight:700}
+.accountPanel{border:1px solid var(--line);background:var(--paper);padding:25px}
+.narrowPanel{max-width:680px}
+.accountPanelHead{display:flex;justify-content:space-between;gap:20px;align-items:start;margin-bottom:22px}
+.accountPanelHead .eyebrow{margin-bottom:5px}
+.accountPanelHead h2{font-family:var(--font-serif);font-size:34px;font-weight:400;margin:0}
+.accountForm{max-width:540px}
+.accountForm input:disabled{background:#f1eee9;color:#8a847c}
+.formSuccess{font-size:11px;color:#176948;background:#edf8f3;padding:10px}
+.addressForm{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:20px;margin-bottom:20px;background:#f3efe8;border:1px solid var(--line)}
+.addressForm label{margin:0}.addressForm .full{grid-column:span 2}.addressCheck{display:flex!important;align-items:center!important;grid-template-columns:auto 1fr;align-self:center;font-size:10px}
+.addressGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.addressCard{border:1px solid var(--line);padding:20px;min-height:200px}
+.addressTop{display:flex;align-items:center;gap:8px;margin-bottom:20px}
+.addressTop>span{margin-left:auto;background:#e7f4ed;color:#1f6d4f;padding:5px 7px;font-size:8px;font-weight:800;text-transform:uppercase}
+.addressCard h3{font-size:13px;margin:0 0 6px}.addressCard p{color:var(--muted);font-size:11px;line-height:1.5;margin:4px 0}
+.addressActions{display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:12px;border-top:1px solid var(--line)}
+.addressActions button{border:0;background:transparent;padding:0;display:flex;gap:5px;align-items:center;font-size:9px;font-weight:800;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.accountOrders{display:grid;gap:12px}
+.accountOrders>article{border:1px solid var(--line)}
+.accountOrderHead,.accountOrderFooter{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:14px 16px}
+.accountOrderHead{border-bottom:1px solid var(--line)}.accountOrderHead strong,.accountOrderHead small{display:block}.accountOrderHead small{color:var(--muted);font-size:9px;margin-top:3px}.accountOrderHead>span{font-size:9px;font-weight:800;text-transform:uppercase;background:#eee9e2;padding:6px 8px}
+.accountOrderItems{display:flex;gap:10px;overflow:auto;padding:15px 16px}
+.accountOrderItem{display:grid;grid-template-columns:60px 160px;gap:9px;align-items:center}.accountOrderItem>div{position:relative;width:60px;height:76px;overflow:hidden;background:var(--soft)}.accountOrderItem img{object-fit:cover}.accountOrderItem strong,.accountOrderItem small{display:block;font-size:9px}.accountOrderItem small{color:var(--muted);margin-top:4px}
+.accountOrderFooter{border-top:1px solid var(--line);font-size:11px}.accountOrderFooter strong{font-size:17px}
+.accountEmpty{text-align:center;padding:65px 20px}.accountEmpty h3{font-family:var(--font-serif);font-size:30px;font-weight:400}
+.accountLoading{padding:80px 4vw;min-height:500px}
+@media(max-width:900px){.authPage{grid-template-columns:1fr}.authVisual{min-height:390px}.accountOverview{grid-template-columns:1fr 1fr}.addressGrid{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.authVisual{min-height:340px;padding:38px 18px}.authPanel{padding:42px 18px}.authGrid{grid-template-columns:1fr}.accountPage{padding:45px 16px 75px}.accountHero{display:block}.accountHero>button{margin-top:18px}.accountOverview,.addressGrid{grid-template-columns:1fr}.accountTabs a{margin-left:0}.addressForm{grid-template-columns:1fr}.addressForm .full{grid-column:auto}.accountPanel{padding:17px}}

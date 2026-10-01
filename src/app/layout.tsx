@@ -5,6 +5,7 @@ import "./commerce-extra.css";
 import "./storefront-modern.css";
 import "./typography-motion.css";
 import "./catalog-db.css";
+import "./account.css";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { StoreProvider } from "@/components/store-provider";
