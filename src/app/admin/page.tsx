@@ -25,8 +25,8 @@ function blankProduct(): Product {
     name: "",
     subtitle: "",
     category: "tops",
-    type: "tshirt",
-    gender: "unisex",
+    type: "corset",
+    gender: "women",
     price: 399000,
     color: "Đen",
     colorFamily: "black",
@@ -66,7 +66,7 @@ export default function AdminPage() {
   const lowStock = catalog.filter((item) => item.stock <= 8).toSorted((a, b) => a.stock - b.stock);
 
   if (accountLoading) return <div className="accountLoading"><div className="skeletonLine title" /><div className="skeletonBlock detailSkeleton" /></div>;
-  if (!user || user.role !== "admin") return <section className="adminAccessDenied"><div><p className="eyebrow">RESTRICTED AREA</p><h1>Khu vực quản trị</h1><p>Trang này chỉ dành cho tài khoản quản trị ÉLANE.</p><Link className="btn" href={user ? "/account" : "/login?next=/admin"}>{user ? "Về tài khoản" : "Đăng nhập quản trị"}</Link></div></section>;
+  if (!user || user.role !== "admin") return <section className="adminAccessDenied"><div><p className="eyebrow">RESTRICTED AREA</p><h1>Khu vực quản trị</h1><p>Trang này chỉ dành cho tài khoản quản trị LSOUL.</p><Link className="btn" href={user ? "/account" : "/login?next=/admin"}>{user ? "Về tài khoản" : "Đăng nhập quản trị"}</Link></div></section>;
 
   function openNewProduct() {
     setEditing(blankProduct());
@@ -79,7 +79,7 @@ export default function AdminPage() {
     saveProduct({
       ...editing,
       id: generatedId,
-      sku: editing.sku?.trim() || `ELA-${String(catalog.length + 1).padStart(3, "0")}`,
+      sku: editing.sku?.trim() || `LSO-${String(catalog.length + 1).padStart(3, "0")}`,
       images: editing.images.length ? editing.images : [editing.image],
       stock: Math.max(0, Number(editing.stock)),
       price: Math.max(0, Number(editing.price)),
@@ -91,7 +91,7 @@ export default function AdminPage() {
   return (
     <section className="adminPage adminConsole">
       <div className="adminHero">
-        <div><p className="eyebrow">ÉLANE COMMERCE CONSOLE</p><h1>Store operations.</h1></div>
+        <div><p className="eyebrow">LSOUL COMMERCE CONSOLE</p><h1>Store operations.</h1></div>
         <div className="adminHeroActions"><span className={`dbStatus ${persistenceMode === "database" ? "connected" : ""}`}>{persistenceMode === "database" ? "PostgreSQL · Đã kết nối" : "Bộ nhớ trình duyệt"}</span><Link className="btn ghost small" href="/admin/customers">Khách hàng</Link><Link className="btn ghost small" href="/admin/marketing">Social & ưu đãi</Link><Link className="btn ghost small" href="/admin/fulfillment">Vận hành đơn</Link><Link className="btn ghost small" href="/">Xem cửa hàng</Link><button className="btn small" onClick={openNewProduct}><Plus size={15} /> Thêm sản phẩm</button></div>
       </div>
 
@@ -166,7 +166,7 @@ export default function AdminPage() {
             <label className="adminField"><span>SKU</span><input value={editing.sku ?? ""} onChange={(event) => setEditing({ ...editing, sku: event.target.value })} placeholder="Tự sinh nếu để trống" /></label>
             <label className="adminField"><span>Danh mục</span><select value={editing.category} onChange={(event) => setEditing({ ...editing, category: event.target.value as ProductCategory })}>{Object.entries(categoryLabels).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>
             <label className="adminField"><span>Loại sản phẩm</span><select value={editing.type} onChange={(event) => setEditing({ ...editing, type: event.target.value as ClothingType })}>{Object.entries(typeLabels).map(([value,label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-            <label className="adminField"><span>Đối tượng</span><select value={editing.gender} onChange={(event) => setEditing({ ...editing, gender: event.target.value as Product["gender"] })}><option value="unisex">Unisex</option><option value="women">Nữ</option><option value="men">Nam</option></select></label>
+            <label className="adminField"><span>Đối tượng</span><select value={editing.gender} onChange={(event) => setEditing({ ...editing, gender: event.target.value as Product["gender"] })}><option value="women">Nữ</option></select></label>
             <label className="adminField"><span>Giá bán</span><input type="number" min="0" value={editing.price} onChange={(event) => setEditing({ ...editing, price: Number(event.target.value) })} /></label>
             <label className="adminField"><span>Giá cũ</span><input type="number" min="0" value={editing.oldPrice ?? ""} onChange={(event) => setEditing({ ...editing, oldPrice: event.target.value ? Number(event.target.value) : undefined })} /></label>
             <label className="adminField"><span>Tồn kho</span><input type="number" min="0" value={editing.stock} onChange={(event) => setEditing({ ...editing, stock: Number(event.target.value) })} /></label>

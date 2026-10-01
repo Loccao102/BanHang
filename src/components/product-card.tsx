@@ -13,6 +13,7 @@ export function ProductCard({ product }: { product: Product }) {
   const { addToCart, toggleWishlist, wishlist } = useStore();
   const [quickView, setQuickView] = useState(false);
   const liked = wishlist.includes(product.id);
+  const quickSize = product.variants?.find((variant) => variant.stock > 0)?.size ?? product.sizes[0];
 
   return (
     <>
@@ -23,7 +24,7 @@ export function ProductCard({ product }: { product: Product }) {
           <button className={`heartButton ${liked ? "active" : ""}`} aria-label="Yêu thích" onClick={() => toggleWishlist(product.id)}><Heart size={18} fill={liked ? "currentColor" : "none"} /></button>
           <div className="productHoverActions">
             <button onClick={() => setQuickView(true)}><Eye size={16} /> Quick view</button>
-            <button onClick={() => addToCart(product, product.sizes[0])}><ShoppingBag size={16} /> Thêm nhanh</button>
+            <button onClick={() => addToCart(product, quickSize)}><ShoppingBag size={16} /> Thêm nhanh</button>
           </div>
         </div>
         <div className="productMeta">

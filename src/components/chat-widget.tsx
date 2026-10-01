@@ -17,7 +17,7 @@ type ChatMessage = {
 const starter: ChatMessage[] = [{
   id: "welcome",
   role: "assistant",
-  text: "Chào bạn, mình là ÉLANE Stylist. Hãy nói màu sắc, ngân sách hoặc dịp bạn sắp đi — mình sẽ tìm đồ đang còn trong shop."
+  text: "Chào bạn, mình là LSOUL Stylist. Hãy nói màu sắc, ngân sách hoặc dịp bạn sắp đi — mình sẽ tìm đồ đang còn trong shop."
 }];
 
 export function ChatWidget() {
@@ -77,10 +77,10 @@ export function ChatWidget() {
         {open ? <X size={21} /> : <><MessageCircle size={20} /><span>Stylist AI</span></>}
       </button>
       {open ? (
-        <aside className="chatPanel" aria-label="ÉLANE Stylist AI">
+        <aside className="chatPanel" aria-label="LSOUL Stylist AI">
           <div className="chatHead">
             <div className="chatAvatar"><Sparkles size={18} /></div>
-            <div><strong>ÉLANE Stylist</strong><small><span className="statusDot" /> AI shopping assistant</small></div>
+            <div><strong>LSOUL Stylist</strong><small><span className="statusDot" /> AI shopping assistant</small></div>
             <button className="iconButton" onClick={() => setOpen(false)}><X size={19} /></button>
           </div>
           <div className="chatSuggestions">

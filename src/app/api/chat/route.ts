@@ -20,7 +20,7 @@ function retrieve(message: string) {
   const text = message.toLowerCase();
   const budget = parseBudget(text);
   const requestedColors = Object.entries(colorKeywords).filter(([key]) => text.includes(key)).map(([, value]) => value);
-  const category = text.includes("quần") || text.includes("chân váy") ? "bottoms" : text.includes("váy") ? "dress" : text.includes("áo khoác") || text.includes("blazer") || text.includes("jacket") ? "outerwear" : text.includes("áo") || text.includes("hoodie") || text.includes("polo") ? "tops" : undefined;
+  const category = text.includes("quần") || text.includes("chân váy") ? "bottoms" : text.includes("váy") || text.includes("đầm") ? "dress" : text.includes("áo khoác") || text.includes("blazer") || text.includes("jacket") ? "outerwear" : text.includes("áo") || text.includes("corset") || text.includes("crop") || text.includes("bodysuit") ? "tops" : text.includes("set") ? "set" : undefined;
   const occasion = text.includes("date") || text.includes("hẹn hò") ? "date" : text.includes("đi làm") || text.includes("công sở") ? "work" : text.includes("đi chơi") ? "casual" : undefined;
 
   const ranked = products
@@ -47,7 +47,7 @@ async function geminiMessage(userMessage: string, found: Product[]) {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return null;
   const catalog = found.map((item) => `${item.name} | ${item.color} | ${item.price} VND | ${item.style.join(", ")} | ${item.occasion.join(", ")}`).join("\n");
-  const prompt = `Bạn là stylist bán hàng cho thương hiệu ÉLANE. Chỉ được nói về đúng các sản phẩm trong danh sách bên dưới, không bịa tên, giá hoặc tồn kho. Trả lời tiếng Việt, tự nhiên, tối đa 2 câu, giải thích ngắn vì sao phù hợp.\n\nKhách: ${userMessage}\n\nSản phẩm tìm được:\n${catalog}`;
+  const prompt = `Bạn là stylist bán hàng cho thương hiệu LSOUL. Chỉ được nói về đúng các sản phẩm trong danh sách bên dưới, không bịa tên, giá hoặc tồn kho. Trả lời tiếng Việt, tự nhiên, tối đa 2 câu, giải thích ngắn vì sao phù hợp.\n\nKhách: ${userMessage}\n\nSản phẩm tìm được:\n${catalog}`;
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
       method: "POST",

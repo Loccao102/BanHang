@@ -78,21 +78,22 @@ export function ProductDetailClient({ productId }: { productId: string }) {
 
   if (!product) return <div className="emptyState"><div><h2>Sản phẩm không còn hiển thị</h2><p>Thiết kế này có thể đã hết mùa hoặc tạm ngừng bán.</p><Link className="btn" href="/shop">Quay lại LSOUL</Link></div></div>;
 
-  const liked = wishlist.includes(product.id);
+  const currentProduct = product;
+  const liked = wishlist.includes(currentProduct.id);
   const selectedStock = sizeOptions.find((item) => item.size === size)?.stock ?? 0;
   const shownAverage = reviewCount ? reviewAverage : product.rating ?? 0;
   const shownCount = reviewCount || product.reviewCount || 0;
 
   function add() {
     if (selectedStock <= 0) return;
-    addToCart(product, size);
+    addToCart(currentProduct, size);
     setAdded(true);
     window.setTimeout(() => setAdded(false), 1800);
   }
 
   function buyNow() {
     if (selectedStock <= 0) return;
-    addToCart(product, size);
+    addToCart(currentProduct, size);
     closeCartDrawer();
     router.push("/checkout");
   }
@@ -102,10 +103,10 @@ export function ProductDetailClient({ productId }: { productId: string }) {
     void fetch("/api/social/events", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: "share", channel: navigator.share ? "native" : "copy", productId: product.id })
+      body: JSON.stringify({ type: "share", channel: typeof navigator.share === "function" ? "native" : "copy", productId: currentProduct.id })
     });
-    if (navigator.share) {
-      await navigator.share({ title: product.name, text: product.subtitle, url }).catch(() => undefined);
+    if (typeof navigator.share === "function") {
+      await navigator.share({ title: currentProduct.name, text: currentProduct.subtitle, url }).catch(() => undefined);
     } else {
       await navigator.clipboard.writeText(url);
       setReviewMessage("Đã sao chép link sản phẩm.");
@@ -115,7 +116,7 @@ export function ProductDetailClient({ productId }: { productId: string }) {
   async function submitReview(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    const response = await fetch(`/api/products/${product.id}/reviews`, {
+    const response = await fetch(`/api/products/${currentProduct.id}/reviews`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

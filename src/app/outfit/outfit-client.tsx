@@ -47,7 +47,7 @@ export function OutfitClient() {
       </div>
       <div className="builderControls">
         <select value={occasion} onChange={(event) => setOccasion(event.target.value)}><option value="date">Hẹn hò</option><option value="work">Đi làm</option><option value="casual">Đi chơi</option><option value="party">Sự kiện</option></select>
-        <select value={style} onChange={(event) => setStyle(event.target.value)}><option value="minimal">Minimal</option><option value="smart-casual">Smart casual</option><option value="classic">Classic</option><option value="street">Street</option></select>
+        <select value={style} onChange={(event) => setStyle(event.target.value)}><option value="feminine">Feminine</option><option value="glam">Glam</option><option value="bold">Bold</option><option value="y2k">Y2K</option><option value="power">Power</option></select>
         <input type="number" min={500000} step={100000} value={budget} onChange={(event) => setBudget(Number(event.target.value))} aria-label="Ngân sách" />
         <button className="btn" onClick={regenerate}><Sparkles size={17} /> Phối cho tôi</button>
       </div>
@@ -58,7 +58,7 @@ export function OutfitClient() {
         </div>
         <aside className="lookInfo">
           <div className="scoreCircle"><strong>{look.score}</strong><small>/ 100</small></div>
-          <h2>ÉLANE match</h2>
+          <h2>LSOUL match</h2>
           <p>{look.reason}</p>
           <div className="lookList">{look.items.map((item) => <Link href={`/product/${item.id}`} key={item.id}><span>{item.name}<br /><small style={{color:'#aaa'}}>{item.color}</small></span><strong>{formatPrice(item.price)}</strong></Link>)}</div>
           <div className="lookTotal">Tổng: <strong>{formatPrice(total)}</strong></div>

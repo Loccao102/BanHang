@@ -47,8 +47,8 @@ export default function SocialPage() {
 
   async function share(post: SocialPostView) {
     const url = `${window.location.origin}/social#${post.slug}`;
-    void track(post, "share", navigator.share ? "native" : "copy");
-    if (navigator.share) await navigator.share({ title: "LSOUL Social", text: post.caption, url }).catch(() => undefined);
+    void track(post, "share", typeof navigator.share === "function" ? "native" : "copy");
+    if (typeof navigator.share === "function") await navigator.share({ title: "LSOUL Social", text: post.caption, url }).catch(() => undefined);
     else {
       await navigator.clipboard.writeText(url);
       setMessage("Đã sao chép link bài viết.");
