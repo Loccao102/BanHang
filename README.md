@@ -15,6 +15,7 @@ Website thương mại điện tử thời trang nữ xây dựng bằng Next.js
 - Lịch sử đơn hàng, payment status, carrier và tracking code
 - Review xác thực dành cho khách có đơn đã hoàn tất
 - LSOUL Social feed, UGC, product tagging, shop-the-look và share tracking
+- LSOUL Stylist AI với lịch sử hội thoại theo tài khoản, nhiều conversation, rename/delete/resume và product recommendation từ catalog thật
 - Admin quản lý sản phẩm, tồn kho, đơn hàng, khách hàng, coupon và nội dung social
 - PostgreSQL + Prisma, CI chạy với PostgreSQL 16
 
@@ -102,3 +103,35 @@ Trên SePay tạo webhook:
 - Dùng chức năng gửi thử/Test mode trước, sau đó thử lại bằng một giao dịch thật.
 
 Webhook không đánh dấu thanh toán nếu sai số tiền, sai mã đơn, đơn COD hoặc đơn đã hủy. Mọi giao dịch nhận được đều được lưu trong `PaymentTransaction` để đối soát và chống xử lý trùng.
+
+
+## LSOUL Stylist AI
+
+Chatbot được mount toàn website và dùng `GEMINI_API_KEY` cho natural-language response.
+
+Dữ liệu nghiệp vụ không do model tự suy đoán:
+
+- Catalog, giá, tồn kho theo size và review lấy từ PostgreSQL.
+- Khi người dùng hỏi về đơn hàng, chatbot chỉ đọc tối đa các đơn thuộc chính tài khoản đang đăng nhập.
+- Product cards trong chat dẫn tới product detail và có thể thêm nhanh size còn hàng vào giỏ.
+- User đăng nhập có nhiều cuộc trò chuyện lưu trong `ChatConversation` / `ChatMessage`.
+- Có New chat, tự đặt tiêu đề từ tin nhắn đầu, mở lại history, đổi tên và xóa conversation.
+- Guest vẫn chat được; lịch sử guest lưu cục bộ trên trình duyệt.
+- Nếu Gemini tạm không khả dụng, hệ thống vẫn trả fallback dựa trên product retrieval của catalog.
+
+Các API chính:
+
+```text
+POST   /api/chat
+GET    /api/chat/conversations
+POST   /api/chat/conversations
+GET    /api/chat/conversations/:id
+PATCH  /api/chat/conversations/:id
+DELETE /api/chat/conversations/:id
+```
+
+Biến môi trường:
+
+```env
+GEMINI_API_KEY=...
+```

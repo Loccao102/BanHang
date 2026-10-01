@@ -6,11 +6,13 @@ import "./storefront-modern.css";
 import "./typography-motion.css";
 import "./catalog-db.css";
 import "./account.css";
+import "./chat-assistant.css";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { StoreProvider } from "@/components/store-provider";
 import { CartDrawer } from "@/components/cart-drawer";
 import { StoreToast } from "@/components/store-toast";
+import { ChatWidget } from "@/components/chat-widget";
 
 const sans = Be_Vietnam_Pro({
   subsets: ["latin", "vietnamese"],
@@ -41,6 +43,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <Footer />
           <CartDrawer />
           <StoreToast />
+          <ChatWidget />
         </StoreProvider>
       </body>
     </html>
