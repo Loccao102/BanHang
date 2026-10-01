@@ -130,6 +130,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const deleteProduct = useCallback((id: string) => {
     setCatalog((current) => current.filter((item) => item.id !== id));
     setWishlist((current) => current.filter((item) => item !== id));
+    setCart((current) => current.filter((line) => line.product.id !== id));
   }, []);
 
   const adjustStock = useCallback((id: string, delta: number) => {
