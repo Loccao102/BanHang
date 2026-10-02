@@ -57,8 +57,13 @@ export function normalizeOutfitSelection(currentIds: string[], nextProduct: Prod
 export function isValidOutfit(products: Product[]) {
   if (!products.length) return false;
   const slots = products.map(outfitSlot);
+
   if (slots.includes("one-piece")) return products.length === 1;
-  return new Set(slots).size === slots.length;
+
+  if (!slots.includes("top") || !slots.includes("bottom")) return false;
+  if (new Set(slots).size !== slots.length) return false;
+
+  return slots.every((slot) => slot === "top" || slot === "bottom" || slot === "outerwear");
 }
 
 export function outfitLabel(products: Product[]) {
