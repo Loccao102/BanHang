@@ -78,7 +78,29 @@ FigJam không thay thế draw.io. Hai bản được duy trì song song.
 
 ## Sequence Diagram
 
-Chưa tạo. Sequence sẽ được xây dựng sau khi bộ Use Case phía trên được duyệt và chốt.
+Sequence Diagram dùng phong cách **UML classic, đơn sắc**:
+
+- Actor/participant đặt ở đầu lifeline.
+- Lifeline là đường dọc nét đứt.
+- Message request dùng mũi tên liền.
+- Response dùng nét đứt.
+- Có activation bar cho các thành phần đang xử lý.
+- Dùng combined fragment `alt`, `opt`, `loop` khi luồng có điều kiện/lặp.
+- Không sử dụng màu trang trí.
+
+### Đã tạo
+
+- `sequence/SEQ-01-Dang-nhap.drawio`
+  - Luồng đăng nhập thực tế của hệ thống.
+  - Session lưu trong PostgreSQL.
+  - Cookie `lsoul_session` httpOnly.
+  - Có nhánh đăng nhập sai và đăng nhập thành công.
+  - Sau đăng nhập frontend tải lại account state trước khi redirect.
+
+- `sequence/SEQ-01-Dang-nhap.puml`
+  - Source PlantUML đơn sắc tương ứng để tham khảo/chuyển đổi khi cần.
+
+Các Sequence tiếp theo phải giữ cùng bố cục và style với SEQ-01.
 
 
 ## Quy chuẩn trình bày UML
