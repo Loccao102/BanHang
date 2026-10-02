@@ -53,6 +53,6 @@ export const CART_KEY = "lsoul-cart-v1";
 export const WISHLIST_KEY = "lsoul-wishlist-v1";
 export const ORDER_KEY = "lsoul-orders-v1";
 export const COUPON_KEY = "lsoul-coupon-v1";
-export const CATALOG_KEY = "lsoul-catalog-v1";
+export const CATALOG_KEY = "lsoul-catalog-v2";
 export const SETTINGS_KEY = "lsoul-settings-v1";
 export const CHAT_KEY = "lsoul-chat-v1";
