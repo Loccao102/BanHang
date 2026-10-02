@@ -86,6 +86,10 @@ export function ProductDetailClient({ productId }: { productId: string }) {
   if (!product) return <div className="emptyState"><div><h2>Sản phẩm không còn hiển thị</h2><p>Thiết kế này có thể đã hết mùa hoặc tạm ngừng bán.</p><Link className="btn" href="/shop">Quay lại LSOUL</Link></div></div>;
 
   const currentProduct = product;
+  const galleryImages = Array.from(new Set([
+    ...((currentProduct.images ?? []).filter((value) => typeof value === "string" && value.trim().length > 0)),
+    currentProduct.image
+  ].filter((value): value is string => typeof value === "string" && value.trim().length > 0)));
   const liked = wishlist.includes(currentProduct.id);
   const selectedStock = sizeOptions.find((item) => item.size === size)?.stock ?? 0;
   const shownAverage = reviewCount ? reviewAverage : product.rating ?? 0;
@@ -143,7 +147,19 @@ export function ProductDetailClient({ productId }: { productId: string }) {
   return (
     <>
       <section className="productDetail immersiveProductDetail">
-        <div className="productGallery immersiveGallery">{product.images.map((image, index) => <div className="galleryImage immersiveGalleryImage" data-reveal key={image}><Image src={image} alt={`${product.name} ${index + 1}`} fill priority={index === 0} sizes="(max-width: 760px) 100vw, 68vw" /><span className="immersiveGalleryIndex">{String(index + 1).padStart(2, "0")} / {String(product.images.length).padStart(2, "0")}</span>{index === 0 ? <div className="immersiveGalleryCaption"><span>LSOUL / PRODUCT STUDY</span><strong>{product.name}</strong></div> : null}</div>)}</div>
+        <div className="productGallery immersiveGallery">
+          {galleryImages.length ? galleryImages.map((image, index) => (
+            <div className="galleryImage immersiveGalleryImage" data-reveal key={`${image}-${index}`}>
+              <Image src={image} alt={`${product.name} ${index + 1}`} fill priority={index === 0} unoptimized sizes="(max-width: 760px) 100vw, 68vw" />
+              <span className="immersiveGalleryIndex">{String(index + 1).padStart(2, "0")} / {String(galleryImages.length).padStart(2, "0")}</span>
+              {index === 0 ? <div className="immersiveGalleryCaption"><span>LSOUL / PRODUCT STUDY</span><strong>{product.name}</strong></div> : null}
+            </div>
+          )) : (
+            <div className="galleryImage immersiveGalleryImage productImageFallback">
+              <div><strong>{product.name}</strong><span>Ảnh sản phẩm đang được cập nhật.</span></div>
+            </div>
+          )}
+        </div>
         <div className="productInfo immersiveProductInfo"><div className="immersiveProductRail"><span>LSOUL</span><span>{product.sku ?? product.id}</span></div>
           <p className="eyebrow">{product.isNew ? "MỚI VỀ / LSOUL" : "THIẾT KẾ LSOUL"}</p>
           <h1>{product.name}</h1><p className="subtitle">{product.subtitle}</p>
