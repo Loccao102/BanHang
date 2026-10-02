@@ -4,6 +4,8 @@ import "./commerce-extra.css";
 import "./storefront-modern.css";
 import "./typography-motion.css";
 import "./catalog-db.css";
+import "./social-commerce.css";
+import "./admin-extended.css";
 import "./account.css";
 import "./chat-assistant.css";
 import "./luxury-motion.css";
