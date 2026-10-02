@@ -23,13 +23,13 @@ async function getProducts(productIds: string[]) {
   const db = getDb();
   if (!db) {
     return productIds.flatMap((id) => {
-      const product = fallbackProducts.find((item) => item.id === id && item.active !== false);
+      const product = fallbackProducts.find((item) => item.id === id && item.active !== false && Boolean(item.tryOnImage));
       return product ? [product] : [];
     });
   }
 
   const rows = await db.product.findMany({
-    where: { id: { in: productIds }, active: true },
+    where: { id: { in: productIds }, active: true, tryOnImage: { not: null } },
     include: {
       variants: { where: { active: true } },
       reviews: { where: { approved: true }, select: { rating: true } }
@@ -146,7 +146,7 @@ export async function POST(request: Request) {
         currentImage = await runSingle(
           apiKey,
           currentImage,
-          product.tryOnImage ?? product.image,
+          product.tryOnImage!,
           categoryFor(product)
         );
         steps.push({ productId: product.id, output: currentImage });
