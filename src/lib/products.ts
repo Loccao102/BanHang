@@ -68,6 +68,14 @@ export type Product = {
   stretch?: number;
   coverage?: number;
   colorTemperature?: "warm" | "cool" | "neutral";
+  hoverImage?: string;
+  waistRise?: "low" | "mid" | "high" | "not-applicable";
+  recommendedUndertones?: Array<"warm" | "cool" | "neutral">;
+  bodyShapeCompatibility?: string[];
+  pairingTags?: string[];
+  avoidPairingTags?: string[];
+  visualWeight?: number;
+  volume?: "fitted" | "balanced" | "voluminous";
   styleKeywords?: string[];
   aiSearchText?: string;
   analyzerReady?: boolean;
