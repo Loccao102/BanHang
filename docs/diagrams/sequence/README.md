@@ -28,6 +28,11 @@ Bộ Sequence Diagram của LSOUL dùng **UML classic, đơn sắc** và mở tr
 - `SEQ-13-Tro-ly-Mua-sam-AI.drawio` — TRỢ LÝ MUA SẮM AI — UC32, UC33
 - `SEQ-14-Lich-su-Tro-chuyen-AI.drawio` — QUẢN LÝ LỊCH SỬ TRÒ CHUYỆN AI — UC34
 - `SEQ-15-Quan-tri-He-thong.drawio` — QUẢN TRỊ SẢN PHẨM & BÁN HÀNG — UC35, UC36
+- `SEQ-16-Chi-tiet-San-pham-va-Bien-the.drawio` — CHI TIẾT SẢN PHẨM & BIẾN THỂ — UC13, UC14, UC15
+- `SEQ-17-Dieu-chinh-sau-Thu-do-va-Them-Outfit.drawio` — ĐIỀU CHỈNH SAU TRY-ON & THÊM OUTFIT — UC21, UC22
+- `SEQ-18-AI-Thuc-thi-Thao-tac-Mua-sam.drawio` — AI THỰC THI THAO TÁC MUA SẮM — UC33
+- `SEQ-19-Quan-tri-San-pham-va-Ton-kho.drawio` — QUẢN TRỊ SẢN PHẨM & TỒN KHO — UC35
+- `SEQ-20-Quan-tri-Don-hang-va-Ban-hang.drawio` — QUẢN TRỊ ĐƠN HÀNG & BÁN HÀNG — UC36
 
 ## Mapping Use Case → Sequence
 
@@ -45,9 +50,9 @@ Bộ Sequence Diagram của LSOUL dùng **UML classic, đơn sắc** và mở tr
 | UC10 | SEQ-05 |
 | UC11 | SEQ-05 |
 | UC12 | SEQ-05 |
-| UC13 | SEQ-05 |
-| UC14 | SEQ-05 |
-| UC15 | SEQ-05 |
+| UC13 | SEQ-05, SEQ-16 |
+| UC14 | SEQ-05, SEQ-16 |
+| UC15 | SEQ-05, SEQ-16 |
 | UC16 | SEQ-06 |
 | UC17 | SEQ-06 |
 | UC18 | SEQ-06 |
@@ -55,8 +60,8 @@ Bộ Sequence Diagram của LSOUL dùng **UML classic, đơn sắc** và mở tr
 | UC20 | SEQ-07 |
 | UC20.1 | SEQ-08 |
 | UC20.2 | SEQ-08 |
-| UC21 | SEQ-07 |
-| UC22 | SEQ-07 |
+| UC21 | SEQ-07, SEQ-17 |
+| UC22 | SEQ-07, SEQ-17 |
 | UC23 | SEQ-09 |
 | UC24 | SEQ-09 |
 | UC25 | SEQ-09 |
@@ -67,9 +72,9 @@ Bộ Sequence Diagram của LSOUL dùng **UML classic, đơn sắc** và mở tr
 | UC30 | SEQ-12 |
 | UC31 | SEQ-12 |
 | UC32 | SEQ-13 |
-| UC33 | SEQ-13 |
+| UC33 | SEQ-13, SEQ-18 |
 | UC34 | SEQ-14 |
-| UC35 | SEQ-15 |
-| UC36 | SEQ-15 |
+| UC35 | SEQ-15, SEQ-19 |
+| UC36 | SEQ-15, SEQ-20 |
 
-**Kết quả:** toàn bộ UC01–UC36 và UC20.1/UC20.2 đều được bao phủ bởi ít nhất một Sequence Diagram.
+**Kết quả:** bộ tài liệu có 20 Sequence Diagram. Toàn bộ UC01–UC36 và UC20.1/UC20.2 đều được bao phủ; các nghiệp vụ core được tách thêm sequence chi tiết để phục vụ đồ án mà không làm tài liệu quá dài.
