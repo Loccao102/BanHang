@@ -1,14 +1,43 @@
 import { NextResponse } from "next/server";
+import { products as fallbackProducts, type Product } from "@/lib/products";
+import { getDb } from "@/lib/server/db";
+import { fromProductRow } from "@/lib/server/product-db";
+
+export const runtime = "nodejs";
+export const maxDuration = 300;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export async function POST(request: Request) {
-  const { modelImage, garmentImage, category = "auto" } = await request.json();
-  if (!modelImage || !garmentImage) return NextResponse.json({ error: "Thiếu ảnh người hoặc ảnh sản phẩm." }, { status: 400 });
+function categoryFor(product: Product) {
+  if (product.category === "bottoms") return "bottoms";
+  if (product.category === "dress" || product.category === "set") return "one-pieces";
+  return "tops";
+}
 
-  const apiKey = process.env.FASHN_API_KEY;
-  if (!apiKey) return NextResponse.json({ mode: "unavailable", message: "Dịch vụ thử đồ trực tuyến hiện chưa khả dụng." }, { status: 503 });
+async function getProducts(productIds: string[]) {
+  const db = getDb();
+  if (!db) {
+    return productIds.flatMap((id) => {
+      const product = fallbackProducts.find((item) => item.id === id && item.active !== false);
+      return product ? [product] : [];
+    });
+  }
 
+  const rows = await db.product.findMany({
+    where: { id: { in: productIds }, active: true },
+    include: {
+      variants: { where: { active: true } },
+      reviews: { where: { approved: true }, select: { rating: true } }
+    }
+  });
+  const map = new Map(rows.map((row) => [row.id, fromProductRow(row)]));
+  return productIds.flatMap((id) => {
+    const product = map.get(id);
+    return product ? [product] : [];
+  });
+}
+
+async function runSingle(apiKey: string, modelImage: string, garmentImage: string, category: string) {
   const run = await fetch("https://api.fashn.ai/v1/run", {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
@@ -27,13 +56,13 @@ export async function POST(request: Request) {
 
   if (!run.ok) {
     const detail = await run.text();
-    return NextResponse.json({ error: `FASHN không nhận request: ${detail}` }, { status: run.status });
+    throw new Error(`FASHN không nhận request: ${detail}`);
   }
 
   const initial = await run.json();
-  if (!initial.id) return NextResponse.json({ error: "FASHN không trả prediction id." }, { status: 502 });
+  if (!initial.id) throw new Error("FASHN không trả prediction id.");
 
-  for (let attempt = 0; attempt < 30; attempt += 1) {
+  for (let attempt = 0; attempt < 45; attempt += 1) {
     await sleep(1000);
     const statusResponse = await fetch(`https://api.fashn.ai/v1/status/${initial.id}`, {
       headers: { Authorization: `Bearer ${apiKey}` },
@@ -41,9 +70,53 @@ export async function POST(request: Request) {
     });
     if (!statusResponse.ok) continue;
     const status = await statusResponse.json();
-    if (status.status === "completed") return NextResponse.json({ mode: "live", output: status.output?.[0], predictionId: initial.id });
-    if (status.status === "failed") return NextResponse.json({ error: status.error?.message ?? "Virtual try-on thất bại." }, { status: 502 });
+    if (status.status === "completed") {
+      const output = status.output?.[0];
+      if (!output) throw new Error("FASHN hoàn tất nhưng không trả ảnh.");
+      return output as string;
+    }
+    if (status.status === "failed") throw new Error(status.error?.message ?? "Virtual try-on thất bại.");
   }
 
-  return NextResponse.json({ error: "Virtual try-on đang xử lý quá lâu. Hãy thử lại." }, { status: 504 });
+  throw new Error("Virtual try-on đang xử lý quá lâu. Hãy thử lại.");
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json() as { modelImage?: string; productIds?: string[] };
+    const modelImage = String(body.modelImage ?? "");
+    const productIds = Array.isArray(body.productIds) ? Array.from(new Set(body.productIds.map(String))).slice(0, 3) : [];
+
+    if (!modelImage || !productIds.length) {
+      return NextResponse.json({ error: "Thiếu ảnh người hoặc danh sách sản phẩm." }, { status: 400 });
+    }
+    if (!modelImage.startsWith("data:image/") && !modelImage.startsWith("https://")) {
+      return NextResponse.json({ error: "Ảnh người không hợp lệ." }, { status: 400 });
+    }
+
+    const apiKey = process.env.FASHN_API_KEY;
+    if (!apiKey) return NextResponse.json({ error: "FASHN_API_KEY chưa được cấu hình." }, { status: 503 });
+
+    const selected = await getProducts(productIds);
+    if (selected.length !== productIds.length) {
+      return NextResponse.json({ error: "Có sản phẩm không còn khả dụng." }, { status: 400 });
+    }
+
+    let currentImage = modelImage;
+    const steps: Array<{ productId: string; output: string }> = [];
+
+    for (const product of selected) {
+      currentImage = await runSingle(apiKey, currentImage, product.image, categoryFor(product));
+      steps.push({ productId: product.id, output: currentImage });
+    }
+
+    return NextResponse.json({
+      mode: "live",
+      output: currentImage,
+      steps,
+      productIds: selected.map((product) => product.id)
+    });
+  } catch (error) {
+    return NextResponse.json({ error: error instanceof Error ? error.message : "Không thể thử đồ." }, { status: 502 });
+  }
 }

@@ -52,3 +52,11 @@ body[data-page="home"][data-scrolled="true"] .luxServiceRail{scroll-margin-top:7
 }
 
 .productSourceNote{display:block;margin-top:10px;color:var(--muted);font-size:8px;line-height:1.5}.productSourceNote a{text-decoration:underline;text-underline-offset:2px}.variantSwatches a{min-width:52px}.variantSwatches .miniSwatch[style]{border:1px solid rgba(0,0,0,.2)}
+
+/* UX fixes requested after flagship pass */
+body[data-custom-cursor="true"],body[data-custom-cursor="true"] a,body[data-custom-cursor="true"] button{cursor:auto!important}
+body[data-custom-cursor="true"] a,body[data-custom-cursor="true"] button{cursor:pointer!important}
+.luxCursor{display:none!important}
+body[data-page="home"] .announcement{display:none}
+body[data-page="home"] .siteHeader{top:0!important}
+body[data-page="home"] .luxMegaMenu{top:64px!important}

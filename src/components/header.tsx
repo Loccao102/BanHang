@@ -23,7 +23,7 @@ const megaGroups = [
   },
   {
     title: "Discover",
-    links: [["LSOUL Social", "/social"], ["Most wanted", "/shop?sort=featured"], ["Size guide", "/size-guide"], ["About LSOUL", "/about"]]
+    links: [["LSOUL Social", "/social"], ["Virtual Fitting Room", "/try-on"], ["Most wanted", "/shop?sort=featured"], ["Size guide", "/size-guide"], ["About LSOUL", "/about"]]
   }
 ];
 
