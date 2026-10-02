@@ -21,6 +21,9 @@ type ProductRow = {
   lengthClass: string | null; neckline: string | null; sleeveLength: string | null;
   pattern: string | null; season: Prisma.JsonValue; formality: number; warmth: number;
   stretch: number; coverage: number; colorTemperature: string | null;
+  hoverImage: string | null; waistRise: string | null; recommendedUndertones: Prisma.JsonValue;
+  bodyShapeCompatibility: Prisma.JsonValue; pairingTags: Prisma.JsonValue; avoidPairingTags: Prisma.JsonValue;
+  visualWeight: number; volume: string | null;
   styleKeywords: Prisma.JsonValue; aiSearchText: string; analyzerReady: boolean;
   variants?: VariantRow[]; reviews?: { rating: number }[];
 };
@@ -49,6 +52,11 @@ export function fromProductRow(row: ProductRow): Product {
     sleeveLength: row.sleeveLength ?? undefined, pattern: row.pattern ?? undefined,
     season: jsonStrings(row.season), formality: row.formality, warmth: row.warmth, stretch: row.stretch,
     coverage: row.coverage, colorTemperature: row.colorTemperature as Product["colorTemperature"],
+    hoverImage: row.hoverImage ?? undefined, waistRise: row.waistRise as Product["waistRise"],
+    recommendedUndertones: jsonStrings(row.recommendedUndertones) as Product["recommendedUndertones"],
+    bodyShapeCompatibility: jsonStrings(row.bodyShapeCompatibility), pairingTags: jsonStrings(row.pairingTags),
+    avoidPairingTags: jsonStrings(row.avoidPairingTags), visualWeight: row.visualWeight,
+    volume: row.volume as Product["volume"],
     styleKeywords: jsonStrings(row.styleKeywords), aiSearchText: row.aiSearchText, analyzerReady: row.analyzerReady
   };
 }
@@ -69,6 +77,18 @@ export function toProductRow(product: Product) {
     neckline: product.neckline ?? null, sleeveLength: product.sleeveLength ?? null, pattern: product.pattern ?? null,
     season: product.season ?? [], formality: product.formality ?? 2, warmth: product.warmth ?? 2,
     stretch: product.stretch ?? 2, coverage: product.coverage ?? 2, colorTemperature: product.colorTemperature ?? null,
+    hoverImage: product.hoverImage ?? product.images?.[1] ?? product.image,
+    waistRise: product.waistRise ?? (/low-rise|cạp thấp/i.test(product.fit) ? "low" : null),
+    recommendedUndertones: product.recommendedUndertones ?? (
+      product.colorTemperature === "warm" ? ["warm", "neutral"] :
+      product.colorTemperature === "cool" ? ["cool", "neutral"] :
+      ["warm", "cool", "neutral"]
+    ),
+    bodyShapeCompatibility: product.bodyShapeCompatibility ?? [],
+    pairingTags: product.pairingTags ?? product.styleKeywords ?? product.style,
+    avoidPairingTags: product.avoidPairingTags ?? [],
+    visualWeight: product.visualWeight ?? Math.max(1, Math.min(5, product.formality ?? 3)),
+    volume: product.volume ?? (/wide|flare|tiered|babydoll|ruffle|xòe/i.test([product.fit, product.silhouette].filter(Boolean).join(" ")) ? "voluminous" : /slim|bodycon|corset|fitted|ôm/i.test([product.fit, product.silhouette].filter(Boolean).join(" ")) ? "fitted" : "balanced"),
     styleKeywords: product.styleKeywords ?? product.style,
     aiSearchText: product.aiSearchText ?? [product.name, product.subtitle, product.category, product.type, product.color, ...product.style, ...product.occasion].join(" "),
     analyzerReady: product.analyzerReady ?? false
