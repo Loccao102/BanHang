@@ -40,8 +40,7 @@ async function getProducts(productIds: string[]) {
   const rows = await db.product.findMany({
     where: { id: { in: productIds }, active: true, tryOnImage: { not: null } },
     include: {
-      variants: { where: { active: true } },
-      reviews: { where: { approved: true }, select: { rating: true } }
+      variants: { where: { active: true } }
     }
   });
 
