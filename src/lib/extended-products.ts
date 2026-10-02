@@ -476,7 +476,7 @@ const data: Seed[] = [
     sourceUrl: "https://dosi-in.com/san-pham/lsoul-ao-hai-day-loang-mau-phoi-day-da-bo-dinh-tan-cao-cap-trap-top-a24122790-269491027.26774330517/",
     style: ["Y2K", "gothic", "statement"], occasion: ["đi chơi", "concert"], material: "Vải loang phối dây da",
     fit: "Slim strappy crop", silhouette: "fitted", lengthClass: "cropped", neckline: "square", sleeveLength: "sleeveless", colorTemperature: "warm", tryOn: true
-  }
+  },
   {
     sku: "A25102840", name: "Jio Bodysuit", subtitle: "Bodysuit cotton co giãn phong cách Y2K",
     category: "tops", type: "bodysuit", price: 979000, color: "Đen / trắng / xám / hồng", colorFamily: "black",
