@@ -92,7 +92,7 @@ export function TryOnClient() {
   const [resultImage, setResultImage] = useState<string | null>(null);
   const [intermediate, setIntermediate] = useState<Array<{ productId: string; output: string }>>([]);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("Chọn 1–3 món từ wishlist, tải ảnh toàn thân và bắt đầu thử.");
+  const [message, setMessage] = useState("Chọn đồ từ mục yêu thích, tải ảnh toàn thân và bắt đầu thử.");
 
   useEffect(() => {
     if (!selectedIds.length && initialProducts.length) {
@@ -149,7 +149,7 @@ export function TryOnClient() {
     setLoading(true);
     setResultImage(null);
     setIntermediate([]);
-    setMessage("FASHN đang dựng các món đã chọn lên ảnh của bạn...");
+    setMessage("AI đang ghép các món đã chọn lên ảnh của bạn...");
     try {
       const response = await fetch("/api/tryon", {
         method: "POST",
@@ -160,7 +160,7 @@ export function TryOnClient() {
       if (!response.ok) throw new Error(data.error ?? "Không thể tạo ảnh thử đồ.");
       setResultImage(data.output);
       setIntermediate(data.steps ?? []);
-      setMessage("Hoàn tất. Bạn có thể chỉnh màu/size trước khi mua set.");
+      setMessage("Hoàn tất. Bạn có thể chỉnh màu và cỡ trước khi mua cả bộ.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Có lỗi khi thử đồ.");
     } finally {
@@ -178,7 +178,7 @@ export function TryOnClient() {
     setSelectedIds((current) => current.map((id) => id === currentProduct.id ? next.id : id));
     setConfigured((current) => current.map((item) => item.productId === currentProduct.id ? { productId: next.id, size: firstSize(next) } : item));
     setResultImage(null);
-    setMessage("Đã đổi màu/biến thể. Bấm thử lại để AI tạo ảnh theo lựa chọn mới.");
+    setMessage("Đã đổi màu hoặc biến thể. Bấm thử lại để AI tạo ảnh theo lựa chọn mới.");
   }
 
   function buySet(goCheckout = false) {
@@ -189,7 +189,7 @@ export function TryOnClient() {
       return variant ? [{ product, size: item.size, quantity: 1 }] : [];
     });
     if (bundle.length !== configured.length) {
-      setMessage("Một món vừa hết size đã chọn. Vui lòng chọn lại size.");
+      setMessage("Một món vừa hết cỡ đã chọn. Vui lòng chọn lại cỡ.");
       return;
     }
     addBundleToCart(bundle);
@@ -199,9 +199,9 @@ export function TryOnClient() {
   return (
     <section className="fittingRoomPage">
       <div className="fittingHero" data-reveal>
-        <p className="eyebrow">LSOUL VIRTUAL FITTING ROOM</p>
-        <h1>Try the look.<br />Then own it.</h1>
-        <p>Chọn những món đã lưu, thử trực tiếp trên ảnh của bạn bằng FASHN, rồi tinh chỉnh màu và size trước khi mua cả set.</p>
+        <p className="eyebrow">PHÒNG THỬ ĐỒ AI LSOUL</p>
+        <h1>Thử trước.<br />Ưng thì mặc.</h1>
+        <p>Chọn những món đã lưu, thử trực tiếp trên ảnh của bạn bằng AI, rồi chỉnh màu và cỡ trước khi mua cả bộ.</p>
       </div>
 
       <div className="fittingWorkspace">
@@ -217,7 +217,7 @@ export function TryOnClient() {
 
           <div className="fittingStep">
             <div className="fittingStepHead"><span>02</span><div><strong>Tủ đồ đã lưu</strong><small>Áo + quần/chân váy (+ áo khoác), hoặc váy/set riêng</small></div><Sparkles size={17} /></div>
-            <div className="fittingLookSummary"><span>LOOK</span><strong>{outfitLabel(selectedProducts)}</strong></div>
+            <div className="fittingLookSummary"><span>BỘ ĐỒ</span><strong>{outfitLabel(selectedProducts)}</strong></div>
             <div className="fittingWishlist fittingWardrobeGroups">
               {(["tops", "bottoms", "dresses", "outerwear", "sets"] as WardrobeGroup[]).map((group) => {
                 const grouped = fallbackProducts.filter((product) => wardrobeGroup(product) === group);
@@ -245,8 +245,8 @@ export function TryOnClient() {
 
         <div className="fittingStage">
           <div className="fittingResult">
-            {resultImage ? <Image src={resultImage} alt="Kết quả thử đồ LSOUL" fill unoptimized priority /> : personImage ? <Image src={personImage} alt="Ảnh người dùng" fill unoptimized /> : <div className="fittingPlaceholder"><WandSparkles size={34} /><strong>Fitting result</strong><p>Ảnh kết quả sẽ xuất hiện tại đây.</p></div>}
-            <span className="fittingStageLabel">{resultImage ? "AI RESULT" : "YOUR PHOTO"}</span>
+            {resultImage ? <Image src={resultImage} alt="Kết quả thử đồ LSOUL" fill unoptimized priority /> : personImage ? <Image src={personImage} alt="Ảnh người dùng" fill unoptimized /> : <div className="fittingPlaceholder"><WandSparkles size={34} /><strong>Ảnh thử đồ</strong><p>Ảnh kết quả sẽ xuất hiện tại đây.</p></div>}
+            <span className="fittingStageLabel">{resultImage ? "KẾT QUẢ AI" : "ẢNH CỦA BẠN"}</span>
           </div>
           {intermediate.length > 1 ? <div className="fittingPasses">{intermediate.map((step, index) => <div key={step.productId}><Image src={step.output} alt={`Try-on pass ${index + 1}`} fill unoptimized /><span>PASS {index + 1}</span></div>)}</div> : null}
         </div>
@@ -254,7 +254,7 @@ export function TryOnClient() {
 
       {selectedProducts.length ? (
         <section className="fittingBuyPanel" data-reveal>
-          <div className="fittingBuyHeader"><div><p className="eyebrow">EDIT YOUR LOOK</p><h2>Hoàn thiện set trước khi mua.</h2></div><div><small>Tổng tạm tính</small><strong>{formatPrice(total)}</strong></div></div>
+          <div className="fittingBuyHeader"><div><p className="eyebrow">CHỈNH BỘ ĐỒ</p><h2>Hoàn thiện bộ đồ trước khi mua.</h2></div><div><small>Tổng dự kiến</small><strong>{formatPrice(total)}</strong></div></div>
           <div className="fittingConfiguredList">
             {selectedProducts.map((product) => {
               const config = configured.find((item) => item.productId === product.id);
@@ -263,15 +263,15 @@ export function TryOnClient() {
                 <article key={product.id}>
                   <div className="fittingConfiguredImage"><Image src={product.image} alt={product.name} fill sizes="110px" /></div>
                   <div className="fittingConfiguredMeta"><strong>{product.name}</strong><span>{product.subtitle}</span><small>{formatPrice(product.price)}</small></div>
-                  <label><span>Màu</span><select value={product.id} onChange={(event) => changeColor(product, event.target.value)}>{colorVariants.map((variant) => <option value={variant.id} key={variant.id}>{variant.color}</option>)}</select></label>
-                  <label><span>Size</span><select value={config?.size ?? firstSize(product)} onChange={(event) => changeSize(product.id, event.target.value)}>{product.variants?.filter((variant) => variant.stock > 0).map((variant) => <option value={variant.size} key={variant.size}>{variant.size}</option>)}</select></label>
+                  <label><span>Màu sắc</span><select value={product.id} onChange={(event) => changeColor(product, event.target.value)}>{colorVariants.map((variant) => <option value={variant.id} key={variant.id}>{variant.color}</option>)}</select></label>
+                  <label><span>Cỡ</span><select value={config?.size ?? firstSize(product)} onChange={(event) => changeSize(product.id, event.target.value)}>{product.variants?.filter((variant) => variant.stock > 0).map((variant) => <option value={variant.size} key={variant.size}>{variant.size}</option>)}</select></label>
                 </article>
               );
             })}
           </div>
           <div className="fittingBuyActions">
-            <button className="btn secondary" onClick={() => buySet(false)}><ShoppingBag size={16} /> Thêm cả set vào giỏ</button>
-            <button className="btn" onClick={() => buySet(true)}>Mua set này</button>
+            <button className="btn secondary" onClick={() => buySet(false)}><ShoppingBag size={16} /> Thêm cả bộ vào giỏ</button>
+            <button className="btn" onClick={() => buySet(true)}>Mua bộ này</button>
           </div>
         </section>
       ) : null}

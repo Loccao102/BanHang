@@ -51,7 +51,7 @@ export function ShopClient() {
 
   return (
     <>
-      <section className="pageHero"><p className="eyebrow">{saleOnly ? "SEASONAL EDIT" : "ONLINE STORE"}</p><h1>{saleOnly ? "Sale edit" : "LSOUL collection"}</h1><p>Khám phá những silhouette đặc trưng của LSOUL: corset, crop top, bodysuit, blazer chiết eo, mini dress, chân váy, quần loe và matching set.</p></section>
+      <section className="pageHero"><p className="eyebrow">{saleOnly ? "BỘ SƯU TẬP GIẢM GIÁ" : "CỬA HÀNG TRỰC TUYẾN"}</p><h1>{saleOnly ? "Sản phẩm giảm giá" : "Bộ sưu tập LSOUL"}</h1><p>Khám phá những silhouette đặc trưng của LSOUL: corset, áo ngắn, bodysuit, blazer chiết eo, đầm ngắn, chân váy, quần loe và các bộ phối sẵn.</p></section>
       <div className="shopShell">
         <aside className="filters desktopFilters">{filters}</aside>
         <section>

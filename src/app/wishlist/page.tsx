@@ -46,16 +46,16 @@ export default function WishlistPage() {
     <section className="wishlistPage wardrobeWishlistPage">
       <div className="wishlistHeader wardrobeWishlistHeader">
         <div>
-          <p className="eyebrow">YOUR SAVED WARDROBE</p>
-          <h1>Wishlist</h1>
-          <p>{items.length} sản phẩm đã lưu · chọn theo nhóm để phối thành một look hợp lệ.</p>
+          <p className="eyebrow">TỦ ĐỒ ĐÃ LƯU</p>
+          <h1>Yêu thích</h1>
+          <p>{items.length} sản phẩm đã lưu · chọn theo nhóm để phối thành một bộ đồ phù hợp.</p>
         </div>
         <div className="wardrobeSelectionSummary">
-          <span>LOOK ĐANG CHỌN</span>
+          <span>BỘ ĐỒ ĐANG CHỌN</span>
           <strong>{outfitLabel(selectedProducts)}</strong>
           <small>{selectedProducts.length ? selectedProducts.map((product) => product.name).join(" · ") : "Chọn áo + quần/chân váy (+ áo khoác), hoặc chọn một váy/set riêng."}</small>
           <Link className={`btn ${selected.length ? "" : "disabled"}`} href={selected.length ? tryOnHref : "#"}>
-            <Sparkles size={15} /> Thử look này
+            <Sparkles size={15} /> Thử bộ đồ này
           </Link>
         </div>
       </div>
@@ -76,7 +76,7 @@ export default function WishlistPage() {
                   <div className={`wishlistSelectableItem ${selected.includes(product.id) ? "selected" : ""}`} key={product.id}>
                     <button className="wishlistSelectToggle" onClick={() => toggle(product.id)} aria-label={`Chọn ${product.name} để thử đồ`}>
                       <span>{selected.includes(product.id) ? "✓" : "+"}</span>
-                      {selected.includes(product.id) ? "Đang trong look" : "Phối món này"}
+                      {selected.includes(product.id) ? "Đang được chọn" : "Chọn để phối"}
                     </button>
                     <ProductCard product={product} />
                   </div>

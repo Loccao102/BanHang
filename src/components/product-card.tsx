@@ -22,10 +22,10 @@ export function ProductCard({ product }: { product: Product }) {
           <Link href={`/product/${product.id}`} aria-label={product.name}>
             <Image className="productImagePrimary" src={product.image} alt={product.name} fill sizes="(max-width: 760px) 50vw, 25vw" />
           </Link>
-          <div className="productBadges">{product.isNew ? <span>NEW</span> : null}{product.oldPrice ? <span>SALE</span> : null}{product.stock <= 5 ? <span>LOW STOCK</span> : null}</div>
+          <div className="productBadges">{product.isNew ? <span>MỚI</span> : null}{product.oldPrice ? <span>GIẢM GIÁ</span> : null}{product.stock <= 5 ? <span>SẮP HẾT</span> : null}</div>
           <button className={`heartButton ${liked ? "active" : ""}`} aria-label="Yêu thích" onClick={() => toggleWishlist(product.id)}><Heart size={18} fill={liked ? "currentColor" : "none"} /></button>
           <div className="productHoverActions">
-            <button onClick={() => setQuickView(true)}><Eye size={16} /> Quick view</button>
+            <button onClick={() => setQuickView(true)}><Eye size={16} /> Xem nhanh</button>
             <button onClick={() => addToCart(product, quickSize)}><ShoppingBag size={16} /> Thêm nhanh</button>
           </div>
         </div>

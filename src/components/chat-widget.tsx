@@ -16,7 +16,7 @@ import { useStore } from "./store-provider";
 const welcome: ChatMessageView = {
   id: "welcome",
   role: "assistant",
-  text: "Chào bạn, mình là LSOUL Stylist AI. Mình có thể tìm đồ, phối outfit và thực hiện các thao tác mua sắm như thêm vào giỏ, áp coupon, mở đơn hàng hoặc đưa bạn tới checkout."
+  text: "Chào bạn, mình là Trợ lý phối đồ AI LSOUL. Mình có thể tìm đồ, phối đồ và thực hiện các thao tác mua sắm như thêm vào giỏ, áp mã giảm giá, mở đơn hàng hoặc đưa bạn tới trang thanh toán."
 };
 
 function firstAvailableSize(product: Product) {
@@ -141,13 +141,13 @@ export function ChatWidget() {
           const variant = product?.variants?.find((candidate) => candidate.size === item.size && candidate.stock >= item.quantity);
           return product && variant ? [{ product, size: item.size, quantity: item.quantity }] : [];
         });
-        if (bundle.length !== action.items.length) throw new Error("Một món trong outfit vừa hết size.");
+        if (bundle.length !== action.items.length) throw new Error("Một món trong bộ đồ vừa hết cỡ.");
         addBundleToCart(bundle);
       }
 
       if (action.type === "apply_coupon") {
         const applied = await applyCoupon(action.code);
-        if (!applied) throw new Error("Coupon chưa đủ điều kiện cho giỏ hàng hiện tại.");
+        if (!applied) throw new Error("Mã giảm giá chưa đủ điều kiện cho giỏ hàng hiện tại.");
       }
 
       if (action.type === "open_order") {
@@ -284,14 +284,14 @@ export function ChatWidget() {
           <div className="chatHead">
             <button className="chatHistoryButton" onClick={() => setHistoryOpen((value) => !value)} aria-label="Lịch sử trò chuyện"><History size={18} /></button>
             <div className="chatAvatar"><Sparkles size={17} /></div>
-            <div className="chatHeadTitle"><strong>{activeTitle}</strong><small><span className="statusDot" /> AI shopping agent</small></div>
+            <div className="chatHeadTitle"><strong>{activeTitle}</strong><small><span className="statusDot" /> Trợ lý mua sắm AI</small></div>
             <button className="chatNewButton" onClick={newChat} title="Cuộc trò chuyện mới"><Plus size={17} /></button>
             <button className="iconButton" onClick={() => setOpen(false)} aria-label="Đóng chatbot"><X size={18} /></button>
           </div>
 
           {historyOpen ? (
             <div className="chatHistoryDrawer">
-              <div className="chatHistoryTop"><div><p className="eyebrow">HISTORY</p><h3>Lịch sử trò chuyện</h3></div><button onClick={newChat}><Plus size={14} /> New chat</button></div>
+              <div className="chatHistoryTop"><div><p className="eyebrow">LỊCH SỬ</p><h3>Lịch sử trò chuyện</h3></div><button onClick={newChat}><Plus size={14} /> Cuộc trò chuyện mới</button></div>
               {user ? (
                 <div className="chatConversationList">
                   {conversations.length ? conversations.map((conversation) => (
@@ -331,8 +331,8 @@ export function ChatWidget() {
 
           <div className="chatSuggestions">
             {[
-              "Phối outfit đi date dưới 2 triệu",
-              "Thêm corset đen size M vào giỏ",
+              "Phối đồ đi hẹn hò dưới 2 triệu",
+              "Thêm corset đen cỡ M vào giỏ",
               "Áp mã LSOUL10",
               ...(user ? ["Mở đơn gần nhất của mình"] : ["Tìm corset đen dưới 900k"])
             ].map((prompt) => <button key={prompt} disabled={loading} onClick={() => void send(prompt)}>{prompt}</button>)}
@@ -384,10 +384,10 @@ export function ChatWidget() {
           </div>
 
           <form className="chatForm" onSubmit={handleSubmit}>
-            <input ref={inputRef} value={input} onChange={(event) => setInput(event.target.value)} maxLength={2000} placeholder='Ví dụ: "thêm cái thứ 2 size M vào giỏ"' />
+            <input ref={inputRef} value={input} onChange={(event) => setInput(event.target.value)} maxLength={2000} placeholder='Ví dụ: "thêm cái thứ 2 cỡ M vào giỏ"' />
             <button disabled={loading || !input.trim()} aria-label="Gửi"><Send size={17} /></button>
           </form>
-          <div className="chatFoot">{user ? "Shopping agent · lịch sử lưu vào tài khoản LSOUL." : "Guest shopping agent · lịch sử lưu trên trình duyệt."}</div>
+          <div className="chatFoot">{user ? "Trợ lý mua sắm · lịch sử lưu vào tài khoản LSOUL." : "Chế độ khách · lịch sử lưu trên trình duyệt."}</div>
         </aside>
       ) : null}
     </>
