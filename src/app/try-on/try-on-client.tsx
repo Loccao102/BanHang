@@ -6,7 +6,7 @@ import { BrainCircuit, Camera, Check, Heart, LoaderCircle, ShoppingBag, Sparkles
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { formatPrice, type Product } from "@/lib/products";
 import type { StylistAssessment } from "@/lib/stylist-assessment";
-import { normalizeOutfitSelection, outfitLabel, sortOutfitProducts, wardrobeGroup, wardrobeGroupLabels, type WardrobeGroup } from "@/lib/wardrobe";
+import { isValidOutfit, normalizeOutfitSelection, outfitLabel, sortOutfitProducts, wardrobeGroup, wardrobeGroupLabels, type WardrobeGroup } from "@/lib/wardrobe";
 import { useStore } from "@/components/store-provider";
 
 type ConfiguredItem = {
@@ -124,6 +124,7 @@ export function TryOnClient() {
   });
 
   const total = selectedProducts.reduce((sum, product) => sum + product.price, 0);
+  const outfitReady = isValidOutfit(selectedProducts);
 
   function clearStylistResult() {
     setTryOnSessionId(null);
@@ -209,7 +210,10 @@ export function TryOnClient() {
   }
 
   async function runTryOn() {
-    if (!personImage || !selectedIds.length) return;
+    if (!personImage || !outfitReady) {
+      setMessage("Hãy phối đủ áo + quần/chân váy (áo khoác tùy chọn), hoặc chọn một váy/đầm hoàn chỉnh trước khi thử.");
+      return;
+    }
     setLoading(true);
     setResultImage(null);
     setIntermediate([]);
@@ -306,10 +310,11 @@ export function TryOnClient() {
             </div>
           </div>
 
-          <button className="btn block fittingRun" disabled={!personImage || !selectedIds.length || loading} onClick={runTryOn}>
+          <button className="btn block fittingRun" disabled={!personImage || !outfitReady || loading} onClick={runTryOn}>
             {loading ? <LoaderCircle className="spin" size={17} /> : <WandSparkles size={17} />}
             {loading ? "Đang tạo fitting..." : `Thử ${outfitLabel(selectedProducts)} bằng AI`}
           </button>
+          {!outfitReady && selectedProducts.length ? <p className="fittingCompositionHint">Outfit chưa hoàn chỉnh · cần áo + quần/chân váy, hoặc một váy/đầm.</p> : null}
           <p className="fittingStatus">{message}</p>
         </aside>
 
