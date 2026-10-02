@@ -7,48 +7,36 @@ skinparam responseMessageBelowArrow true
 title SEQ-01 - ĐĂNG NHẬP
 
 actor "Người dùng" as User
-boundary "Trang đăng nhập\n(Browser)" as UI
-control "/api/auth/login\nLogin API" as LoginAPI
-control "Auth Service" as Auth
-control "/api/account/state\nAccount API" as AccountAPI
+boundary "Login UI" as UI
+control "Auth API" as API
+control "Auth Service" as Service
+control "Prisma Client" as Prisma
 database "PostgreSQL" as DB
 
-User -> UI : 1. Nhập email, mật khẩu\nvà nhấn Đăng nhập
-UI -> LoginAPI : 2. POST /api/auth/login\n{ email, password }
-activate LoginAPI
+User -> UI : 1. Nhập email + mật khẩu
+UI -> API : 2. POST /api/auth/login
+API -> Service : 3. login(email, password)
+Service -> Prisma : 4. findUnique(User by email)
+Prisma -> DB : 5. SELECT User
+Service -> Service : 6. verifyPassword()
 
-LoginAPI -> DB : 3. findUnique({ email })
-DB --> LoginAPI : 4. user + passwordHash
-LoginAPI -> LoginAPI : 5. verifyPassword(password, passwordHash)
+alt Sai email / mật khẩu
+    Service --> API : 7a. Authentication failed
+    API --> UI : 8a. 401 + error
+    UI --> User : 9a. Hiển thị lỗi
+else Thông tin hợp lệ
+    Service -> Prisma : 7b. create Session(tokenHash, expiresAt)
+    Prisma -> DB : 8b. INSERT Session
+    Service --> API : 9b. Authenticated user + session token
+    API --> UI : 10b. 200 + Set-Cookie lsoul_session
 
-alt Email hoặc mật khẩu không đúng
-    LoginAPI --> UI : 6. 401 - Email hoặc mật khẩu không đúng
-    UI --> User : 7. Hiển thị thông báo lỗi
-else Thông tin đăng nhập hợp lệ
-    LoginAPI -> Auth : 8. createSession(user.id)
-    activate Auth
-    Auth -> Auth : 9. Sinh token ngẫu nhiên\nSHA-256 token\nexpiresAt +30 ngày
-    Auth -> DB : 10. INSERT Session(tokenHash, userId, expiresAt)
-    DB --> Auth : 11. Session đã lưu
-    Auth --> LoginAPI : 12. Cookie lsoul_session\nhttpOnly, sameSite=lax
-    deactivate Auth
-    LoginAPI --> UI : 13. 200 user + Set-Cookie
-    deactivate LoginAPI
-
-    UI -> AccountAPI : 14. GET /api/account/state\n(kèm cookie session)
-    activate AccountAPI
-    AccountAPI -> Auth : 15. getCurrentUser()
-    activate Auth
-    Auth -> DB : 16. Tìm Session theo tokenHash + user
-    DB --> Auth : 17. Session + User
-    Auth --> AccountAPI : 18. Current user
-    deactivate Auth
-    AccountAPI -> DB : 19. Tải wishlist, cart, orders, addresses
-    DB --> AccountAPI : 20. Trạng thái tài khoản
-    AccountAPI --> UI : authenticated + account state
-    deactivate AccountAPI
-
-    UI --> User : 21. Redirect tới next hoặc /account
+    UI -> API : 11b. GET /api/account/state
+    API -> Service : 12b. getCurrentUser()
+    Service -> Prisma : 13b. find Session + User
+    Prisma -> DB : 14b. SELECT Session/User/account state
+    Service --> API : 15b. User + account state
+    API --> UI : 16b. authenticated=true
+    UI --> User : 17b. Redirect next hoặc /account
 end
 
 @enduml
