@@ -1,20 +1,64 @@
-# Draw.io diagrams
+# UML diagrams – LSOUL
 
-Các file trong thư mục này là file **.drawio editable trực tiếp** bằng diagrams.net / draw.io.
+Toàn bộ sơ đồ trong thư mục này là file **.drawio editable trực tiếp** bằng diagrams.net / draw.io.
 
-## Batch 1
+## Quy trình
 
-### Use Case
-- `usecase/UC-01-Tai-khoan.drawio`: UC01–UC08.
-- `usecase/UC-03-Yeu-thich-Thu-do-AI.drawio`: UC16–UC22.
+1. Chốt Use Case toàn hệ thống.
+2. Chia Use Case theo nhóm chức năng và actor.
+3. Hoàn thiện/duyệt toàn bộ Use Case.
+4. Sau đó mới bắt đầu Sequence Diagram.
 
-### Sequence
-- `sequence/SEQ-01-Thu-do-AI.drawio`: luồng Virtual Try-On, gồm FASHN API 1.6 và Hugging Face ZeroGPU fallback.
-- `sequence/SEQ-02-AI-Stylist-Danh-gia-Outfit.drawio`: đánh giá độ phù hợp sau khi phối đồ và feedback học gu.
+Hiện tại **chưa tạo Sequence Diagram** theo đúng quy trình trên.
 
-## Quy ước
+## Use Case tổng quan
 
-- Tên Use Case và mã UC bám theo `docs/USE_CASES.md`.
-- Không đưa Social Commerce vào phạm vi Use Case chính thức.
-- Độ phù hợp outfit là xử lý nội bộ sau UC20, không phải thuộc tính cố định của từng Product.
-- Các sơ đồ tiếp theo sẽ bổ sung theo từng nhóm để tránh một file quá lớn và khó chỉnh sửa.
+- `usecase/UC-00-Tong-quan-he-thong.drawio`
+  - Toàn bộ hệ thống.
+  - 7 actor.
+  - 6 nhóm chức năng.
+  - 36 Use Case chính.
+  - UC20.1 và UC20.2 là Use Case mở rộng của UC20.
+
+## Use Case theo nhóm
+
+- `usecase/UC-G01-Tai-khoan.drawio`
+  - UC01–UC08.
+  - Actor: Khách truy cập, Khách hàng.
+
+- `usecase/UC-G02-San-pham.drawio`
+  - UC09–UC15.
+  - Actor: Người dùng mua sắm.
+
+- `usecase/UC-G03-Phoi-do-Thu-do-AI.drawio`
+  - UC16–UC22, UC20.1, UC20.2.
+  - Actor: Người dùng mua sắm, Dịch vụ AI Try-On, Dịch vụ AI tư vấn & Stylist.
+
+- `usecase/UC-G04-Gio-hang-Don-hang-Thanh-toan.drawio`
+  - UC23–UC31.
+  - Actor: Người dùng mua sắm, Khách hàng, Dịch vụ thanh toán.
+
+- `usecase/UC-G05-Tro-ly-AI.drawio`
+  - UC32–UC34.
+  - Actor: Người dùng mua sắm, Khách hàng, Dịch vụ AI tư vấn & Stylist.
+
+- `usecase/UC-G06-Quan-tri.drawio`
+  - UC35–UC36.
+  - Actor: Quản trị viên.
+  - Có các Use Case con để thể hiện phạm vi của UC35/UC36 nhưng không tăng số Use Case chính thức.
+
+## Actor chuẩn
+
+- A01 – Người dùng mua sắm.
+- A02 – Khách truy cập.
+- A03 – Khách hàng.
+- A04 – Quản trị viên.
+- A05 – Dịch vụ AI Try-On.
+- A06 – Dịch vụ AI tư vấn & Stylist.
+- A07 – Dịch vụ thanh toán.
+
+Chi tiết và bảng mapping nằm trong `docs/USE_CASES.md`.
+
+## Sequence Diagram
+
+Chưa tạo. Sequence sẽ được xây dựng sau khi bộ Use Case phía trên được duyệt và chốt.
