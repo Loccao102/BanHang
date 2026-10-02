@@ -93,7 +93,7 @@ model User {
   wishlist     WishlistItem[]
   cartItems    CartItem[]
   orders       Order[]
-socialPosts  SocialPost[]
+  socialPosts  SocialPost[]
   socialEvents SocialEvent[]
   chatConversations ChatConversation[]
   styleProfile UserStyleProfile?
