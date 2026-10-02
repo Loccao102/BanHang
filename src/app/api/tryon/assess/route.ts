@@ -25,8 +25,7 @@ async function loadProducts(productIds: string[]) {
   const rows = await db.product.findMany({
     where: { id: { in: productIds }, active: true },
     include: {
-      variants: { where: { active: true } },
-      reviews: { where: { approved: true }, select: { rating: true } }
+      variants: { where: { active: true } }
     }
   });
   const map = new Map<string, Product>(rows.map((row) => [row.id, fromProductRow(row)]));
