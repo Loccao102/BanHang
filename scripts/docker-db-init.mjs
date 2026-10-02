@@ -12,6 +12,51 @@ function run(args) {
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
+async function waitForDatabase(databaseUrl, maxRetries = 30, delayMs = 1500) {
+  let host = "postgres";
+  let port = 5432;
+  try {
+    const parsed = new URL(databaseUrl);
+    if (parsed.hostname) host = parsed.hostname;
+    if (parsed.port) port = Number(parsed.port);
+  } catch {
+    // Keep fallback defaults
+  }
+
+  const net = await import("node:net");
+  for (let i = 1; i <= maxRetries; i++) {
+    const reachable = await new Promise((resolve) => {
+      const socket = new net.Socket();
+      socket.setTimeout(2000);
+      socket.once("connect", () => {
+        socket.destroy();
+        resolve(true);
+      });
+      socket.once("error", () => {
+        socket.destroy();
+        resolve(false);
+      });
+      socket.once("timeout", () => {
+        socket.destroy();
+        resolve(false);
+      });
+      socket.connect(port, host);
+    });
+
+    if (reachable) {
+      console.log(`Database server is reachable at ${host}:${port}.`);
+      return;
+    }
+
+    console.log(`Waiting for database server at ${host}:${port}... (attempt ${i}/${maxRetries})`);
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+
+  throw new Error(`Could not connect to database server at ${host}:${port} after ${maxRetries} attempts.`);
+}
+
+await waitForDatabase(env.DATABASE_URL);
+
 run(["prisma", "generate"]);
 run(["prisma", "db", "push"]);
 

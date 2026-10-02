@@ -23,7 +23,7 @@ main { min-height: 60vh; }
 .siteHeader { height: 76px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 4vw; border-bottom: 1px solid var(--line); background: rgba(247,245,241,.94); position: sticky; top: 0; z-index: 40; backdrop-filter: blur(18px); }
 .brand { font-family: var(--font-serif); font-size: 27px; letter-spacing: .12em; font-weight: 700; }
 .brand span { font-size: 9px; vertical-align: top; margin-left: 2px; }
-.desktopNav { display: flex; gap: 28px; font-size: 12px; text-transform: uppercase; letter-spacing: .09em; }
+.desktopNav { display: flex; gap: clamp(12px, 1.6vw, 22px); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; white-space: nowrap; }
 .desktopNav a { position: relative; padding: 8px 0; }
 .desktopNav a::after { content: ""; height: 1px; background: var(--ink); position: absolute; left: 0; right: 100%; bottom: 3px; transition: .25s; }
 .desktopNav a:hover::after { right: 0; }
@@ -413,5 +413,4 @@ html[lang="vi"] .aboutHeader h1,
 html[lang="vi"] .accountHero h1,
 html[lang="vi"] .socialHero h1{line-height:1!important;letter-spacing:-.035em!important}
 html[lang="vi"] .eyebrow,
-html[lang="vi"] .desktopNav,
-html[lang="vi"] .megaTrigger{letter-spacing:.08em}
+html[lang="vi"] .desktopNav{letter-spacing:.08em}

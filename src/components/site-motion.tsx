@@ -1,20 +1,12 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
-
-function isStorefrontPath(pathname: string) {
-  return !pathname.startsWith("/admin") && !pathname.startsWith("/checkout") && !pathname.startsWith("/login") && !pathname.startsWith("/register");
-}
+import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 
 export function SiteMotion() {
   const pathname = usePathname();
-  const router = useRouter();
-  const [transitioning, setTransitioning] = useState(false);
-  const transitionTimer = useRef<number | null>(null);
 
   useEffect(() => {
-    setTransitioning(false);
     window.scrollTo({ top: 0, behavior: "instant" });
   }, [pathname]);
 
@@ -71,42 +63,5 @@ export function SiteMotion() {
     };
   }, [pathname]);
 
-  useEffect(() => {
-    const handleClick = (event: MouseEvent) => {
-      if (!isStorefrontPath(pathname)) return;
-      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-
-      const anchor = (event.target as HTMLElement | null)?.closest("a") as HTMLAnchorElement | null;
-      if (!anchor || anchor.target === "_blank" || anchor.hasAttribute("download")) return;
-
-      const url = new URL(anchor.href, window.location.href);
-      if (url.origin !== window.location.origin) return;
-      if (url.pathname === pathname && url.search === window.location.search) return;
-      if (url.hash && url.pathname === pathname && url.search === window.location.search) return;
-      if (!isStorefrontPath(url.pathname)) return;
-
-      event.preventDefault();
-      setTransitioning(true);
-      if (transitionTimer.current) window.clearTimeout(transitionTimer.current);
-      transitionTimer.current = window.setTimeout(() => {
-        router.push(url.pathname + url.search + url.hash);
-      }, 360);
-    };
-
-    document.addEventListener("click", handleClick, true);
-    return () => {
-      document.removeEventListener("click", handleClick, true);
-      if (transitionTimer.current) window.clearTimeout(transitionTimer.current);
-    };
-  }, [pathname, router]);
-
-  return (
-    <>
-      <div className="pageScrollProgress" aria-hidden="true" />
-      <div className={`routeTransition ${transitioning ? "isActive" : ""}`} aria-hidden="true">
-        <div className="routeTransitionWord">LSOUL</div>
-        <div className="routeTransitionLine" />
-      </div>
-    </>
-  );
+  return <div className="pageScrollProgress" aria-hidden="true" />;
 }
