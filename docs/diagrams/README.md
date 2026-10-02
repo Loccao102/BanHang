@@ -79,3 +79,16 @@ FigJam không thay thế draw.io. Hai bản được duy trì song song.
 ## Sequence Diagram
 
 Chưa tạo. Sequence sẽ được xây dựng sau khi bộ Use Case phía trên được duyệt và chốt.
+
+
+## Quy chuẩn trình bày UML
+
+Toàn bộ Use Case Diagram dùng cùng một phong cách **UML classic**:
+
+- Actor người dùng/quản trị viên dùng ký hiệu stick figure và đặt ngoài system boundary.
+- Hệ thống ngoài như AI Try-On, AI Stylist, dịch vụ thanh toán đặt ngoài boundary dưới dạng external system.
+- Một system/subsystem boundary hình chữ nhật bao quanh các Use Case.
+- Use Case dùng hình ellipse nền trắng, viền đen.
+- Association dùng đường thẳng, không mũi tên.
+- `<<include>>` và `<<extend>>` dùng đường nét đứt có mũi tên.
+- Không dùng card màu, dashboard panel hoặc phong cách presentation cho sơ đồ UML chính thức.
