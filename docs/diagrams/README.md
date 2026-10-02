@@ -1,116 +1,66 @@
 # UML diagrams – LSOUL
 
-Bộ UML của dự án được duy trì **song song ở hai định dạng editable**:
+Bộ UML chính thức của dự án lưu dưới dạng **draw.io / diagrams.net** trong GitHub để version control và chỉnh sửa lâu dài.
 
-1. **draw.io / diagrams.net**  
-   - Lưu trực tiếp trong GitHub dưới dạng `.drawio`.
-   - Đây là bản nguồn chính để version control, backup và chỉnh sửa lâu dài.
+## Use Case Diagram
 
-2. **FigJam**  
-   - Dùng để review trực quan, kéo thả và chỉnh nhanh trên canvas.
-   - Mọi thay đổi quan trọng sẽ được đồng bộ lại về file `.drawio` trong GitHub.
+Toàn bộ Use Case dùng phong cách **UML classic, đơn sắc**:
 
-## Quy trình
+- Actor người dùng/quản trị viên dùng stick figure và đặt ngoài system boundary.
+- External system đặt ngoài boundary.
+- Use Case dùng ellipse nền trắng, viền đen.
+- Association dùng đường thẳng.
+- `<<include>>` và `<<extend>>` dùng nét đứt có mũi tên.
 
-1. Chốt Use Case toàn hệ thống.
-2. Chia Use Case theo nhóm chức năng và actor.
-3. Hoàn thiện/duyệt toàn bộ Use Case.
-4. Sau đó mới bắt đầu Sequence Diagram.
-5. Mỗi sơ đồ mới phải có cả:
-   - bản `.drawio` trong GitHub;
-   - bản FigJam editable.
-
-## Use Case tổng quan
+### Bộ Use Case đã hoàn tất
 
 - `usecase/UC-00-Tong-quan-he-thong.drawio`
-  - Toàn bộ hệ thống.
-  - 7 actor.
-  - 6 nhóm chức năng.
-  - 36 Use Case chính.
-  - UC20.1 và UC20.2 là Use Case mở rộng của UC20.
+- `usecase/UC-G01-Tai-khoan.drawio` — UC01–UC08
+- `usecase/UC-G02-San-pham.drawio` — UC09–UC15
+- `usecase/UC-G03-Phoi-do-Thu-do-AI.drawio` — UC16–UC22, UC20.1, UC20.2
+- `usecase/UC-G04-Gio-hang-Don-hang-Thanh-toan.drawio` — UC23–UC31
+- `usecase/UC-G05-Tro-ly-AI.drawio` — UC32–UC34
+- `usecase/UC-G06-Quan-tri.drawio` — UC35–UC36
 
-## Use Case theo nhóm
-
-- `usecase/UC-G01-Tai-khoan.drawio`
-  - UC01–UC08.
-  - Actor: Khách truy cập, Khách hàng.
-
-- `usecase/UC-G02-San-pham.drawio`
-  - UC09–UC15.
-  - Actor: Người dùng mua sắm.
-
-- `usecase/UC-G03-Phoi-do-Thu-do-AI.drawio`
-  - UC16–UC22, UC20.1, UC20.2.
-  - Actor: Người dùng mua sắm, Dịch vụ AI Try-On, Dịch vụ AI tư vấn & Stylist.
-
-- `usecase/UC-G04-Gio-hang-Don-hang-Thanh-toan.drawio`
-  - UC23–UC31.
-  - Actor: Người dùng mua sắm, Khách hàng, Dịch vụ thanh toán.
-
-- `usecase/UC-G05-Tro-ly-AI.drawio`
-  - UC32–UC34.
-  - Actor: Người dùng mua sắm, Khách hàng, Dịch vụ AI tư vấn & Stylist.
-
-- `usecase/UC-G06-Quan-tri.drawio`
-  - UC35–UC36.
-  - Actor: Quản trị viên.
-
-## Actor chuẩn
-
-- A01 – Người dùng mua sắm.
-- A02 – Khách truy cập.
-- A03 – Khách hàng.
-- A04 – Quản trị viên.
-- A05 – Dịch vụ AI Try-On.
-- A06 – Dịch vụ AI tư vấn & Stylist.
-- A07 – Dịch vụ thanh toán.
-
-Chi tiết mapping nằm trong `docs/USE_CASES.md`.
-
-## FigJam
-
-Board FigJam hiện tại:
-https://www.figma.com/board/RpD76jtjbKzyJcrJsY1vwm
-
-Tên board: `LSOUL - UML Use Cases`
-
-FigJam không thay thế draw.io. Hai bản được duy trì song song.
+Chi tiết Use Case nằm trong `docs/USE_CASES.md`.
 
 ## Sequence Diagram
 
-Sequence Diagram dùng phong cách **UML classic, đơn sắc**:
+Toàn bộ Sequence dùng phong cách **UML classic, đơn sắc**:
 
-- Actor/participant đặt ở đầu lifeline.
+- Participant/actor ở đầu lifeline.
 - Lifeline là đường dọc nét đứt.
-- Message request dùng mũi tên liền.
+- Request dùng mũi tên liền.
 - Response dùng nét đứt.
-- Có activation bar cho các thành phần đang xử lý.
-- Dùng combined fragment `alt`, `opt`, `loop` khi luồng có điều kiện/lặp.
+- Dùng `alt`, `opt` khi có điều kiện.
 - Không sử dụng màu trang trí.
+- **PostgreSQL chỉ nhận query/write; không có mũi tên đi ra từ database.**
+- Dữ liệu trả về được biểu diễn từ Service/API lên tầng gọi.
+- Prisma được thể hiện là tầng ORM/data access khi cần.
 
-### Đã tạo
+### Bộ Sequence đã hoàn tất
 
-- `sequence/SEQ-01-Dang-nhap.drawio`
-  - Luồng đăng nhập thực tế của hệ thống.
-  - Session lưu trong PostgreSQL.
-  - Cookie `lsoul_session` httpOnly.
-  - Có nhánh đăng nhập sai và đăng nhập thành công.
-  - Sau đăng nhập frontend tải lại account state trước khi redirect.
+- `sequence/SEQ-01-Dang-nhap.drawio` — UC02
+- `sequence/SEQ-02-Dang-ky-Dang-xuat.drawio` — UC01, UC03
+- `sequence/SEQ-03-Quen-va-Dat-lai-mat-khau.drawio` — UC04, UC05
+- `sequence/SEQ-04-Quan-ly-Tai-khoan.drawio` — UC06, UC07, UC08
+- `sequence/SEQ-05-Kham-pha-San-pham.drawio` — UC09–UC15
+- `sequence/SEQ-06-Yeu-thich-va-Phoi-do.drawio` — UC16–UC18
+- `sequence/SEQ-07-Thu-do-AI.drawio` — UC19, UC20, UC21, UC22
+- `sequence/SEQ-08-Danh-gia-Outfit-AI.drawio` — UC20.1, UC20.2
+- `sequence/SEQ-09-Gio-hang-va-Coupon.drawio` — UC23–UC25
+- `sequence/SEQ-10-Dat-hang.drawio` — UC26, UC27
+- `sequence/SEQ-11-Thanh-toan-VietQR.drawio` — UC28
+- `sequence/SEQ-12-Don-hang-va-Danh-gia.drawio` — UC29–UC31
+- `sequence/SEQ-13-Tro-ly-Mua-sam-AI.drawio` — UC32, UC33
+- `sequence/SEQ-14-Lich-su-Tro-chuyen-AI.drawio` — UC34
+- `sequence/SEQ-15-Quan-tri-He-thong.drawio` — UC35, UC36
 
-- `sequence/SEQ-01-Dang-nhap.puml`
-  - Source PlantUML đơn sắc tương ứng để tham khảo/chuyển đổi khi cần.
+Mapping đầy đủ UC → Sequence nằm trong `docs/diagrams/sequence/README.md`.
 
-Các Sequence tiếp theo phải giữ cùng bố cục và style với SEQ-01.
+## FigJam
 
+Board review trực quan:
+https://www.figma.com/board/RpD76jtjbKzyJcrJsY1vwm
 
-## Quy chuẩn trình bày UML
-
-Toàn bộ Use Case Diagram dùng cùng một phong cách **UML classic**:
-
-- Actor người dùng/quản trị viên dùng ký hiệu stick figure và đặt ngoài system boundary.
-- Hệ thống ngoài như AI Try-On, AI Stylist, dịch vụ thanh toán đặt ngoài boundary dưới dạng external system.
-- Một system/subsystem boundary hình chữ nhật bao quanh các Use Case.
-- Use Case dùng hình ellipse nền trắng, viền đen.
-- Association dùng đường thẳng, không mũi tên.
-- `<<include>>` và `<<extend>>` dùng đường nét đứt có mũi tên.
-- Không dùng card màu, dashboard panel hoặc phong cách presentation cho sơ đồ UML chính thức.
+File `.drawio` trong GitHub là **bản nguồn chính**. FigJam chỉ dùng để review/chỉnh trực quan khi quota MCP cho phép.
