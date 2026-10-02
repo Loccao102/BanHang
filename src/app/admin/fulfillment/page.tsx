@@ -26,7 +26,7 @@ export default function FulfillmentPage() {
     <div className="adminPanel">
       <div className="adminPanelHead"><div><p className="eyebrow">ORDER OPERATIONS</p><h2>{orders.length} đơn hàng</h2></div><Truck size={19}/></div>
       <div className="fulfillmentList">{orders.map((order)=><article key={order.id}>
-        <div><strong>#{order.id}</strong><small>{order.customer.name} · {order.customer.phone}</small><small>{formatPrice(order.total)}</small></div>
+        <div><strong><Link href={`/admin/orders/${order.id}`}>#{order.id}</Link></strong><small>{order.customer.name} · {order.customer.phone}</small><small>{formatPrice(order.total)}</small></div>
         <label><span>Trạng thái</span><select value={order.status} onChange={(event)=>updateOrderStatus(order.id,event.target.value as OrderStatus)}>{statuses.map((item)=><option value={item.value} key={item.value}>{item.label}</option>)}</select></label>
         <label><span>Thanh toán</span><select value={order.paymentStatus ?? (order.payment === "cod" ? "cod_pending" : "pending")} onChange={(event)=>updateOrderStatus(order.id,order.status,{paymentStatus:event.target.value as PaymentStatus})}>{payments.map((item)=><option value={item.value} key={item.value}>{item.label}</option>)}</select></label>
         <label><span>Đơn vị VC</span><input defaultValue={order.shippingCarrier ?? ""} placeholder="GHN / GHTK..." onBlur={(event)=>updateOrderStatus(order.id,order.status,{shippingCarrier:event.target.value,trackingCode:order.trackingCode})}/></label>

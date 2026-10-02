@@ -40,7 +40,20 @@ function blankProduct(): Product {
     fit: "Regular fit",
     active: true,
     featured: false,
-    isNew: true
+    isNew: true,
+    tryOnCategory: "tops",
+    tryOnPhotoType: "model",
+    season: ["spring", "summer"],
+    formality: 2,
+    warmth: 2,
+    stretch: 2,
+    coverage: 3,
+    colorTemperature: "neutral",
+    pairingTags: [],
+    avoidPairingTags: [],
+    styleKeywords: ["minimal"],
+    aiSearchText: "",
+    analyzerReady: false
   };
 }
 
@@ -62,7 +75,7 @@ export default function AdminPage() {
 
   const stock = catalog.reduce((sum, item) => sum + item.stock, 0);
   const inventoryValue = catalog.reduce((sum, item) => sum + item.price * item.stock, 0);
-  const revenue = orders.filter((order) => order.status !== "cancelled").reduce((sum, order) => sum + order.total, 0);
+  const revenue = orders.filter((order) => order.status !== "cancelled" && (order.paymentStatus === "paid" || (order.payment === "cod" && order.status === "completed"))).reduce((sum, order) => sum + order.total, 0);
   const lowStock = catalog.filter((item) => item.stock <= 8).toSorted((a, b) => a.stock - b.stock);
 
   if (accountLoading) return <div className="accountLoading"><div className="skeletonLine title" /><div className="skeletonBlock detailSkeleton" /></div>;
@@ -92,7 +105,7 @@ export default function AdminPage() {
     <section className="adminPage adminConsole">
       <div className="adminHero">
         <div><p className="eyebrow">LSOUL COMMERCE CONSOLE</p><h1>Store operations.</h1></div>
-        <div className="adminHeroActions"><span className={`dbStatus ${persistenceMode === "database" ? "connected" : ""}`}>{persistenceMode === "database" ? "PostgreSQL · Đã kết nối" : "Bộ nhớ trình duyệt"}</span><Link className="btn ghost small" href="/admin/customers">Khách hàng</Link><Link className="btn ghost small" href="/admin/marketing">Social & ưu đãi</Link><Link className="btn ghost small" href="/admin/fulfillment">Vận hành đơn</Link><Link className="btn ghost small" href="/">Xem cửa hàng</Link><button className="btn small" onClick={openNewProduct}><Plus size={15} /> Thêm sản phẩm</button></div>
+        <div className="adminHeroActions"><span className={`dbStatus ${persistenceMode === "database" ? "connected" : ""}`}>{persistenceMode === "database" ? "PostgreSQL · Đã kết nối" : "Bộ nhớ trình duyệt"}</span><Link className="btn ghost small" href="/admin/analytics">Analytics</Link><Link className="btn ghost small" href="/admin/ai">AI Insights</Link><Link className="btn ghost small" href="/admin/customers">Khách hàng</Link><Link className="btn ghost small" href="/admin/marketing">Social & ưu đãi</Link><Link className="btn ghost small" href="/admin/fulfillment">Vận hành đơn</Link><Link className="btn ghost small" href="/">Xem cửa hàng</Link><button className="btn small" onClick={openNewProduct}><Plus size={15} /> Thêm sản phẩm</button></div>
       </div>
 
       <div className="adminTabs">
@@ -136,7 +149,7 @@ export default function AdminPage() {
       {tab === "orders" ? <div className="adminPanel">
         <div className="adminPanelHead"><div><p className="eyebrow">ORDER MANAGEMENT</p><h2>Đơn hàng</h2></div><span className="adminHint">Đơn hàng mới từ website sẽ xuất hiện tại đây.</span></div>
         {orders.length ? <div className="adminOrderList">{orders.map((order) => <article key={order.id}>
-          <div><strong>#{order.id}</strong><small>{new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(order.createdAt))}</small></div>
+          <div><strong><Link href={`/admin/orders/${order.id}`}>#{order.id}</Link></strong><small>{new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" }).format(new Date(order.createdAt))}</small></div>
           <div><strong>{order.customer.name}</strong><small>{order.customer.phone} · {order.customer.city}</small></div>
           <div><strong>{order.items.reduce((sum, line) => sum + line.quantity, 0)} sản phẩm</strong><small>{order.payment === "qr" ? "QR chuyển khoản" : "COD"}</small></div>
           <div><strong>{formatPrice(order.total)}</strong><small>{order.customer.address}</small></div>
@@ -176,10 +189,30 @@ export default function AdminPage() {
             <label className="adminField"><span>Chất liệu</span><input value={editing.material} onChange={(event) => setEditing({ ...editing, material: event.target.value })} /></label>
             <label className="adminField"><span>Phom</span><input value={editing.fit} onChange={(event) => setEditing({ ...editing, fit: event.target.value })} /></label>
             <label className="adminField full"><span>Ảnh chính (URL)</span><input required value={editing.image} onChange={(event) => setEditing({ ...editing, image: event.target.value, images: [event.target.value, ...editing.images.slice(1)] })} /></label>
+            <label className="adminField full"><span>Gallery ảnh (mỗi URL một dòng)</span><textarea rows={4} value={editing.images.join("\n")} onChange={(event) => setEditing({ ...editing, images: event.target.value.split(/\n+/).map((item) => item.trim()).filter(Boolean) })} /></label>
+            <label className="adminField"><span>Ảnh hover</span><input value={editing.hoverImage ?? ""} onChange={(event) => setEditing({ ...editing, hoverImage: event.target.value || undefined })} /></label>
+            <label className="adminField"><span>Ảnh dùng cho Try-On</span><input value={editing.tryOnImage ?? ""} onChange={(event) => setEditing({ ...editing, tryOnImage: event.target.value || undefined })} /></label>
+
+            <div className="adminField full"><span><strong>AI & Virtual Try-On metadata</strong></span></div>
+            <label className="adminField"><span>Try-On category</span><select value={editing.tryOnCategory ?? ""} onChange={(event) => setEditing({ ...editing, tryOnCategory: (event.target.value || undefined) as Product["tryOnCategory"] })}><option value="">Chưa chọn</option><option value="tops">tops</option><option value="bottoms">bottoms</option><option value="one-pieces">one-pieces</option></select></label>
+            <label className="adminField"><span>Loại ảnh Try-On</span><select value={editing.tryOnPhotoType ?? ""} onChange={(event) => setEditing({ ...editing, tryOnPhotoType: (event.target.value || undefined) as Product["tryOnPhotoType"] })}><option value="">Chưa chọn</option><option value="model">model</option><option value="flat-lay">flat-lay</option></select></label>
+            <label className="adminField"><span>Silhouette</span><input value={editing.silhouette ?? ""} onChange={(event) => setEditing({ ...editing, silhouette: event.target.value || undefined })} /></label>
+            <label className="adminField"><span>Length class</span><input value={editing.lengthClass ?? ""} onChange={(event) => setEditing({ ...editing, lengthClass: event.target.value || undefined })} /></label>
+            <label className="adminField"><span>Neckline</span><input value={editing.neckline ?? ""} onChange={(event) => setEditing({ ...editing, neckline: event.target.value || undefined })} /></label>
+            <label className="adminField"><span>Pattern</span><input value={editing.pattern ?? ""} onChange={(event) => setEditing({ ...editing, pattern: event.target.value || undefined })} /></label>
+            <label className="adminField"><span>Mùa</span><input value={(editing.season ?? []).join(", ")} onChange={(event) => setEditing({ ...editing, season: event.target.value.split(",").map((item) => item.trim()).filter(Boolean) })} /></label>
+            <label className="adminField"><span>Nhiệt độ màu</span><select value={editing.colorTemperature ?? ""} onChange={(event) => setEditing({ ...editing, colorTemperature: (event.target.value || undefined) as Product["colorTemperature"] })}><option value="">Chưa chọn</option><option value="warm">warm</option><option value="cool">cool</option><option value="neutral">neutral</option></select></label>
+            <label className="adminField"><span>Formality (1-5)</span><input type="number" min="1" max="5" value={editing.formality ?? 2} onChange={(event) => setEditing({ ...editing, formality: Number(event.target.value) })} /></label>
+            <label className="adminField"><span>Warmth (1-5)</span><input type="number" min="1" max="5" value={editing.warmth ?? 2} onChange={(event) => setEditing({ ...editing, warmth: Number(event.target.value) })} /></label>
+            <label className="adminField"><span>Stretch (1-5)</span><input type="number" min="1" max="5" value={editing.stretch ?? 2} onChange={(event) => setEditing({ ...editing, stretch: Number(event.target.value) })} /></label>
+            <label className="adminField"><span>Coverage (1-5)</span><input type="number" min="1" max="5" value={editing.coverage ?? 3} onChange={(event) => setEditing({ ...editing, coverage: Number(event.target.value) })} /></label>
+            <label className="adminField full"><span>Pairing tags</span><input value={(editing.pairingTags ?? []).join(", ")} onChange={(event) => setEditing({ ...editing, pairingTags: event.target.value.split(",").map((item) => item.trim()).filter(Boolean) })} /></label>
+            <label className="adminField full"><span>Avoid pairing tags</span><input value={(editing.avoidPairingTags ?? []).join(", ")} onChange={(event) => setEditing({ ...editing, avoidPairingTags: event.target.value.split(",").map((item) => item.trim()).filter(Boolean) })} /></label>
+            <label className="adminField full"><span>AI search text</span><textarea rows={3} value={editing.aiSearchText ?? ""} onChange={(event) => setEditing({ ...editing, aiSearchText: event.target.value })} /></label>
             <label className="adminField"><span>Style</span><input value={editing.style.join(", ")} onChange={(event) => setEditing({ ...editing, style: event.target.value.split(",").map((item) => item.trim()).filter(Boolean) })} /></label>
             <label className="adminField"><span>Hoàn cảnh</span><input value={editing.occasion.join(", ")} onChange={(event) => setEditing({ ...editing, occasion: event.target.value.split(",").map((item) => item.trim()).filter(Boolean) })} /></label>
           </div>
-          <div className="adminChecks"><label><input type="checkbox" checked={editing.active !== false} onChange={(event) => setEditing({ ...editing, active: event.target.checked })} /> Đang bán</label><label><input type="checkbox" checked={Boolean(editing.featured)} onChange={(event) => setEditing({ ...editing, featured: event.target.checked })} /> Best seller</label><label><input type="checkbox" checked={Boolean(editing.isNew)} onChange={(event) => setEditing({ ...editing, isNew: event.target.checked })} /> New arrival</label></div>
+          <div className="adminChecks"><label><input type="checkbox" checked={editing.active !== false} onChange={(event) => setEditing({ ...editing, active: event.target.checked })} /> Đang bán</label><label><input type="checkbox" checked={Boolean(editing.featured)} onChange={(event) => setEditing({ ...editing, featured: event.target.checked })} /> Best seller</label><label><input type="checkbox" checked={Boolean(editing.isNew)} onChange={(event) => setEditing({ ...editing, isNew: event.target.checked })} /> New arrival</label><label><input type="checkbox" checked={Boolean(editing.analyzerReady)} onChange={(event) => setEditing({ ...editing, analyzerReady: event.target.checked })} /> Sẵn sàng cho AI Analyst</label></div>
           <div className="adminFormActions"><button type="button" className="btn secondary" onClick={() => setEditing(null)}>Hủy</button><button className="btn" type="submit"><Save size={15} /> Lưu sản phẩm</button></div>
         </form>
       </div> : null}

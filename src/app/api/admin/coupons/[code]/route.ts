@@ -4,16 +4,35 @@ import { getDb } from "@/lib/server/db";
 
 export const runtime = "nodejs";
 
+function dateOrNull(value: unknown) {
+  if (value === undefined) return undefined;
+  const raw = String(value ?? "").trim();
+  return raw ? new Date(raw) : null;
+}
+
 export async function PATCH(request: Request, { params }: { params: Promise<{ code: string }> }) {
   try {
     await requireAdmin();
     const db = getDb()!;
     const { code } = await params;
-    const body = await request.json() as { active?: boolean };
-
+    const body = await request.json() as {
+      active?: boolean; type?: "percentage" | "fixed"; value?: number; minOrder?: number;
+      maxDiscount?: number | null; usageLimit?: number | null; startsAt?: string | null; endsAt?: string | null;
+    };
+    const startsAt = dateOrNull(body.startsAt);
+    const endsAt = dateOrNull(body.endsAt);
     const coupon = await db.coupon.update({
       where: { code: decodeURIComponent(code).toUpperCase() },
-      data: { ...(body.active !== undefined ? { active: body.active } : {}) }
+      data: {
+        ...(body.active !== undefined ? { active: body.active } : {}),
+        ...(body.type ? { type: body.type } : {}),
+        ...(body.value !== undefined ? { value: Math.max(1, Number(body.value)) } : {}),
+        ...(body.minOrder !== undefined ? { minOrder: Math.max(0, Number(body.minOrder)) } : {}),
+        ...(body.maxDiscount !== undefined ? { maxDiscount: body.maxDiscount ? Math.max(0, Number(body.maxDiscount)) : null } : {}),
+        ...(body.usageLimit !== undefined ? { usageLimit: body.usageLimit ? Math.max(1, Number(body.usageLimit)) : null } : {}),
+        ...(startsAt !== undefined ? { startsAt } : {}),
+        ...(endsAt !== undefined ? { endsAt } : {})
+      }
     });
     return NextResponse.json({ coupon });
   } catch {
