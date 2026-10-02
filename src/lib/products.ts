@@ -1,3 +1,5 @@
+import { extendedProducts } from "./extended-products";
+
 export type ProductCategory = "tops" | "bottoms" | "outerwear" | "dress" | "set";
 
 export type ClothingType =
@@ -96,7 +98,7 @@ const common = {
   active: true
 };
 
-export const products: Product[] = [
+const coreProducts: Product[] = [
   {
     ...common,
     id: "lsoul-dydy-dress-v25021658",
@@ -570,6 +572,8 @@ export const products: Product[] = [
     analyzerReady: false
   }
 ];
+
+export const products: Product[] = [...coreProducts, ...extendedProducts];
 
 export const formatPrice = (value: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(value);
