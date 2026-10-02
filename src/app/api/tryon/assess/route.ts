@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/server/auth";
 import { getDb } from "@/lib/server/db";
 import { fromProductRow } from "@/lib/server/product-db";
 import { assessTryOnLook } from "@/lib/server/stylist-assessment";
+import { isValidOutfit } from "@/lib/wardrobe";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -47,9 +48,19 @@ export async function POST(request: Request) {
     const user = await getCurrentUser();
     let resultImage = String(body.resultImage ?? "");
     let productIds = jsonIds(body.productIds);
+    let session: {
+      id: string;
+      userId: string | null;
+      status: string;
+      productIds: unknown;
+      resultUrl: string | null;
+    } | null = null;
 
     if (db && body.tryOnSessionId) {
-      const session = await db.tryOnSession.findUnique({ where: { id: String(body.tryOnSessionId) } });
+      session = await db.tryOnSession.findUnique({
+        where: { id: String(body.tryOnSessionId) },
+        select: { id: true, userId: true, status: true, productIds: true, resultUrl: true }
+      });
       if (!session) return NextResponse.json({ error: "Phiên thử đồ không tồn tại." }, { status: 404 });
       if (session.userId && session.userId !== user?.id) {
         return NextResponse.json({ error: "Bạn không có quyền xem phiên thử đồ này." }, { status: 403 });
@@ -72,6 +83,11 @@ export async function POST(request: Request) {
     if (products.length !== productIds.length) {
       return NextResponse.json({ error: "Không đọc đủ metadata của outfit." }, { status: 400 });
     }
+    if (!isValidOutfit(products)) {
+      return NextResponse.json({
+        error: "Chỉ chấm độ phù hợp sau khi outfit hoàn chỉnh: áo + quần/chân váy (+ áo khoác), hoặc một váy/đầm."
+      }, { status: 400 });
+    }
 
     const profile = db && user
       ? await db.userStyleProfile.findUnique({ where: { userId: user.id } })
@@ -82,6 +98,48 @@ export async function POST(request: Request) {
       products,
       profile
     });
+
+    if (db && session) {
+      const score = Object.fromEntries(assessment.scores.map((item) => [item.key, item.score]));
+      await db.outfitAssessment.upsert({
+        where: { tryOnSessionId: session.id },
+        create: {
+          tryOnSessionId: session.id,
+          userId: user?.id ?? session.userId,
+          productIds,
+          overallScore: assessment.overallScore,
+          colorScore: score.color ?? 0,
+          proportionScore: score.proportion ?? 0,
+          styleScore: score.style ?? 0,
+          preferenceScore: score.preference ?? 0,
+          renderScore: score.render ?? 0,
+          verdict: assessment.verdict,
+          summary: assessment.summary,
+          positives: assessment.positives,
+          cautions: assessment.cautions,
+          suggestions: assessment.suggestions,
+          mode: assessment.mode,
+          profileConfidence: assessment.profileConfidence
+        },
+        update: {
+          userId: user?.id ?? session.userId,
+          productIds,
+          overallScore: assessment.overallScore,
+          colorScore: score.color ?? 0,
+          proportionScore: score.proportion ?? 0,
+          styleScore: score.style ?? 0,
+          preferenceScore: score.preference ?? 0,
+          renderScore: score.render ?? 0,
+          verdict: assessment.verdict,
+          summary: assessment.summary,
+          positives: assessment.positives,
+          cautions: assessment.cautions,
+          suggestions: assessment.suggestions,
+          mode: assessment.mode,
+          profileConfidence: assessment.profileConfidence
+        }
+      });
+    }
 
     return NextResponse.json({ assessment });
   } catch (error) {
