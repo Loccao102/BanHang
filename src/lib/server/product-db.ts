@@ -25,7 +25,7 @@ type ProductRow = {
   bodyShapeCompatibility: Prisma.JsonValue; pairingTags: Prisma.JsonValue; avoidPairingTags: Prisma.JsonValue;
   visualWeight: number; volume: string | null;
   styleKeywords: Prisma.JsonValue; aiSearchText: string; analyzerReady: boolean;
-  variants?: VariantRow[];;
+  variants?: VariantRow[];
 };
 
 function jsonStrings(value: Prisma.JsonValue): string[] {
