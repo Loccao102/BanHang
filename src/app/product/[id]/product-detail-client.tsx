@@ -2,22 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Check, Heart, Package, Ruler, ShoppingBag, Star, Truck } from "lucide-react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { Check, Heart, Package, Ruler, ShoppingBag, Truck } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatPrice } from "@/lib/products";
 import { useStore } from "@/components/store-provider";
 import { ProductCard } from "@/components/product-card";
 
-type ReviewView = {
-  id: string;
-  rating: number;
-  title?: string | null;
-  content: string;
-  verified: boolean;
-  createdAt: string;
-  author: string;
-};
 
 export function ProductDetailClient({ productId }: { productId: string }) {
   const { addToCart, toggleWishlist, wishlist, catalog, closeCartDrawer, user } = useStore();
@@ -25,11 +16,6 @@ export function ProductDetailClient({ productId }: { productId: string }) {
   const product = catalog.find((item) => item.id === productId && item.active !== false);
   const [size, setSize] = useState("");
   const [added, setAdded] = useState(false);
-  const [reviews, setReviews] = useState<ReviewView[]>([]);
-  const [reviewAverage, setReviewAverage] = useState(0);
-  const [reviewCount, setReviewCount] = useState(0);
-  const [canReview, setCanReview] = useState(false);
-  const [reviewMessage, setReviewMessage] = useState("");
 
   const sizeOptions = useMemo(() => {
     if (!product) return [];
@@ -44,20 +30,6 @@ export function ProductDetailClient({ productId }: { productId: string }) {
     const available = sizeOptions.find((item) => item.stock > 0)?.size ?? product.sizes[0] ?? "";
     if (!size || !product.sizes.includes(size)) setSize(available);
   }, [product, size, sizeOptions]);
-
-  async function loadReviews() {
-    const response = await fetch(`/api/products/${productId}/reviews`, { cache: "no-store" });
-    if (!response.ok) return;
-    const data = await response.json() as { reviews: ReviewView[]; average: number; count: number; canReview: boolean };
-    setReviews(data.reviews);
-    setReviewAverage(data.average);
-    setReviewCount(data.count);
-    setCanReview(data.canReview);
-  }
-
-  useEffect(() => {
-    void loadReviews();
-  }, [productId, user]);
 
   useEffect(() => {
     if (!product) return;
@@ -92,8 +64,6 @@ export function ProductDetailClient({ productId }: { productId: string }) {
   ].filter((value): value is string => typeof value === "string" && value.trim().length > 0)));
   const liked = wishlist.includes(currentProduct.id);
   const selectedStock = sizeOptions.find((item) => item.size === size)?.stock ?? 0;
-  const shownAverage = reviewCount ? reviewAverage : product.rating ?? 0;
-  const shownCount = reviewCount || product.reviewCount || 0;
 
   function add() {
     if (!user) {
@@ -117,30 +87,6 @@ export function ProductDetailClient({ productId }: { productId: string }) {
     router.push("/checkout");
   }
 
-  async function submitReview(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!user) {
-      router.push(`/login?next=${encodeURIComponent(`/product/${currentProduct.id}`)}`);
-      return;
-    }
-    const data = new FormData(event.currentTarget);
-    const response = await fetch(`/api/products/${currentProduct.id}/reviews`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        rating: Number(data.get("rating")),
-        title: data.get("title"),
-        content: data.get("content")
-      })
-    });
-    const result = await response.json();
-    setReviewMessage(response.ok ? "Cảm ơn bạn. Đánh giá đã được đăng." : result.error ?? "Không thể gửi đánh giá.");
-    if (response.ok) {
-      (event.currentTarget as HTMLFormElement).reset();
-      await loadReviews();
-    }
-  }
-
   return (
     <>
       <section className="productDetail immersiveProductDetail">
@@ -160,7 +106,6 @@ export function ProductDetailClient({ productId }: { productId: string }) {
         <div className="productInfo immersiveProductInfo"><div className="immersiveProductRail"><span>LSOUL</span><span>{product.sku ?? product.id}</span></div>
           <p className="eyebrow">{product.isNew ? "MỚI VỀ / LSOUL" : "THIẾT KẾ LSOUL"}</p>
           <h1>{product.name}</h1><p className="subtitle">{product.subtitle}</p>
-          <div className="ratingLine"><span><Star size={13} fill="currentColor" /> {shownCount ? shownAverage.toFixed(1) : "New"}</span>{shownCount ? <><span>·</span><a href="#reviews">{shownCount} đánh giá</a></> : null}</div>
           <div className="detailPrice">{formatPrice(product.price)} {product.oldPrice ? <><del>{formatPrice(product.oldPrice)}</del><span className="salePercent">-{Math.round((1 - product.price / product.oldPrice) * 100)}%</span></> : null}</div>
           <div className="optionLabel"><span>Màu</span><span>{product.color}</span></div>
           <div className="colorSwatchRow"><span className={`swatch swatch-${product.colorFamily}`} style={product.colorHex ? { backgroundColor: product.colorHex } : undefined} /><small>{product.color}</small></div>
@@ -183,15 +128,6 @@ export function ProductDetailClient({ productId }: { productId: string }) {
       </section>
 
       <section className="section relatedSection"><div className="sectionHead"><div><p className="eyebrow">PHỐI CÙNG</p><h2>Hoàn thiện bộ đồ</h2></div></div><div className="productGrid">{related.map((item) => <ProductCard product={item} key={item.id} />)}</div></section>
-
-      <section className="reviewsSection" id="reviews">
-        <div><p className="eyebrow">ĐÁNH GIÁ ĐÃ XÁC THỰC</p><h2>{shownCount ? `${shownAverage.toFixed(1)} / 5` : "Chưa có đánh giá"}</h2><p>{shownCount ? `${shownCount} đánh giá từ khách hàng` : "Hãy là người đầu tiên chia sẻ trải nghiệm."}</p></div>
-        <div className="reviewStack">
-          {canReview ? <form className="reviewForm" onSubmit={submitReview}><strong>Đánh giá sản phẩm đã mua</strong><div className="reviewFormGrid"><select name="rating" defaultValue="5"><option value="5">★★★★★ 5 sao</option><option value="4">★★★★☆ 4 sao</option><option value="3">★★★☆☆ 3 sao</option><option value="2">★★☆☆☆ 2 sao</option><option value="1">★☆☆☆☆ 1 sao</option></select><input name="title" placeholder="Tiêu đề đánh giá" /></div><textarea name="content" minLength={10} required rows={4} placeholder="Chia sẻ cảm nhận về phom, chất liệu và size..." /><button className="btn small" type="submit">Gửi đánh giá</button></form> : null}
-          {reviewMessage ? <p className="formSuccess">{reviewMessage}</p> : null}
-          <div className="reviewCards">{reviews.length ? reviews.slice(0, 6).map((review) => <article key={review.id}><div>{"★".repeat(review.rating)}{"☆".repeat(5-review.rating)}</div><strong>{review.title || "Đánh giá từ khách hàng"}</strong><p>{review.content}</p><small>{review.author}{review.verified ? " · Đã mua hàng" : ""}</small></article>) : <article><strong>Chưa có review</strong><p>Review xác thực sẽ xuất hiện sau khi khách nhận hàng và đánh giá.</p></article>}</div>
-        </div>
-      </section>
     </>
   );
 }

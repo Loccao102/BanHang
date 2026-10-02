@@ -43,8 +43,6 @@ export type Product = {
   stock: number;
   stockTracked?: boolean;
   variants?: ProductVariant[];
-  rating?: number;
-  reviewCount?: number;
   image: string;
   images: string[];
   style: string[];

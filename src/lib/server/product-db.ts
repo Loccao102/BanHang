@@ -25,7 +25,7 @@ type ProductRow = {
   bodyShapeCompatibility: Prisma.JsonValue; pairingTags: Prisma.JsonValue; avoidPairingTags: Prisma.JsonValue;
   visualWeight: number; volume: string | null;
   styleKeywords: Prisma.JsonValue; aiSearchText: string; analyzerReady: boolean;
-  variants?: VariantRow[]; reviews?: { rating: number }[];
+  variants?: VariantRow[];;
 };
 
 function jsonStrings(value: Prisma.JsonValue): string[] {
@@ -33,8 +33,6 @@ function jsonStrings(value: Prisma.JsonValue): string[] {
 }
 
 export function fromProductRow(row: ProductRow): Product {
-  const reviewCount = row.reviews?.length ?? 0;
-  const rating = reviewCount ? row.reviews!.reduce((sum, review) => sum + review.rating, 0) / reviewCount : undefined;
   return {
     id: row.id, sku: row.sku, groupCode: row.groupCode ?? undefined, name: row.name,
     subtitle: row.subtitle, category: row.category as Product["category"], type: row.type as Product["type"],
@@ -42,7 +40,7 @@ export function fromProductRow(row: ProductRow): Product {
     colorFamily: row.colorFamily as Product["colorFamily"], colorHex: row.colorHex ?? undefined,
     sizes: jsonStrings(row.sizes), stock: row.stock, stockTracked: row.stockTracked,
     variants: row.variants?.map((variant): ProductVariant => ({ id: variant.id, sku: variant.sku, size: variant.size, stock: variant.stock, active: variant.active })),
-    rating, reviewCount, image: row.image, images: jsonStrings(row.images), style: jsonStrings(row.style),
+    image: row.image, images: jsonStrings(row.images), style: jsonStrings(row.style),
     occasion: jsonStrings(row.occasion), material: row.material, fit: row.fit, featured: row.featured,
     isNew: row.isNew, active: row.active, sourceUrl: row.sourceUrl ?? undefined,
     sourceUpdatedAt: row.sourceUpdatedAt?.toISOString(), sourceType: row.sourceType as Product["sourceType"],

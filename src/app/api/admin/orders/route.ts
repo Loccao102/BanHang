@@ -15,7 +15,7 @@ export async function GET() {
     const productRows = productIds.length
       ? await db.product.findMany({
           where: { id: { in: productIds } },
-          include: { variants: true, reviews: { where: { approved: true }, select: { rating: true } } }
+          include: { variants: true }
         })
       : [];
     const productMap = new Map(productRows.map((row) => [row.id, fromProductRow(row)]));

@@ -61,7 +61,6 @@ enum BehaviorEventType {
   recommendation_reject
   order_created
   purchase
-  review
 }
 
 enum RecommendationFeedback {
@@ -94,8 +93,7 @@ model User {
   wishlist     WishlistItem[]
   cartItems    CartItem[]
   orders       Order[]
-  reviews      Review[]
-  socialPosts  SocialPost[]
+socialPosts  SocialPost[]
   socialEvents SocialEvent[]
   chatConversations ChatConversation[]
   styleProfile UserStyleProfile?
@@ -259,8 +257,7 @@ model Product {
   variants        ProductVariant[]
   wishlistItems   WishlistItem[]
   cartItems       CartItem[]
-  reviews         Review[]
-  socialLinks     SocialPostProduct[]
+socialLinks     SocialPostProduct[]
   socialEvents    SocialEvent[]
   behaviorEvents  UserBehaviorEvent[]
   affinities      ProductAffinity[]
@@ -369,32 +366,11 @@ model OrderItem {
   quantity     Int
   order        Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
   variant      ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
-  review       Review?
+?
 
   @@index([orderId])
   @@index([productId])
   @@index([variantId])
-}
-
-model Review {
-  id          String    @id @default(uuid())
-  userId      String
-  productId   String
-  orderItemId Int?      @unique
-  rating      Int
-  title       String?
-  content     String
-  images      Json
-  verified    Boolean   @default(false)
-  approved    Boolean   @default(true)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
-  orderItem   OrderItem? @relation(fields: [orderItemId], references: [id], onDelete: SetNull)
-
-  @@unique([userId, productId])
-  @@index([productId, approved])
 }
 
 model SocialPost {

@@ -10,7 +10,7 @@ const allowed = new Set<BehaviorEventType>([
   "product_view","search","wishlist_add","wishlist_remove","cart_add","cart_remove",
   "tryon_start","tryon_success","tryon_retry","tryon_reject",
   "recommendation_shown","recommendation_click","recommendation_accept","recommendation_reject",
-  "order_created","purchase","review"
+  "order_created","purchase"
 ]);
 
 export async function POST(request: Request) {

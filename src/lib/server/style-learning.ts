@@ -19,7 +19,6 @@ export const behaviorWeights: Record<BehaviorEventType, number> = {
   recommendation_reject: -3,
   order_created: 3,
   purchase: 5,
-  review: 2
 };
 
 export async function recordBehaviorEvent(args: {

@@ -12,25 +12,26 @@ export async function POST() {
     const db = getDb()!;
 
     await db.$transaction(async (tx) => {
-      await tx.socialPostProduct.deleteMany();
-      await tx.review.deleteMany();
-      await tx.cartItem.deleteMany();
-      await tx.wishlistItem.deleteMany();
-      await tx.productVariant.deleteMany();
-      await tx.product.deleteMany();
-      await tx.product.createMany({ data: products.map(toProductRow) });
-      await tx.productVariant.createMany({
-        data: products.flatMap((product) => (product.variants ?? []).map((variant) => ({
-          productId: product.id,
-          sku: variant.sku,
-          size: variant.size,
-          stock: variant.stock,
-          active: variant.active
-        })))
-      });
+      for (const product of products) {
+        const row = toProductRow(product);
+        const { id, ...data } = row;
+        await tx.product.upsert({ where: { id }, create: row, update: data });
+
+        const variants = product.variants ?? [];
+        await tx.productVariant.deleteMany({
+          where: { productId: id, size: { notIn: variants.map((item) => item.size) } }
+        });
+        for (const variant of variants) {
+          await tx.productVariant.upsert({
+            where: { productId_size: { productId: id, size: variant.size } },
+            create: { productId: id, sku: variant.sku, size: variant.size, stock: variant.stock, active: variant.active },
+            update: { sku: variant.sku, stock: variant.stock, active: variant.active }
+          });
+        }
+      }
     });
 
-    return NextResponse.json({ reset: true, count: products.length });
+    return NextResponse.json({ reset: true, count: products.length, preserved: ["orders", "cart", "wishlist", "social", "behavior", "ai"] });
   } catch {
     return NextResponse.json({ error: "Không có quyền truy cập." }, { status: 403 });
   }

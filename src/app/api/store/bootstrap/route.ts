@@ -14,8 +14,7 @@ export async function GET() {
       analyzerReady: true
     },
     include: {
-      variants: { orderBy: { size: "asc" } },
-      reviews: { where: { approved: true }, select: { rating: true } }
+      variants: { orderBy: { size: "asc" } }
     },
     orderBy: { sku: "asc" }
   });

@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       const productIds = Array.from(new Set(items.map((line) => line.product.id)));
       const products = await tx.product.findMany({
         where: { id: { in: productIds }, active: true },
-        include: { variants: true, reviews: { where: { approved: true }, select: { rating: true } } }
+        include: { variants: true }
       });
       const productMap = new Map(products.map((product) => [product.id, product]));
 
