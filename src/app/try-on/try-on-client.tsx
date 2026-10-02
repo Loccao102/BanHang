@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Camera, Check, LoaderCircle, ShoppingBag, Sparkles, Upload, WandSparkles } from "lucide-react";
+import { BrainCircuit, Camera, Check, Heart, LoaderCircle, ShoppingBag, Sparkles, ThumbsDown, ThumbsUp, Upload, WandSparkles } from "lucide-react";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { formatPrice, type Product } from "@/lib/products";
+import type { StylistAssessment } from "@/lib/stylist-assessment";
 import { normalizeOutfitSelection, outfitLabel, sortOutfitProducts, wardrobeGroup, wardrobeGroupLabels, type WardrobeGroup } from "@/lib/wardrobe";
 import { useStore } from "@/components/store-provider";
 
@@ -12,6 +13,8 @@ type ConfiguredItem = {
   productId: string;
   size: string;
 };
+
+type FeedbackReaction = "accurate" | "love" | "inaccurate";
 
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 
@@ -93,6 +96,12 @@ export function TryOnClient() {
   const [intermediate, setIntermediate] = useState<Array<{ productId: string; output: string }>>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("Chọn đồ từ mục yêu thích, tải ảnh toàn thân và bắt đầu thử.");
+  const [tryOnSessionId, setTryOnSessionId] = useState<string | null>(null);
+  const [assessment, setAssessment] = useState<StylistAssessment | null>(null);
+  const [assessmentLoading, setAssessmentLoading] = useState(false);
+  const [assessmentError, setAssessmentError] = useState("");
+  const [feedbackReaction, setFeedbackReaction] = useState<FeedbackReaction | null>(null);
+  const [feedbackSaving, setFeedbackSaving] = useState(false);
 
   useEffect(() => {
     if (!selectedIds.length && initialProducts.length) {
@@ -116,7 +125,16 @@ export function TryOnClient() {
 
   const total = selectedProducts.reduce((sum, product) => sum + product.price, 0);
 
+  function clearStylistResult() {
+    setTryOnSessionId(null);
+    setAssessment(null);
+    setAssessmentError("");
+    setFeedbackReaction(null);
+    setFeedbackSaving(false);
+  }
+
   function selectProduct(product: Product) {
+    clearStylistResult();
     setSelectedIds((current) => {
       const next = normalizeOutfitSelection(current, product, catalog);
       setConfigured((configs) => next.map((productId) => {
@@ -137,10 +155,56 @@ export function TryOnClient() {
       const encoded = await compressImage(file);
       setPersonImage(encoded);
       setResultImage(null);
+      clearStylistResult();
       setMessage("Ảnh đạt kiểm tra. Bạn có thể bắt đầu thử đồ.");
     } catch (error) {
       setPersonImage(null);
       setMessage(error instanceof Error ? error.message : "Ảnh chưa phù hợp.");
+    }
+  }
+
+  async function assessResult(output: string, sessionId: string | null, productIds: string[]) {
+    setAssessmentLoading(true);
+    setAssessment(null);
+    setAssessmentError("");
+    setFeedbackReaction(null);
+
+    try {
+      const response = await fetch("/api/tryon/assess", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tryOnSessionId: sessionId,
+          resultImage: output,
+          productIds
+        })
+      });
+      const data = await response.json() as { assessment?: StylistAssessment; error?: string };
+      if (!response.ok || !data.assessment) throw new Error(data.error ?? "AI Stylist chưa thể đánh giá outfit.");
+      setAssessment(data.assessment);
+    } catch (error) {
+      setAssessmentError(error instanceof Error ? error.message : "AI Stylist chưa thể đánh giá outfit.");
+    } finally {
+      setAssessmentLoading(false);
+    }
+  }
+
+  async function sendStylistFeedback(reaction: FeedbackReaction) {
+    if (!tryOnSessionId || feedbackReaction || feedbackSaving) return;
+    setFeedbackSaving(true);
+    try {
+      const response = await fetch("/api/tryon/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tryOnSessionId, reaction })
+      });
+      const data = await response.json() as { error?: string };
+      if (!response.ok) throw new Error(data.error ?? "Không lưu được phản hồi.");
+      setFeedbackReaction(reaction);
+    } catch (error) {
+      setAssessmentError(error instanceof Error ? error.message : "Không lưu được phản hồi.");
+    } finally {
+      setFeedbackSaving(false);
     }
   }
 
@@ -149,6 +213,7 @@ export function TryOnClient() {
     setLoading(true);
     setResultImage(null);
     setIntermediate([]);
+    clearStylistResult();
     setMessage("AI đang ghép các món đã chọn lên ảnh của bạn...");
     try {
       const response = await fetch("/api/tryon", {
@@ -160,7 +225,11 @@ export function TryOnClient() {
       if (!response.ok) throw new Error(data.error ?? "Không thể tạo ảnh thử đồ.");
       setResultImage(data.output);
       setIntermediate(data.steps ?? []);
-      setMessage("Hoàn tất. Bạn có thể chỉnh màu và cỡ trước khi mua cả bộ.");
+      const nextSessionId = typeof data.tryOnSessionId === "string" ? data.tryOnSessionId : null;
+      const resultProductIds = Array.isArray(data.productIds) ? data.productIds.map(String) : selectedIds;
+      setTryOnSessionId(nextSessionId);
+      setMessage("Hoàn tất. AI Stylist đang đánh giá độ hợp của outfit...");
+      void assessResult(data.output, nextSessionId, resultProductIds);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Có lỗi khi thử đồ.");
     } finally {
@@ -178,6 +247,7 @@ export function TryOnClient() {
     setSelectedIds((current) => current.map((id) => id === currentProduct.id ? next.id : id));
     setConfigured((current) => current.map((item) => item.productId === currentProduct.id ? { productId: next.id, size: firstSize(next) } : item));
     setResultImage(null);
+    clearStylistResult();
     setMessage("Đã đổi màu hoặc biến thể. Bấm thử lại để AI tạo ảnh theo lựa chọn mới.");
   }
 
@@ -249,6 +319,58 @@ export function TryOnClient() {
             <span className="fittingStageLabel">{resultImage ? "KẾT QUẢ AI" : "ẢNH CỦA BẠN"}</span>
           </div>
           {intermediate.length > 1 ? <div className="fittingPasses">{intermediate.map((step, index) => <div key={step.productId}><Image src={step.output} alt={`Try-on pass ${index + 1}`} fill unoptimized /><span>PASS {index + 1}</span></div>)}</div> : null}
+
+          {resultImage ? (
+            <section className="stylistAssessment" aria-live="polite">
+              <div className="stylistAssessmentHead">
+                <div className="stylistIdentity">
+                  <span><BrainCircuit size={16} /></span>
+                  <div><small>AI STYLIST</small><strong>Outfit này có hợp với bạn không?</strong></div>
+                </div>
+                {assessment ? <div className="stylistOverall"><strong>{assessment.overallScore}</strong><span>/100</span></div> : null}
+              </div>
+
+              {assessmentLoading ? (
+                <div className="stylistLoading"><LoaderCircle className="spin" size={18} /><div><strong>Đang đọc tổng thể outfit...</strong><span>Phân tích màu sắc, tỉ lệ thị giác, phong cách và gu đã học.</span></div></div>
+              ) : assessment ? (
+                <>
+                  <div className="stylistVerdict">
+                    <div><span>{assessment.verdict}</span><strong>{assessment.summary}</strong></div>
+                    <small>{assessment.mode === "vision+profile" ? "Gemini Vision + hồ sơ gu cá nhân" : "Metadata + hồ sơ gu cá nhân"}</small>
+                  </div>
+
+                  <div className="stylistScores">
+                    {assessment.scores.map((score) => (
+                      <div className="stylistScore" key={score.key}>
+                        <div><strong>{score.label}</strong><span>{score.score}/100</span></div>
+                        <div className="stylistBar"><i style={{ width: `${score.score}%` }} /></div>
+                        <small>{score.note}</small>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="stylistReasons">
+                    <div className="positive"><strong>Điểm hợp</strong><ul>{assessment.positives.map((item) => <li key={item}>{item}</li>)}</ul></div>
+                    <div className="caution"><strong>Cần cân nhắc</strong><ul>{assessment.cautions.map((item) => <li key={item}>{item}</li>)}</ul></div>
+                    <div className="suggestion"><strong>Gợi ý thử tiếp</strong><ul>{assessment.suggestions.map((item) => <li key={item}>{item}</li>)}</ul></div>
+                  </div>
+
+                  <div className="stylistFeedback">
+                    <div><strong>AI nói có đúng với bạn không?</strong><span>Phản hồi này sẽ giúp hệ thống học gu cho các lần sau.</span></div>
+                    <div>
+                      <button type="button" disabled={!tryOnSessionId || feedbackSaving || Boolean(feedbackReaction)} className={feedbackReaction === "accurate" ? "selected" : ""} onClick={() => sendStylistFeedback("accurate")}><ThumbsUp size={13} /> Chuẩn với mình</button>
+                      <button type="button" disabled={!tryOnSessionId || feedbackSaving || Boolean(feedbackReaction)} className={feedbackReaction === "love" ? "selected" : ""} onClick={() => sendStylistFeedback("love")}><Heart size={13} /> Mình thích outfit này</button>
+                      <button type="button" disabled={!tryOnSessionId || feedbackSaving || Boolean(feedbackReaction)} className={feedbackReaction === "inaccurate" ? "selected" : ""} onClick={() => sendStylistFeedback("inaccurate")}><ThumbsDown size={13} /> Chưa đúng gu</button>
+                    </div>
+                  </div>
+
+                  <p className="stylistDisclaimer">{assessment.disclaimer}</p>
+                </>
+              ) : (
+                <div className="stylistLoading error"><BrainCircuit size={18} /><div><strong>Chưa có đánh giá.</strong><span>{assessmentError || "Bạn vẫn có thể xem ảnh thử đồ và chọn sản phẩm bình thường."}</span></div></div>
+              )}
+            </section>
+          ) : null}
         </div>
       </div>
 

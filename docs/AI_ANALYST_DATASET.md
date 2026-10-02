@@ -203,3 +203,54 @@ npm run dev
 ```
 
 Lưu ý: `db:setup` chạy seed reset demo data. Không dùng trên database production có dữ liệu thật.
+
+
+## AI Stylist sau Virtual Try-On
+
+Sau khi FASHN tạo ảnh kết quả, phòng thử đồ gọi thêm:
+
+```text
+POST /api/tryon/assess
+```
+
+Pipeline:
+
+```text
+Ảnh try-on đã render
+        +
+metadata sản phẩm
+        +
+UserStyleProfile
+        ↓
+Gemini Vision (nếu có GEMINI_API_KEY)
+        ↓
+Compatibility Engine
+        ↓
+overallScore + 5 điểm thành phần + lý do + gợi ý
+```
+
+Năm điểm thành phần:
+- màu sắc;
+- tỉ lệ thị giác của outfit trong ảnh;
+- độ đồng nhất phong cách;
+- mức khớp với gu đã học;
+- độ tin cậy của ảnh render.
+
+Không dùng điểm này để khẳng định size hoặc độ vừa thực tế. AI không được suy đoán chủng tộc, sức khỏe, cân nặng hay số đo cơ thể từ ảnh.
+
+Nếu Gemini không khả dụng, hệ thống fallback sang metadata sản phẩm + hồ sơ gu để phòng thử đồ vẫn hoạt động.
+
+### Feedback học gu
+
+Người dùng có thể chọn:
+- `Chuẩn với mình`;
+- `Mình thích outfit này`;
+- `Chưa đúng gu`.
+
+API:
+
+```text
+POST /api/tryon/feedback
+```
+
+Phản hồi được lưu vào `TryOnSession.rating/accepted`. Khi người dùng đã đăng nhập, hệ thống ghi thêm behavior event có source `virtual-fitting-room-stylist` rồi rebuild `UserStyleProfile`. Raw ảnh người dùng vẫn không được ghi vào dataset học.
