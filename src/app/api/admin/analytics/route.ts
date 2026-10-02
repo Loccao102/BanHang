@@ -17,7 +17,14 @@ export async function GET() {
       db.user.count({ where: { role: "customer" } }),
       db.product.findMany({ select: { id: true, name: true, category: true, stock: true, active: true } }),
       db.orderItem.findMany({
-        where: { order: { status: { not: "cancelled" } } },
+        where: {
+          order: {
+            OR: [
+              { paymentStatus: "paid" },
+              { payment: "cod", status: "completed" }
+            ]
+          }
+        },
         select: { productId: true, productName: true, quantity: true, productPrice: true, order: { select: { createdAt: true } } }
       })
     ]);
