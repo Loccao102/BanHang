@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { products as fallbackProducts, type Product } from "@/lib/products";
 import { getDb } from "@/lib/server/db";
 import { fromProductRow } from "@/lib/server/product-db";
+import { isValidOutfit, sortOutfitProducts } from "@/lib/wardrobe";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -101,11 +102,15 @@ export async function POST(request: Request) {
     if (selected.length !== productIds.length) {
       return NextResponse.json({ error: "Có sản phẩm không còn khả dụng." }, { status: 400 });
     }
+    if (!isValidOutfit(selected)) {
+      return NextResponse.json({ error: "Outfit không hợp lệ. Hãy phối áo + quần/chân váy (+ áo khoác), hoặc chọn một váy/set riêng." }, { status: 400 });
+    }
 
+    const ordered = sortOutfitProducts(selected);
     let currentImage = modelImage;
     const steps: Array<{ productId: string; output: string }> = [];
 
-    for (const product of selected) {
+    for (const product of ordered) {
       currentImage = await runSingle(apiKey, currentImage, product.image, categoryFor(product));
       steps.push({ productId: product.id, output: currentImage });
     }
@@ -114,7 +119,7 @@ export async function POST(request: Request) {
       mode: "live",
       output: currentImage,
       steps,
-      productIds: selected.map((product) => product.id)
+      productIds: ordered.map((product) => product.id)
     });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Không thể thử đồ." }, { status: 502 });

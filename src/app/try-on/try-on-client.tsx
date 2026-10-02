@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Camera, Check, LoaderCircle, ShoppingBag, Sparkles, Upload, WandSparkles } from "lucide-react";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { formatPrice, type Product } from "@/lib/products";
+import { normalizeOutfitSelection, outfitLabel, sortOutfitProducts, wardrobeGroup, wardrobeGroupLabels, type WardrobeGroup } from "@/lib/wardrobe";
 import { useStore } from "@/components/store-provider";
 
 type ConfiguredItem = {
@@ -95,8 +96,16 @@ export function TryOnClient() {
 
   useEffect(() => {
     if (!selectedIds.length && initialProducts.length) {
-      setSelectedIds(initialProducts.map((product) => product.id));
-      setConfigured(initialProducts.map((product) => ({ productId: product.id, size: firstSize(product) })));
+      const normalized = initialProducts.reduce<string[]>(
+        (current, product) => normalizeOutfitSelection(current, product, catalog),
+        []
+      );
+      const orderedProducts = sortOutfitProducts(normalized.flatMap((id) => {
+        const product = catalog.find((item) => item.id === id);
+        return product ? [product] : [];
+      }));
+      setSelectedIds(orderedProducts.map((product) => product.id));
+      setConfigured(orderedProducts.map((product) => ({ productId: product.id, size: firstSize(product) })));
     }
   }, [initialProducts, selectedIds.length]);
 
@@ -109,17 +118,13 @@ export function TryOnClient() {
 
   function selectProduct(product: Product) {
     setSelectedIds((current) => {
-      if (current.includes(product.id)) {
-        const next = current.filter((id) => id !== product.id);
-        setConfigured((configs) => configs.filter((item) => item.productId !== product.id));
-        return next;
-      }
-      if (current.length >= 3) {
-        setMessage("Bạn có thể thử tối đa 3 món trong một lần.");
-        return current;
-      }
-      setConfigured((configs) => [...configs, { productId: product.id, size: firstSize(product) }]);
-      return [...current, product.id];
+      const next = normalizeOutfitSelection(current, product, catalog);
+      setConfigured((configs) => next.map((productId) => {
+        const existing = configs.find((item) => item.productId === productId);
+        const nextProduct = catalog.find((item) => item.id === productId);
+        return existing ?? { productId, size: nextProduct ? firstSize(nextProduct) : "" };
+      }));
+      return next;
     });
     setResultImage(null);
   }
@@ -211,21 +216,29 @@ export function TryOnClient() {
           </div>
 
           <div className="fittingStep">
-            <div className="fittingStepHead"><span>02</span><div><strong>Wishlist của bạn</strong><small>Chọn tối đa 3 món</small></div><Sparkles size={17} /></div>
-            <div className="fittingWishlist">
-              {fallbackProducts.map((product) => (
-                <button className={selectedIds.includes(product.id) ? "active" : ""} key={product.id} onClick={() => selectProduct(product)}>
-                  <div><Image src={product.image} alt={product.name} fill sizes="76px" /></div>
-                  <span><strong>{product.name}</strong><small>{product.color} · {formatPrice(product.price)}</small></span>
-                  <i>{selectedIds.includes(product.id) ? <Check size={12} /> : "+"}</i>
-                </button>
-              ))}
+            <div className="fittingStepHead"><span>02</span><div><strong>Tủ đồ đã lưu</strong><small>Áo + quần/chân váy (+ áo khoác), hoặc váy/set riêng</small></div><Sparkles size={17} /></div>
+            <div className="fittingLookSummary"><span>LOOK</span><strong>{outfitLabel(selectedProducts)}</strong></div>
+            <div className="fittingWishlist fittingWardrobeGroups">
+              {(["tops", "bottoms", "dresses", "outerwear", "sets"] as WardrobeGroup[]).map((group) => {
+                const grouped = fallbackProducts.filter((product) => wardrobeGroup(product) === group);
+                if (!grouped.length) return null;
+                return <div className="fittingWardrobeGroup" key={group}>
+                  <div className="fittingWardrobeGroupTitle">{wardrobeGroupLabels[group]}</div>
+                  {grouped.map((product) => (
+                    <button className={selectedIds.includes(product.id) ? "active" : ""} key={product.id} onClick={() => selectProduct(product)}>
+                      <div><Image src={product.image} alt={product.name} fill sizes="76px" /></div>
+                      <span><strong>{product.name}</strong><small>{product.color} · {formatPrice(product.price)}</small></span>
+                      <i>{selectedIds.includes(product.id) ? <Check size={12} /> : "+"}</i>
+                    </button>
+                  ))}
+                </div>;
+              })}
             </div>
           </div>
 
           <button className="btn block fittingRun" disabled={!personImage || !selectedIds.length || loading} onClick={runTryOn}>
             {loading ? <LoaderCircle className="spin" size={17} /> : <WandSparkles size={17} />}
-            {loading ? "Đang tạo fitting..." : `Thử ${selectedIds.length} món bằng AI`}
+            {loading ? "Đang tạo fitting..." : `Thử ${outfitLabel(selectedProducts)} bằng AI`}
           </button>
           <p className="fittingStatus">{message}</p>
         </aside>
