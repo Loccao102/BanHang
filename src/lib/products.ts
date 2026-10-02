@@ -1,4 +1,5 @@
 import { extendedProducts } from "./extended-products";
+import { flatlayProducts } from "./flatlay-products";
 
 export type ProductCategory = "tops" | "bottoms" | "outerwear" | "dress" | "set";
 
@@ -573,7 +574,7 @@ const coreProducts: Product[] = [
   }
 ];
 
-export const products: Product[] = [...coreProducts, ...extendedProducts];
+export const products: Product[] = [...coreProducts, ...flatlayProducts, ...extendedProducts];
 
 export const formatPrice = (value: number) =>
   new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(value);

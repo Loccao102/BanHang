@@ -49,7 +49,7 @@ function fallbackReply(message: string, products: Product[], hasOrderContext: bo
   }
 
   if (products.length) {
-    const names = products.slice(0, 3).map((p) => p.name).join(", ");
+    const names = Array.from(new Set(products.slice(0, 3).map((p) => `${p.name} (${p.color})`))).join(", ");
     return `Dạ LSOUL tìm thấy các thiết kế rất hợp gu của bạn (${names}). Bạn có thể bấm vào sản phẩm để xem chi tiết hoặc bấm "Thêm giỏ" để lưu ngay nhé!`;
   }
 

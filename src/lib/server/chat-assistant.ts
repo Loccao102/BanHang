@@ -14,10 +14,15 @@ const typeKeywords: Array<[string[], Product["type"]]> = [
   [["corset"],"corset"],[["crop","croptop"],"crop-top"],[["bodysuit"],"bodysuit"],
   [["blouse"],"blouse"],[["sơ mi","shirt"],"shirt"],[["knit"],"knit-top"],
   [["blazer"],"blazer"],[["jacket","áo khoác"],"jacket"],[["cardigan"],"cardigan"],
-  [["jeans","quần jean"],"jeans"],[["quần tây","trousers"],"trousers"],
-  [["quần loe","flare"],"flare-pants"],[["short"],"shorts"],[["chân váy","skirt"],"skirt"],
-  [["bodycon"],"bodycon-dress"],[["maxi"],"maxi-dress"],[["midi"],"midi-dress"],
-  [["mini dress","đầm mini","váy mini"],"mini-dress"],[["set","matching"],"set"]
+  [["jeans","quần jean","quần bò"],"jeans"],
+  [["quần tây","quần âu","quần ống suông","quần suông","quần vải","trousers"],"trousers"],
+  [["quần loe","flare"],"flare-pants"],
+  [["quần short","quần đùi","quần cộc","short","shorts"],"shorts"],
+  [["chân váy","skirt"],"skirt"],
+  [["bodycon","body","váy body","đầm body","ôm body","dáng ôm","ôm sát"],"bodycon-dress"],
+  [["maxi","dáng dài","váy dài","đầm dài"],"maxi-dress"],
+  [["midi"],"midi-dress"],
+  [["mini dress","đầm mini","váy mini","ngắn"],"mini-dress"],[["set","matching"],"set"]
 ];
 
 export function parseBudget(text: string) {
@@ -53,13 +58,21 @@ export function retrieveProducts(
   const budget = parseBudget(text);
   const colors = Object.entries(colorKeywords).filter(([word]) => text.includes(word)).map(([, value]) => value);
   const requestedTypes = typeKeywords.filter(([words]) => words.some((word) => text.includes(word))).map(([, type]) => type);
+  const wantsLong = text.includes("dài") || text.includes("maxi");
+  const wantsShort = text.includes("ngắn") || text.includes("mini");
+
+  // Specific garment intent detection
+  const wantsPants = (text.includes("quần") || text.includes("jeans") || text.includes("trousers") || text.includes("pants")) && !text.includes("chân váy");
+  const wantsSkirt = text.includes("chân váy") || text.includes("skirt");
+  const wantsDress = (text.includes("đầm") || text.includes("dress") || (text.includes("váy") && !wantsSkirt && !wantsPants));
+  const wantsTop = (text.includes("áo") || text.includes("corset") || text.includes("croptop") || text.includes("sơ mi") || text.includes("blazer") || text.includes("bodysuit")) && !wantsPants && !wantsDress && !wantsSkirt;
 
   const category: Product["category"] | undefined =
-    text.includes("chân váy") || text.includes("quần") || text.includes("jeans") ? "bottoms" :
-    text.includes("đầm") || text.includes("váy") || text.includes("dress") ? "dress" :
+    wantsPants || wantsSkirt ? "bottoms" :
+    wantsDress ? "dress" :
     text.includes("áo khoác") || text.includes("blazer") || text.includes("jacket") || text.includes("cardigan") ? "outerwear" :
     text.includes("set") ? "set" :
-    text.includes("áo") || text.includes("corset") || text.includes("top") || text.includes("bodysuit") ? "tops" : undefined;
+    wantsTop ? "tops" : undefined;
 
   const refinement = /(đổi|doi|khác|khac|màu|mau|rẻ hơn|re hon|đắt hơn|dat hon|cái khác|cai khac)/.test(text);
   const contextTypes = new Set(contextProducts.map((item) => item.type));
@@ -82,7 +95,41 @@ export function retrieveProducts(
       let score = 0;
       if (category && item.category === category) score += 8;
       if (requestedTypes.includes(item.type)) score += 12;
-      if (colors.includes(item.colorFamily)) score += 7;
+
+      // Strict garment type exclusivity
+      const isPantsItem = ["trousers", "jeans", "flare-pants", "shorts"].includes(item.type);
+      const isSkirtItem = item.type === "skirt";
+      const isDressItem = item.category === "dress";
+      const isTopItem = item.category === "tops" || item.category === "outerwear";
+
+      if (wantsPants) {
+        if (isPantsItem) score += 18;
+        if (isSkirtItem || isDressItem || isTopItem) score -= 60;
+      } else if (wantsSkirt) {
+        if (isSkirtItem) score += 18;
+        if (isPantsItem || isDressItem || isTopItem) score -= 60;
+      } else if (wantsDress) {
+        if (isDressItem) score += 18;
+        if (isPantsItem || isSkirtItem || isTopItem) score -= 60;
+      } else if (wantsTop) {
+        if (isTopItem) score += 18;
+        if (isPantsItem || isSkirtItem || isDressItem) score -= 60;
+      }
+
+      if (colors.includes(item.colorFamily)) {
+        score += 8;
+        // Prioritize exact single-color matches over multi-color descriptions
+        if (!item.color.includes("/")) score += 4;
+      }
+      if (wantsLong) {
+        if (item.lengthClass === "maxi" || item.type === "maxi-dress" || (isPantsItem && item.type !== "shorts")) score += 10;
+        else if (item.lengthClass === "midi" || item.type === "midi-dress") score += 5;
+        else if (item.lengthClass === "mini" || item.type === "mini-dress" || item.type === "shorts") score -= 14;
+      }
+      if (wantsShort) {
+        if (item.lengthClass === "mini" || item.type === "mini-dress" || item.type === "shorts") score += 10;
+        else if (item.lengthClass === "maxi" || item.type === "maxi-dress" || item.type === "trousers") score -= 14;
+      }
       if (occasionGroups.some((group) => group.some((occasion) => item.occasion.some((value) => value.toLowerCase().includes(occasion))))) score += 6;
       if (budget) score += item.price <= budget ? 5 : -8;
       const searchable = (item.aiSearchText || [item.name, item.subtitle, ...item.style, ...item.occasion].join(" "))
