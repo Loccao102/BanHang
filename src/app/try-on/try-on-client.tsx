@@ -216,10 +216,10 @@ export function TryOnClient() {
           </div>
 
           <div className="fittingStep">
-            <div className="fittingStepHead"><span>02</span><div><strong>Tủ đồ đã lưu</strong><small>Áo + quần/chân váy (+ áo khoác), hoặc váy/set riêng</small></div><Sparkles size={17} /></div>
+            <div className="fittingStepHead"><span>02</span><div><strong>Tủ đồ đã lưu</strong><small>Áo + quần/chân váy (+ áo khoác), hoặc váy/đầm riêng</small></div><Sparkles size={17} /></div>
             <div className="fittingLookSummary"><span>BỘ ĐỒ</span><strong>{outfitLabel(selectedProducts)}</strong></div>
             <div className="fittingWishlist fittingWardrobeGroups">
-              {(["tops", "bottoms", "dresses", "outerwear", "sets"] as WardrobeGroup[]).map((group) => {
+              {(["tops", "bottoms", "dresses", "outerwear"] as WardrobeGroup[]).map((group) => {
                 const grouped = fallbackProducts.filter((product) => wardrobeGroup(product) === group);
                 if (!grouped.length) return null;
                 return <div className="fittingWardrobeGroup" key={group}>

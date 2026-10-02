@@ -143,7 +143,13 @@ export async function POST(request: Request) {
     return product ? [product] : [];
   });
 
-  const initiallyFound = retrieveProducts(message, catalog, 5, contextProducts);
+  const affinityRows = user && db ? await db.productAffinity.findMany({
+    where: { userId: user.id },
+    select: { productId: true, score: true }
+  }) : [];
+  const affinityScores = new Map(affinityRows.map((item) => [item.productId, item.score]));
+
+  const initiallyFound = retrieveProducts(message, catalog, 5, contextProducts, affinityScores);
   const plan = buildAgentPlan({
     message,
     found: initiallyFound,

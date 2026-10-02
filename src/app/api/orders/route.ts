@@ -6,6 +6,7 @@ import { couponDiscount, couponIsUsable } from "@/lib/server/coupon";
 import { getDb } from "@/lib/server/db";
 import { fromProductRow } from "@/lib/server/product-db";
 import { serializeOrder } from "@/lib/server/order-serializer";
+import { recordBehaviorEvent, rebuildUserStyleProfile } from "@/lib/server/style-learning";
 
 export const runtime = "nodejs";
 
@@ -131,6 +132,20 @@ export async function POST(request: Request) {
       const hydratedProducts = new Map(products.map((product) => [product.id, fromProductRow(product)]));
       return serializeOrder(order, hydratedProducts);
     }, { isolationLevel: "Serializable" });
+
+    if (currentUser) {
+      for (const line of items) {
+        await recordBehaviorEvent({
+          db,
+          userId: currentUser.id,
+          productId: line.product.id,
+          type: "order_created",
+          source: "checkout",
+          metadata: { orderId: created.id, quantity: line.quantity, size: line.size }
+        });
+      }
+      await rebuildUserStyleProfile(db, currentUser.id);
+    }
 
     return NextResponse.json({ saved: true, order: created }, { status: 201 });
   } catch (error) {

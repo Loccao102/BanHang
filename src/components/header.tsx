@@ -17,6 +17,17 @@ const nav = [
   ["Giảm giá", "/shop?sale=1"]
 ];
 
+const megaGroups = [
+  {
+    title: "Mua sắm",
+    links: [["Mới về", "/shop?sort=new"], ["Đầm", "/shop?category=dress"], ["Áo / corset", "/shop?category=tops"], ["Quần & chân váy", "/shop?category=bottoms"], ["Áo khoác", "/shop?category=outerwear"], ["Đang giảm giá", "/shop?sale=1"]]
+  },
+  {
+    title: "Khám phá",
+    links: [["Cộng đồng LSOUL", "/social"], ["Phòng thử đồ AI", "/try-on"], ["Được yêu thích", "/shop?sort=featured"], ["Hướng dẫn chọn cỡ", "/size-guide"], ["Về LSOUL", "/about"]]
+  }
+];
+
 export function Header() {
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);

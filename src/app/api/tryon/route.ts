@@ -1,6 +1,9 @@
+import { createHash } from "node:crypto";
 import { NextResponse } from "next/server";
 import { products as fallbackProducts, type Product } from "@/lib/products";
 import { getDb } from "@/lib/server/db";
+import { getCurrentUser } from "@/lib/server/auth";
+import { recordBehaviorEvent, rebuildUserStyleProfile } from "@/lib/server/style-learning";
 import { fromProductRow } from "@/lib/server/product-db";
 import { isValidOutfit, sortOutfitProducts } from "@/lib/wardrobe";
 
@@ -10,6 +13,7 @@ export const maxDuration = 300;
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function categoryFor(product: Product) {
+  if (product.tryOnCategory) return product.tryOnCategory;
   if (product.category === "bottoms") return "bottoms";
   if (product.category === "dress" || product.category === "set") return "one-pieces";
   return "tops";
@@ -98,6 +102,8 @@ export async function POST(request: Request) {
     const apiKey = process.env.FASHN_API_KEY;
     if (!apiKey) return NextResponse.json({ error: "FASHN_API_KEY chưa được cấu hình." }, { status: 503 });
 
+    const db = getDb();
+    const user = await getCurrentUser();
     const selected = await getProducts(productIds);
     if (selected.length !== productIds.length) {
       return NextResponse.json({ error: "Có sản phẩm không còn khả dụng." }, { status: 400 });
@@ -107,20 +113,79 @@ export async function POST(request: Request) {
     }
 
     const ordered = sortOutfitProducts(selected);
+    const categorySequence = ordered.map(categoryFor);
+    const personImageHash = createHash("sha256").update(modelImage).digest("hex");
+    const session = db ? await db.tryOnSession.create({
+      data: {
+        userId: user?.id ?? null,
+        personImageHash,
+        productIds: ordered.map((product) => product.id),
+        categorySequence,
+        status: "processing"
+      }
+    }) : null;
+
+    if (db) {
+      for (const product of ordered) {
+        await recordBehaviorEvent({
+          db,
+          userId: user?.id,
+          productId: product.id,
+          type: "tryon_start",
+          source: "virtual-fitting-room",
+          metadata: { sessionId: session?.id, category: categoryFor(product) }
+        });
+      }
+    }
+
     let currentImage = modelImage;
     const steps: Array<{ productId: string; output: string }> = [];
 
-    for (const product of ordered) {
-      currentImage = await runSingle(apiKey, currentImage, product.image, categoryFor(product));
-      steps.push({ productId: product.id, output: currentImage });
-    }
+    try {
+      for (const product of ordered) {
+        currentImage = await runSingle(
+          apiKey,
+          currentImage,
+          product.tryOnImage ?? product.image,
+          categoryFor(product)
+        );
+        steps.push({ productId: product.id, output: currentImage });
+      }
 
-    return NextResponse.json({
-      mode: "live",
-      output: currentImage,
-      steps,
-      productIds: ordered.map((product) => product.id)
-    });
+      if (db && session) {
+        await db.tryOnSession.update({
+          where: { id: session.id },
+          data: { status: "completed", resultUrl: currentImage }
+        });
+        for (const product of ordered) {
+          await recordBehaviorEvent({
+            db,
+            userId: user?.id,
+            productId: product.id,
+            type: "tryon_success",
+            source: "virtual-fitting-room",
+            metadata: { sessionId: session.id }
+          });
+        }
+        if (user) await rebuildUserStyleProfile(db, user.id);
+      }
+
+      return NextResponse.json({
+        mode: "live",
+        output: currentImage,
+        steps,
+        productIds: ordered.map((product) => product.id),
+        tryOnSessionId: session?.id ?? null
+      });
+    } catch (error) {
+      if (db && session) {
+        await db.tryOnSession.update({
+          where: { id: session.id },
+          data: { status: "failed", errorMessage: error instanceof Error ? error.message.slice(0, 500) : "Try-on failed" }
+        }).catch(() => undefined);
+      }
+      throw error;
+    }
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Không thể thử đồ." }, { status: 502 });
   }

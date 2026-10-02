@@ -31,9 +31,9 @@ export function parseBudget(text: string) {
 }
 
 export async function loadAvailableProducts(db: PrismaClient | null): Promise<Product[]> {
-  if (!db) return fallbackProducts.filter((item) => item.active !== false && item.stock > 0);
+  if (!db) return fallbackProducts.filter((item) => item.active !== false && item.stock > 0 && item.analyzerReady !== false);
   const rows = await db.product.findMany({
-    where: { active: true, stock: { gt: 0 } },
+    where: { active: true, stock: { gt: 0 }, analyzerReady: true },
     include: {
       variants: { where: { active: true }, orderBy: { size: "asc" } },
       reviews: { where: { approved: true }, select: { rating: true } }
@@ -42,7 +42,13 @@ export async function loadAvailableProducts(db: PrismaClient | null): Promise<Pr
   return rows.map(fromProductRow);
 }
 
-export function retrieveProducts(message: string, catalog: Product[], limit = 5, contextProducts: Product[] = []) {
+export function retrieveProducts(
+  message: string,
+  catalog: Product[],
+  limit = 5,
+  contextProducts: Product[] = [],
+  affinityScores: Map<string, number> = new Map()
+) {
   const text = message.toLowerCase();
   const budget = parseBudget(text);
   const colors = Object.entries(colorKeywords).filter(([word]) => text.includes(word)).map(([, value]) => value);
@@ -59,12 +65,17 @@ export function retrieveProducts(message: string, catalog: Product[], limit = 5,
   const contextTypes = new Set(contextProducts.map((item) => item.type));
   const contextCategories = new Set(contextProducts.map((item) => item.category));
 
-  const occasions = [
-    text.includes("date") || text.includes("hẹn hò") ? "date" : "",
-    text.includes("đi làm") || text.includes("công sở") || text.includes("office") ? "work" : "",
-    text.includes("party") || text.includes("tiệc") || text.includes("bar") || text.includes("club") ? "party" : "",
-    text.includes("đi chơi") || text.includes("casual") ? "casual" : ""
-  ].filter(Boolean);
+  const occasionGroups = [
+    text.includes("date") || text.includes("hẹn hò") ? ["hẹn hò", "date"] : [],
+    text.includes("đi làm") || text.includes("công sở") || text.includes("office") ? ["đi làm", "công sở", "work"] : [],
+    text.includes("party") || text.includes("tiệc") || text.includes("bar") || text.includes("club") ? ["đi tiệc", "sự kiện buổi tối", "party"] : [],
+    text.includes("đi chơi") || text.includes("casual") || text.includes("cafe") ? ["đi chơi", "đi cafe", "casual"] : [],
+    text.includes("concert") ? ["concert"] : []
+  ].filter((group) => group.length);
+  const queryTokens = text
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .split(/[^a-z0-9]+/)
+    .filter((token) => token.length >= 3);
 
   return catalog
     .map((item) => {
@@ -72,8 +83,13 @@ export function retrieveProducts(message: string, catalog: Product[], limit = 5,
       if (category && item.category === category) score += 8;
       if (requestedTypes.includes(item.type)) score += 12;
       if (colors.includes(item.colorFamily)) score += 7;
-      if (occasions.some((occasion) => item.occasion.includes(occasion))) score += 6;
+      if (occasionGroups.some((group) => group.some((occasion) => item.occasion.some((value) => value.toLowerCase().includes(occasion))))) score += 6;
       if (budget) score += item.price <= budget ? 5 : -8;
+      const searchable = (item.aiSearchText || [item.name, item.subtitle, ...item.style, ...item.occasion].join(" "))
+        .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const tokenHits = queryTokens.filter((token) => searchable.includes(token)).length;
+      score += Math.min(6, tokenHits * 1.2);
+      score += Math.max(-4, Math.min(8, affinityScores.get(item.id) ?? 0));
       if (text.includes("sale") && item.oldPrice) score += 5;
       if (text.includes("mới") && item.isNew) score += 5;
       if (refinement && contextTypes.has(item.type)) score += 7;
@@ -82,7 +98,7 @@ export function retrieveProducts(message: string, catalog: Product[], limit = 5,
       if ((item.rating ?? 0) >= 4.5) score += 1;
       return { item, score };
     })
-    .filter(({ item, score }) => score > 0 || (!category && !requestedTypes.length && !colors.length && !occasions.length && (!budget || item.price <= budget)))
+    .filter(({ item, score }) => score > 0 || (!category && !requestedTypes.length && !colors.length && !occasionGroups.length && (!budget || item.price <= budget)))
     .sort((a, b) => b.score - a.score || (b.item.rating ?? 0) - (a.item.rating ?? 0) || a.item.price - b.item.price)
     .slice(0, limit)
     .map(({ item }) => item);
