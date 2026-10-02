@@ -6,7 +6,12 @@ WORKDIR /app
 
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# postinstall runs scripts/prisma-generate.mjs, so these files must exist
+# before npm install is executed.
 COPY package.json ./
+COPY prisma ./prisma
+COPY scripts ./scripts
+
 RUN npm install
 
 COPY . .
