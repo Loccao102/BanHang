@@ -1,20 +1,26 @@
 {
-  "name": "lsoul-social-commerce",
+  "name": "lsoul-fashion-commerce",
   "version": "0.3.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -H 0.0.0.0",
     "lint": "tsc --noEmit",
     "db:up": "docker compose up -d postgres",
-    "db:down": "docker compose down",
+    "db:down": "docker compose stop postgres",
     "db:logs": "docker compose logs -f postgres",
     "db:generate": "node scripts/prisma-generate.mjs",
     "db:setup": "node scripts/db-setup.mjs",
     "db:seed": "node scripts/db-seed.mjs",
     "db:studio": "prisma studio",
-    "postinstall": "node scripts/prisma-generate.mjs"
+    "postinstall": "node scripts/prisma-generate.mjs",
+    "db:docker:init": "node scripts/docker-db-init.mjs",
+    "docker:up": "docker compose up --build",
+    "docker:up:d": "docker compose up -d --build",
+    "docker:down": "docker compose down",
+    "docker:reset": "docker compose down -v",
+    "docker:logs": "docker compose logs -f web postgres"
   },
   "dependencies": {
     "@prisma/client": "^6.0.0",

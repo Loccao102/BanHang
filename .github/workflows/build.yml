@@ -33,3 +33,7 @@ jobs:
       - run: npm run db:setup
       - run: npm run lint
       - run: npm run build
+      - name: Validate Docker Compose
+        run: docker compose config
+      - name: Build Docker image
+        run: docker build -t lsoul-ci .

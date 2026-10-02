@@ -1,25 +1,129 @@
-# XÂY DỰNG WEBSITE THƯƠNG MẠI ĐIỆN TỬ TÍCH HỢP SOCIAL COMMERCE CHO THƯƠNG HIỆU THỜI TRANG LSOUL
+# LSOUL – Website thương mại điện tử thời trang tích hợp AI
 
-Website thương mại điện tử thời trang nữ xây dựng bằng Next.js App Router, Prisma và PostgreSQL, tập trung vào hành trình mua sắm trực tiếp kết hợp Social Commerce.
+Website thương mại điện tử thời trang xây dựng bằng Next.js App Router, Prisma và PostgreSQL, có trợ lý mua sắm AI và phòng thử đồ AI.
+
+> Phạm vi đồ án chính thức không bao gồm Social Commerce. Danh sách Use Case được chốt tại `docs/USE_CASES.md`.
 
 ## Chức năng chính
 
-- Catalog LSOUL dạng sourced snapshot: SKU/tên/giá/màu/size/ảnh có nguồn đối chiếu, không sinh màu ngẫu nhiên
-- Tìm kiếm, lọc danh mục, loại sản phẩm, màu, giá, sale và new arrivals
-- Product detail, color options, size variant, wishlist, cart, quick view
-- Đăng ký, đăng nhập, session httpOnly, hồ sơ và sổ địa chỉ
-- Cart/wishlist đồng bộ theo tài khoản
-- Checkout COD/VietQR, coupon từ database và tạo order transaction
-- SePay webhook xác minh giao dịch tự động bằng HMAC-SHA256, chống replay và chống webhook trùng
-- Kiểm tra tồn kho + trừ stock theo size trong PostgreSQL transaction
-- Lịch sử đơn hàng, payment status, carrier và tracking code
-- Review xác thực dành cho khách có đơn đã hoàn tất
-- LSOUL Social feed, UGC, product tagging, shop-the-look và share tracking
-- LSOUL Stylist AI với lịch sử hội thoại theo tài khoản, nhiều conversation, rename/delete/resume và product recommendation từ catalog thật
-- Admin quản lý sản phẩm, tồn kho, đơn hàng, khách hàng, coupon và nội dung social
-- PostgreSQL + Prisma, CI chạy với PostgreSQL 16
+- Catalog sản phẩm LSOUL có nguồn đối chiếu: SKU, tên, giá, màu, cỡ và ảnh.
+- Tìm kiếm, lọc, sắp xếp và xem chi tiết sản phẩm.
+- Yêu thích theo nhóm: áo/corset, quần & chân váy, váy/đầm, áo khoác, set nguyên bộ.
+- Phối đồ từ danh sách yêu thích và thử đồ bằng FASHN.
+- Giỏ hàng, mã giảm giá, checkout COD/VietQR.
+- SePay webhook xác minh thanh toán.
+- Tài khoản, hồ sơ, sổ địa chỉ, đổi mật khẩu và đặt lại mật khẩu.
+- Lịch sử đơn hàng, trạng thái thanh toán, vận chuyển và đánh giá sản phẩm.
+- Trợ lý mua sắm AI dùng Gemini, có lịch sử hội thoại.
+- Admin quản lý sản phẩm, tồn kho, đơn hàng, khách hàng và mã giảm giá.
 
-## Chạy local
+## Biến môi trường
+
+Sao chép file mẫu:
+
+```bash
+cp .env.example .env
+```
+
+Trên Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Các biến chính:
+
+```env
+DATABASE_URL="postgresql://lsoul:lsoul_dev@localhost:5432/lsoul?schema=public"
+
+POSTGRES_USER=lsoul
+POSTGRES_PASSWORD=lsoul_dev
+POSTGRES_DB=lsoul
+POSTGRES_PORT=5432
+APP_PORT=3000
+
+GEMINI_API_KEY=
+FASHN_API_KEY=
+
+NEXT_PUBLIC_BANK_ID=MB
+NEXT_PUBLIC_BANK_ACCOUNT=0123456789
+NEXT_PUBLIC_BANK_ACCOUNT_NAME=LSOUL
+SEPAY_WEBHOOK_SECRET=
+```
+
+Không commit file `.env` có secret thật lên GitHub.
+
+---
+
+# Cách 1 – Chạy toàn bộ bằng Docker
+
+Đây là cách đơn giản nhất để demo đồ án.
+
+```bash
+docker compose up --build
+```
+
+Hoặc chạy nền:
+
+```bash
+npm run docker:up:d
+```
+
+Mở:
+
+```text
+http://localhost:3000
+```
+
+Docker Compose gồm 3 service:
+
+```text
+postgres
+   ↓ healthcheck
+db-init
+   ↓ prisma db push
+   ↓ chỉ seed khi database hoàn toàn trống
+web
+   ↓ Next.js production server
+```
+
+### Quan trọng về dữ liệu
+
+`db-init` **không seed lại khi database đã có dữ liệu**. Vì vậy chạy lại:
+
+```bash
+docker compose down
+docker compose up -d
+```
+
+không làm mất đơn hàng, tài khoản hoặc dữ liệu đã phát sinh.
+
+Muốn xóa toàn bộ database Docker và tạo lại dữ liệu demo:
+
+```bash
+npm run docker:reset
+npm run docker:up
+```
+
+Lệnh `docker:reset` dùng `docker compose down -v`, nên sẽ xóa volume PostgreSQL.
+
+### Log Docker
+
+```bash
+npm run docker:logs
+```
+
+### Tắt toàn bộ stack
+
+```bash
+npm run docker:down
+```
+
+---
+
+# Cách 2 – Chạy Next.js local, PostgreSQL bằng Docker
+
+Phù hợp khi đang code vì Next.js có hot reload.
 
 ```bash
 npm install
@@ -28,27 +132,90 @@ npm run db:setup
 npm run dev
 ```
 
-Mở http://localhost:3000
-
-```env
-DATABASE_URL="postgresql://lsoul:lsoul_dev@localhost:5432/lsoul?schema=public"
-```
-
-Dữ liệu seed dùng snapshot sản phẩm LSOUL có nguồn đối chiếu, cùng size variants, tài khoản demo, địa chỉ, cart, wishlist, order, coupon, review và social posts.
-
-### Tài khoản seed
+Mở:
 
 ```text
-Admin
-admin@lsoul.local
-Admin@123456
-
-Customer
-linh@lsoul.local
-Lsoul@123456
+http://localhost:3000
 ```
 
-## Lệnh database
+Trong chế độ này:
+
+```text
+Next.js: localhost:3000
+PostgreSQL: localhost:5432
+DATABASE_URL: postgresql://lsoul:lsoul_dev@localhost:5432/lsoul?schema=public
+```
+
+Lưu ý: `npm run db:setup` có seed dữ liệu demo và phù hợp khi khởi tạo môi trường phát triển. Không dùng lệnh này trên database có dữ liệu cần giữ.
+
+Tắt riêng PostgreSQL:
+
+```bash
+npm run db:down
+```
+
+---
+
+# Cách 3 – Chạy hoàn toàn local
+
+Nếu máy đã cài PostgreSQL, chỉ cần sửa `DATABASE_URL` trong `.env`:
+
+```env
+DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/DB_NAME?schema=public"
+```
+
+Sau đó:
+
+```bash
+npm install
+npm run db:setup
+npm run dev
+```
+
+---
+
+## Local và Docker khác nhau ở đâu?
+
+Code ứng dụng không thay đổi. Chỉ khác hostname database:
+
+```text
+Local:
+localhost:5432
+
+Trong Docker network:
+postgres:5432
+```
+
+`docker-compose.yml` tự tạo `DATABASE_URL` nội bộ cho `db-init` và `web`, nên file `.env` vẫn giữ URL local để `npm run dev` hoạt động bình thường.
+
+## Các dịch vụ ngoài
+
+Các dịch vụ này không chạy container riêng vì chúng là API bên ngoài:
+
+- Gemini → `GEMINI_API_KEY`
+- FASHN → `FASHN_API_KEY`
+- VietQR → cấu hình `NEXT_PUBLIC_BANK_*`
+- SePay → `SEPAY_WEBHOOK_SECRET`
+
+Cả local và Docker đều đọc cùng bộ biến môi trường.
+
+### NEXT_PUBLIC và Docker
+
+Các biến `NEXT_PUBLIC_BANK_*` được Next.js nhúng vào bundle lúc build. Khi thay thông tin ngân hàng trong `.env`, cần build lại:
+
+```bash
+docker compose up -d --build
+```
+
+Các secret server-side như Gemini, FASHN và SePay chỉ cần restart container nếu thay đổi:
+
+```bash
+docker compose up -d
+```
+
+## Prisma / database
+
+Các lệnh phát triển:
 
 ```bash
 npm run db:up
@@ -57,92 +224,50 @@ npm run db:seed
 npm run db:studio
 ```
 
-## Vercel
+Docker full stack dùng:
 
-Cấu hình một PostgreSQL hosted và thêm `DATABASE_URL` vào Environment Variables của Vercel. Không chạy lại sample seed khi database đã có dữ liệu khách hàng thật.
+```bash
+npm run db:docker:init
+```
 
-## AI mở rộng
+Script này:
 
-`GEMINI_API_KEY` và `FASHN_API_KEY` vẫn được giữ làm điểm mở rộng cho shopping assistant và virtual try-on sau khi phần ecommerce/social commerce hoàn thiện.
+1. chạy `prisma generate`;
+2. chạy `prisma db push`;
+3. kiểm tra dữ liệu;
+4. chỉ seed khi cả bảng sản phẩm và người dùng đều đang trống.
 
-
-## Thanh toán VietQR + SePay
-
-Luồng QR production:
+## Tài khoản demo
 
 ```text
-Tạo order
-→ sinh VietQR theo đúng tổng tiền + nội dung = Order ID
-→ khách chuyển khoản
-→ SePay nhận biến động số dư
-→ POST /api/payments/sepay/webhook
-→ verify HMAC-SHA256
-→ deduplicate transaction ID
-→ đối chiếu Order ID + số tiền
-→ paymentStatus = paid
-→ order status = confirmed
-→ checkout tự nhận trạng thái thành công
+Admin
+admin@lsoul.local
+Admin@123456
+
+Khách hàng
+linh@lsoul.local
+Lsoul@123456
 ```
 
-Biến môi trường trên Vercel:
+## CI
 
-```env
-NEXT_PUBLIC_BANK_ID=MB
-NEXT_PUBLIC_BANK_ACCOUNT=...
-NEXT_PUBLIC_BANK_ACCOUNT_NAME=LSOUL
-SEPAY_WEBHOOK_SECRET=...
-```
-
-Trên SePay tạo webhook:
-
-- URL: `https://<domain>/api/payments/sepay/webhook`
-- Sự kiện: tiền vào
-- Authentication: HMAC-SHA256
-- Nên lọc mã thanh toán theo tiền tố `LS`
-- Lưu Secret Key của webhook vào `SEPAY_WEBHOOK_SECRET`
-- Dùng chức năng gửi thử/Test mode trước, sau đó thử lại bằng một giao dịch thật.
-
-Webhook không đánh dấu thanh toán nếu sai số tiền, sai mã đơn, đơn COD hoặc đơn đã hủy. Mọi giao dịch nhận được đều được lưu trong `PaymentTransaction` để đối soát và chống xử lý trùng.
-
-
-## LSOUL Stylist AI
-
-Chatbot được mount toàn website và dùng `GEMINI_API_KEY` cho natural-language response.
-
-Dữ liệu nghiệp vụ không do model tự suy đoán:
-
-- Catalog, giá, tồn kho theo size và review lấy từ PostgreSQL.
-- Khi người dùng hỏi về đơn hàng, chatbot chỉ đọc tối đa các đơn thuộc chính tài khoản đang đăng nhập.
-- Product cards trong chat dẫn tới product detail và có thể thêm nhanh size còn hàng vào giỏ.
-- User đăng nhập có nhiều cuộc trò chuyện lưu trong `ChatConversation` / `ChatMessage`.
-- Có New chat, tự đặt tiêu đề từ tin nhắn đầu, mở lại history, đổi tên và xóa conversation.
-- Guest vẫn chat được; lịch sử guest lưu cục bộ trên trình duyệt.
-- Nếu Gemini tạm không khả dụng, hệ thống vẫn trả fallback dựa trên product retrieval của catalog.
-
-Các API chính:
+GitHub Actions vẫn dùng PostgreSQL 16 riêng và thực hiện:
 
 ```text
-POST   /api/chat
-GET    /api/chat/conversations
-POST   /api/chat/conversations
-GET    /api/chat/conversations/:id
-PATCH  /api/chat/conversations/:id
-DELETE /api/chat/conversations/:id
+npm install
+npm run db:setup
+npm run lint
+npm run build
 ```
 
-Biến môi trường:
+CI dùng database tạm nên việc seed lại không ảnh hưởng dữ liệu thật.
 
-```env
-GEMINI_API_KEY=...
+## Use Case đồ án
+
+Xem:
+
+```text
+docs/USE_CASES.md
 ```
 
-
-## Product data integrity
-
-Catalog demo không còn sinh 5 màu ngẫu nhiên cho mỗi thiết kế.
-
-- Mỗi sản phẩm lưu `groupCode`, `colorHex`, `sourceUrl`, `sourceUpdatedAt`.
-- Color switch chỉ nối các record có cùng `groupCode`; không dùng chung `type` để giả lập biến thể.
-- Ảnh gallery thuộc đúng record màu đang xem.
-- Nếu nguồn công khai không công bố số lượng kho chính xác, `stockTracked=false`; storefront chỉ hiển thị size đang có sẵn thay vì bịa số lượng.
-- Quantity nội bộ của seed chỉ là ceiling để test checkout transaction. Muốn stock thực tế phải đồng bộ ERP/WMS/API kho chính thức.
+Hiện chốt 36 Use Case cốt lõi để báo cáo và vẽ UML.

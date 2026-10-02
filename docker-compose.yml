@@ -4,18 +4,72 @@ services:
     container_name: lsoul-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: lsoul
-      POSTGRES_PASSWORD: lsoul_dev
-      POSTGRES_DB: lsoul
+      POSTGRES_USER: ${POSTGRES_USER:-lsoul}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lsoul_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-lsoul}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - lsoul_postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U lsoul -d lsoul"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lsoul} -d ${POSTGRES_DB:-lsoul}"]
       interval: 3s
       timeout: 3s
-      retries: 20
+      retries: 30
+
+  db-init:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_BANK_ID: ${NEXT_PUBLIC_BANK_ID:-MB}
+        NEXT_PUBLIC_BANK_ACCOUNT: ${NEXT_PUBLIC_BANK_ACCOUNT:-0123456789}
+        NEXT_PUBLIC_BANK_ACCOUNT_NAME: ${NEXT_PUBLIC_BANK_ACCOUNT_NAME:-LSOUL}
+    image: lsoul-web:local
+    container_name: lsoul-db-init
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-lsoul}:${POSTGRES_PASSWORD:-lsoul_dev}@postgres:5432/${POSTGRES_DB:-lsoul}?schema=public
+    command: ["npm", "run", "db:docker:init"]
+
+  web:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_BANK_ID: ${NEXT_PUBLIC_BANK_ID:-MB}
+        NEXT_PUBLIC_BANK_ACCOUNT: ${NEXT_PUBLIC_BANK_ACCOUNT:-0123456789}
+        NEXT_PUBLIC_BANK_ACCOUNT_NAME: ${NEXT_PUBLIC_BANK_ACCOUNT_NAME:-LSOUL}
+    image: lsoul-web:local
+    container_name: lsoul-web
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      db-init:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-lsoul}:${POSTGRES_PASSWORD:-lsoul_dev}@postgres:5432/${POSTGRES_DB:-lsoul}?schema=public
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      FASHN_API_KEY: ${FASHN_API_KEY:-}
+      NEXT_PUBLIC_BANK_ID: ${NEXT_PUBLIC_BANK_ID:-MB}
+      NEXT_PUBLIC_BANK_ACCOUNT: ${NEXT_PUBLIC_BANK_ACCOUNT:-0123456789}
+      NEXT_PUBLIC_BANK_ACCOUNT_NAME: ${NEXT_PUBLIC_BANK_ACCOUNT_NAME:-LSOUL}
+      SEPAY_WEBHOOK_SECRET: ${SEPAY_WEBHOOK_SECRET:-}
+    ports:
+      - "${APP_PORT:-3000}:3000"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3000').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
 
 volumes:
   lsoul_postgres_data:
