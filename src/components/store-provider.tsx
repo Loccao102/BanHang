@@ -390,14 +390,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [user, router, showNotice, persistenceMode, coupon, refreshCatalog]);
 
   const updateOrderStatus = useCallback((id: string, status: OrderStatus, extra?: { paymentStatus?: PaymentStatus; shippingCarrier?: string; trackingCode?: string }) => {
+    const previous = orders.find((order) => order.id === id);
     setOrders((current) => current.map((order) => order.id === id ? { ...order, status, ...extra } : order));
     if (persistenceMode === "database" && user?.role === "admin") {
       void fetch(`/api/orders/${encodeURIComponent(id)}`, {
         method: "PATCH", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status, ...extra })
-      }).catch(() => undefined);
+      }).then(async (response) => {
+        if (response.ok) return;
+        const body = await response.json().catch(() => ({ error: "Không thể cập nhật đơn hàng." })) as { error?: string };
+        throw new Error(body.error ?? "Không thể cập nhật đơn hàng.");
+      }).catch((error) => {
+        if (previous) setOrders((current) => current.map((order) => order.id === id ? previous : order));
+        showNotice("Không thể cập nhật đơn hàng", error instanceof Error ? error.message : "Vui lòng thử lại.");
+      });
     }
-  }, [persistenceMode, user]);
+  }, [orders, persistenceMode, user, showNotice]);
 
   const saveProduct = useCallback((product: Product) => {
     setCatalog((current) => current.some((item) => item.id === product.id)
