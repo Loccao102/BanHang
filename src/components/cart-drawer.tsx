@@ -8,7 +8,7 @@ import { formatPrice } from "@/lib/products";
 import { useStore } from "./store-provider";
 
 export function CartDrawer() {
-  const { cart, cartDrawerOpen, closeCartDrawer, updateQuantity, removeFromCart } = useStore();
+  const { cart, cartDrawerOpen, closeCartDrawer, updateQuantity, removeFromCart, user } = useStore();
   const subtotal = cart.reduce((sum, line) => sum + line.product.price * line.quantity, 0);
   const remaining = Math.max(0, 699000 - subtotal);
   const progress = Math.min(100, (subtotal / 699000) * 100);
@@ -43,13 +43,21 @@ export function CartDrawer() {
               </div>
               <button className="drawerRemove" onClick={() => removeFromCart(line.product.id, line.size)} aria-label="Xóa sản phẩm"><Trash2 size={15} /></button>
             </div>
-          )) : <div className="drawerEmpty"><ShoppingBag size={28} /><h3>Giỏ hàng đang trống</h3><p>Khám phá collection và thêm những món bạn thích.</p><Link className="btn" href="/shop" onClick={closeCartDrawer}>Đi mua sắm</Link></div>}
+          )) : <div className="drawerEmpty">
+            <ShoppingBag size={28} />
+            <h3>Giỏ hàng đang trống</h3>
+            <p>{!user ? "Đăng nhập để xem các món đồ bạn đã lưu trong giỏ hàng." : "Khám phá collection và thêm những món bạn thích."}</p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "center", width: "100%", maxWidth: 220 }}>
+              <Link className="btn block" href="/shop" onClick={closeCartDrawer}>Đi mua sắm</Link>
+              {!user ? <Link className="drawerTextLink" href="/login?next=/cart" onClick={closeCartDrawer}>Đăng nhập tài khoản</Link> : null}
+            </div>
+          </div>}
         </div>
 
         {cart.length ? <div className="drawerCartFooter">
           <div className="drawerSubtotal"><span>Tạm tính</span><strong>{formatPrice(subtotal)}</strong></div>
           <p>Phí vận chuyển và ưu đãi được tính ở bước checkout.</p>
-          <Link className="btn block" href="/checkout" onClick={closeCartDrawer}>Thanh toán</Link>
+          <Link className="btn block" href={user ? "/checkout" : "/login?next=/checkout"} onClick={closeCartDrawer}>Thanh toán</Link>
           <Link className="drawerTextLink" href="/cart" onClick={closeCartDrawer}>Xem & chỉnh sửa giỏ hàng</Link>
         </div> : null}
       </aside>

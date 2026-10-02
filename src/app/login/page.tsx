@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowRight, LockKeyhole } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/components/store-provider";
 
@@ -11,6 +11,13 @@ export default function LoginPage() {
   const { refreshAccount } = useStore();
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [nextParam, setNextParam] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setNextParam(new URLSearchParams(window.location.search).get("next"));
+    }
+  }, []);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -32,7 +39,7 @@ export default function LoginPage() {
     }
 
     await refreshAccount(true);
-    const next = new URLSearchParams(window.location.search).get("next");
+    const next = nextParam || new URLSearchParams(window.location.search).get("next");
     router.push(next || "/account");
     router.refresh();
   }
@@ -52,7 +59,7 @@ export default function LoginPage() {
           <div className="authForgot"><Link href="/forgot-password">Quên mật khẩu?</Link></div>
           {error ? <div className="authError">{error}</div> : null}
           <button className="btn block" type="submit" disabled={loading}>{loading ? "Đang đăng nhập..." : <>Đăng nhập <ArrowRight size={15} /></>}</button>
-          <p className="authSwitch">Chưa có tài khoản? <Link href="/register">Tạo tài khoản</Link></p>
+          <p className="authSwitch">Chưa có tài khoản? <Link href={nextParam ? `/register?next=${encodeURIComponent(nextParam)}` : "/register"}>Tạo tài khoản</Link></p>
         </form>
       </div>
     </section>

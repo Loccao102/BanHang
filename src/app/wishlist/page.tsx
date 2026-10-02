@@ -17,7 +17,7 @@ import {
 const groupOrder: WardrobeGroup[] = ["tops", "bottoms", "dresses", "outerwear"];
 
 export default function WishlistPage() {
-  const { wishlist, catalog } = useStore();
+  const { wishlist, catalog, user, accountLoading } = useStore();
   const items = catalog.filter((product) => product.active !== false && wishlist.includes(product.id));
   const [selected, setSelected] = useState<string[]>([]);
 
@@ -36,6 +36,33 @@ export default function WishlistPage() {
     const product = catalog.find((item) => item.id === productId);
     if (!product) return;
     setSelected((current) => normalizeOutfitSelection(current, product, catalog));
+  }
+
+  if (accountLoading) {
+    return (
+      <div className="emptyState">
+        <div>
+          <h2>Đang tải danh sách yêu thích...</h2>
+          <p>Vui lòng đợi trong giây lát.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="emptyState">
+        <div>
+          <Heart size={36} />
+          <h2>Yêu cầu đăng nhập</h2>
+          <p>Vui lòng đăng nhập để xem và quản lý danh sách sản phẩm yêu thích của bạn.</p>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center", marginTop: 18 }}>
+            <Link className="btn" href="/login?next=/wishlist">Đăng nhập ngay</Link>
+            <Link className="btn secondary" href="/register?next=/wishlist">Tạo tài khoản</Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!items.length) {

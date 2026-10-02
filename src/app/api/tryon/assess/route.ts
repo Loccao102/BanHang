@@ -85,7 +85,7 @@ export async function POST(request: Request) {
     }
     if (!isValidOutfit(products)) {
       return NextResponse.json({
-        error: "Chỉ chấm độ phù hợp sau khi outfit hoàn chỉnh: áo + quần/chân váy (+ áo khoác), hoặc một váy/đầm."
+        error: "Vui lòng chọn trang phục hợp lệ để stylist chấm điểm phù hợp."
       }, { status: 400 });
     }
 

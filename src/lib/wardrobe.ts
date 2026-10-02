@@ -55,21 +55,29 @@ export function normalizeOutfitSelection(currentIds: string[], nextProduct: Prod
 }
 
 export function isValidOutfit(products: Product[]) {
-  if (!products.length) return false;
+  if (!products.length || products.length > 3) return false;
   const slots = products.map(outfitSlot);
 
-  if (slots.includes("one-piece")) return products.length === 1;
+  if (slots.includes("one-piece")) {
+    return products.length === 1 || (products.length === 2 && slots.includes("outerwear"));
+  }
 
-  if (!slots.includes("top") || !slots.includes("bottom")) return false;
   if (new Set(slots).size !== slots.length) return false;
 
   return slots.every((slot) => slot === "top" || slot === "bottom" || slot === "outerwear");
 }
 
 export function outfitLabel(products: Product[]) {
-  if (!products.length) return "Chưa chọn outfit";
-  if (products.length === 1 && outfitSlot(products[0]) === "one-piece") {
-    return wardrobeGroup(products[0]) === "sets" ? "Set nguyên bộ" : "Váy / đầm";
+  if (!products.length) return "Chưa chọn đồ";
+  if (products.length === 1) {
+    const slot = outfitSlot(products[0]);
+    if (slot === "one-piece") {
+      return wardrobeGroup(products[0]) === "sets" ? "Set nguyên bộ" : "Váy / đầm";
+    }
+    if (slot === "top") return "Áo";
+    if (slot === "bottom") return "Quần / Chân váy";
+    if (slot === "outerwear") return "Áo khoác";
+    return products[0].name;
   }
 
   const labels: string[] = [];

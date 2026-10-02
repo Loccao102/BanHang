@@ -31,9 +31,9 @@ export function parseBudget(text: string) {
 }
 
 export async function loadAvailableProducts(db: PrismaClient | null): Promise<Product[]> {
-  if (!db) return fallbackProducts.filter((item) => item.active !== false && item.stock > 0 && item.analyzerReady !== false);
+  if (!db) return fallbackProducts.filter((item) => item.active !== false && item.stock > 0);
   const rows = await db.product.findMany({
-    where: { active: true, stock: { gt: 0 }, analyzerReady: true },
+    where: { active: true, stock: { gt: 0 } },
     include: {
       variants: { where: { active: true }, orderBy: { size: "asc" } },
       reviews: { where: { approved: true }, select: { rating: true } }
@@ -77,7 +77,7 @@ export function retrieveProducts(
     .split(/[^a-z0-9]+/)
     .filter((token) => token.length >= 3);
 
-  return catalog
+  const scored = catalog
     .map((item) => {
       let score = 0;
       if (category && item.category === category) score += 8;
@@ -94,7 +94,7 @@ export function retrieveProducts(
       if (text.includes("mới") && item.isNew) score += 5;
       if (refinement && contextTypes.has(item.type)) score += 7;
       else if (refinement && contextCategories.has(item.category)) score += 4;
-      if (item.featured) score += 1;
+      if (item.featured) score += 2;
       if ((item.rating ?? 0) >= 4.5) score += 1;
       return { item, score };
     })
@@ -102,6 +102,12 @@ export function retrieveProducts(
     .sort((a, b) => b.score - a.score || (b.item.rating ?? 0) - (a.item.rating ?? 0) || a.item.price - b.item.price)
     .slice(0, limit)
     .map(({ item }) => item);
+
+  // If query yielded nothing but there are items in catalog, return top featured or in-stock items
+  if (scored.length === 0 && catalog.length > 0) {
+    return catalog.filter((item) => item.featured || item.isNew).slice(0, limit);
+  }
+  return scored;
 }
 
 export function titleFromMessage(message: string) {
@@ -118,61 +124,104 @@ export async function askGemini(args: {
   orderContext?: string;
   agentContext?: string;
 }) {
-  const key = process.env.GEMINI_API_KEY;
+  const rawKey = process.env.GEMINI_API_KEY ?? "";
+  const key = rawKey.replace(/^["']|["']$/g, "").trim();
   if (!key) return null;
 
   const catalog = args.products.length
     ? args.products.map((item) => {
         const availableSizes = (item.variants ?? []).filter((variant) => variant.stock > 0).map((variant) => variant.size).join(", ");
-        return `- ${item.name} | id=${item.id} | ${item.color} | ${item.price} VND | size còn: ${availableSizes || item.sizes.join(", ")} | style: ${item.style.join(", ")} | dịp: ${item.occasion.join(", ")} | fit: ${item.fit}`;
+        return `- ${item.name} | Mã: ${item.id} | Màu: ${item.color} | Giá: ${item.price.toLocaleString("vi-VN")} VND | Size còn: ${availableSizes || item.sizes.join(", ")} | Phom/Style: ${item.fit}, ${item.style.join(", ")} | Dịp: ${item.occasion.join(", ")}`;
       }).join("\n")
-    : "(Không có sản phẩm phù hợp trực tiếp trong lượt tìm hiện tại)";
+    : "(Không có sản phẩm trực tiếp trong danh sách này)";
 
-  const history = args.history.slice(-10).map((item) => `${item.role === "user" ? "Khách" : "LSOUL Stylist"}: ${item.text}`).join("\n");
+  const history = args.history.slice(-8).map((item) => `${item.role === "user" ? "Khách" : "LSOUL Stylist"}: ${item.text}`).join("\n");
 
-  const system = `Bạn là LSOUL Stylist AI, trợ lý mua sắm cho website thời trang nữ LSOUL.
-Mục tiêu: giúp khách tìm sản phẩm, phối outfit, chọn size ở mức tư vấn chung, giải thích chất liệu/phom, chính sách giao hàng/đổi size, và tra cứu tình trạng đơn nếu context đơn hàng được cung cấp.
-Quy tắc:
-- Trả lời tiếng Việt tự nhiên, thân thiện, ngắn gọn nhưng đủ ý.
-- Không bịa sản phẩm, giá, tồn kho, mã đơn hoặc trạng thái. Chỉ dùng dữ liệu được cung cấp.
-- Nếu câu hỏi thiếu dữ kiện quan trọng (ví dụ chiều cao/cân nặng/số đo khi hỏi size), hãy hỏi lại đúng 1 câu ngắn.
-- Khi đề xuất sản phẩm, ưu tiên tối đa 3 lựa chọn tốt nhất và nói lý do.
-- Có thể gợi ý cách phối từ các sản phẩm trong danh sách.
-- Không nói rằng bạn "không có dữ liệu thời gian thực" vì catalog bên dưới đã là dữ liệu hiện tại.
-- Chính sách hiện tại: freeship từ 699K; đổi size trong 7 ngày nếu sản phẩm nguyên tag/chưa sử dụng; thanh toán COD hoặc VietQR được SePay xác minh tự động.
-`;
+  const system = `Bạn là LSOUL Stylist AI - Chuyên gia tư vấn thời trang cao cấp của thương hiệu thời trang thiết kế LSOUL (Việt Nam).
+LSOUL nổi tiếng toàn cầu với phong cách gợi cảm, cá tính mạnh mẽ, thời thượng (empowered chic, Y2K glam, edgy elegance), được yêu thích bởi nhiều ngôi sao quốc tế như Lisa (Blackpink), Jennie, Ningning, IU, Chi Pu...
+
+KIẾN THỨC VÀ BẢNG SIZE CHUẨN LSOUL:
+- Size S: Ngực 80-84cm, Eo 60-64cm, Mông 86-90cm (Phù hợp cân nặng dưới 48kg, cao 1m50 - 1m62).
+- Size M: Ngực 84-88cm, Eo 64-68cm, Mông 90-94cm (Phù hợp cân nặng 48 - 54kg, cao 1m55 - 1m65).
+- Size L: Ngực 88-94cm, Eo 68-74cm, Mông 94-100cm (Phù hợp cân nặng 55 - 62kg, cao 1m58 - 1m70).
+- Size XL: Ngực 94-100cm, Eo 74-80cm, Mông 100-106cm (Phù hợp cân nặng 62 - 70kg).
+- LƯU Ý KHI CHỌN SIZE CORSET / ĐẦM BODYCON:
+  + Các mẫu Corset LSOUL có thiết kế gọng định hình và dây đan lưng (lace-up back) linh hoạt, có thể nới hoặc siết vòng eo +/- 3-4cm.
+  + Nếu khách có vòng 1 đầy đặn hoặc đang phân vân giữa 2 size, luôn khuyên chọn tăng 1 size để vừa vặn vòng 1 thoải mái, sau đó siết dây lưng để ôm sát eo thon gọn.
+  + Đầm ôm chất liệu nhung/thun co giãn tốt; với chất liệu tafta hoặc dạ tweed không co giãn nên chọn đúng size số đo lớn nhất.
+
+GỢI Ý PHỐI OUTFIT THEO DỊP:
+- Đi Tiệc / Party / Clubbing: Corset phối chân váy ngắn xòe/xếp ly cạp cao hoặc quần ống loe tôn dáng; Đầm bodycon cut-out gợi cảm, sang trọng.
+- Đi Hẹn Hò (Date Night): Đầm lụa midi, đầm cúp ngực phối cardigan mỏng hoặc blazer khoác hờ vai.
+- Đi Cafe / Dạo Phố: Áo croptop / baby tee phối cùng chân váy xếp ly hoặc quần jeans cạp trễ Y2K năng động.
+- Đi Làm / Sự Kiện: Áo blazer cách điệu tôn dáng phối quần âu suông cạp cao thanh lịch.
+
+CHÍNH SÁCH BÁN HÀNG LSOUL:
+- Miễn phí vận chuyển (Freeship) toàn quốc cho đơn hàng từ 699.000đ.
+- Đổi size hoặc đổi mẫu trong vòng 7 ngày kể từ khi nhận hàng (yêu cầu sản phẩm còn nguyên tem mác, chưa qua sử dụng).
+- Giao hàng hỏa tốc trong 2-4h tại nội thành Hà Nội & TP.HCM; giao tiêu chuẩn toàn quốc 2-4 ngày.
+- Thanh toán tiện lợi qua COD (kiểm tra hàng khi nhận) hoặc Chuyển khoản VietQR tự động xác nhận qua SePay.
+
+QUY TẮC PHẢN HỒI:
+1. Xưng hô tự nhiên, thân thiện và sành điệu ("Dạ nàng ơi", "LSOUL gợi ý cho bạn nè", "Bạn yêu ơi"...).
+2. Khi khách hỏi về sản phẩm, hãy dựa trực tiếp vào danh sách sản phẩm được cung cấp, nêu rõ tên, màu sắc, ưu điểm tôn dáng và giá tiền.
+3. Nếu khách hỏi tư vấn size mà chưa có chiều cao/cân nặng/số đo eo ngực, hãy đưa ra bảng size tham khảo và ân cần hỏi thêm thông tin để tư vấn chuẩn xác.
+4. Trả lời mạch lạc, súc tích, định dạng gạch đầu dòng dễ nhìn. TUYỆT ĐỐI KHÔNG dùng bảng markdown table (vì màn hình di động hẹp).
+5. Không bịa đặt sản phẩm không có thật. Nếu khách cần thao tác như thêm vào giỏ hàng, gợi ý khách bấm nút "Thêm giỏ" ngay bên dưới sản phẩm.`;
 
   const prompt = `${system}
-Lịch sử gần nhất:
-${history || "(Cuộc trò chuyện mới)"}
+Lịch sử trao đổi trước đó:
+${history || "(Bắt đầu cuộc trò chuyện)"}
 
-Context đơn hàng của khách:
-${args.orderContext || "(Không có hoặc khách chưa hỏi về đơn hàng)"}
+Thông tin đơn hàng của khách (nếu có):
+${args.orderContext || "(Khách chưa cung cấp hoặc chưa hỏi đơn hàng)"}
 
-Context hành động của shopping agent:
-${args.agentContext || "(Không có action đặc biệt)"}
-
-Các sản phẩm phù hợp được hệ thống truy xuất:
+Sản phẩm liên quan trong hệ thống LSOUL:
 ${catalog}
 
 Tin nhắn mới của khách:
 ${args.message}
 
-Hãy trả lời trực tiếp. Không dùng markdown table.`;
+Hãy phản hồi tận tình, chuyên nghiệp chuẩn stylist LSOUL:`;
 
-  try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.55, maxOutputTokens: 500 }
-      })
-    });
-    if (!response.ok) return null;
-    const data = await response.json();
-    return data?.candidates?.[0]?.content?.parts?.map((part: { text?: string }) => part.text ?? "").join("").trim() || null;
-  } catch {
-    return null;
+  // Try gemini-flash-latest with thinkingBudget 0, fallback to standard call
+  const configs = [
+    { model: "gemini-flash-latest", thinkingBudget: 0 },
+    { model: "gemini-flash-latest", thinkingBudget: undefined },
+    { model: "gemini-2.5-flash-lite", thinkingBudget: undefined }
+  ];
+
+  for (const item of configs) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
+      const generationConfig: Record<string, unknown> = {
+        temperature: 0.6,
+        maxOutputTokens: 1500
+      };
+      if (item.thinkingBudget !== undefined) {
+        generationConfig.thinkingConfig = { thinkingBudget: item.thinkingBudget };
+      }
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${item.model}:generateContent?key=${key}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig
+        }),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      if (response.ok) {
+        const data = await response.json();
+        const text = data?.candidates?.[0]?.content?.parts?.map((part: { text?: string }) => part.text ?? "").join("").trim();
+        if (text) return text;
+      }
+    } catch {
+      // Continue to next config
+    }
   }
+
+  return null;
 }

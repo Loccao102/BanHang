@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
-  Bot, Check, ChevronRight, Clock3, History, MessageCircle,
+  Bot, Check, ChevronRight, Clock3, Heart, History, MessageCircle,
   Pencil, Plus, Send, ShoppingBag, Sparkles, Trash2, X
 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -36,7 +36,7 @@ function readGuestHistory() {
 
 export function ChatWidget() {
   const router = useRouter();
-  const { user, catalog, addToCart, addBundleToCart, applyCoupon } = useStore();
+  const { user, catalog, addToCart, addBundleToCart, applyCoupon, wishlist, toggleWishlist } = useStore();
   const [open, setOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessageView[]>([welcome]);
@@ -286,7 +286,7 @@ export function ChatWidget() {
             <div className="chatAvatar"><Sparkles size={17} /></div>
             <div className="chatHeadTitle"><strong>{activeTitle}</strong><small><span className="statusDot" /> Trợ lý mua sắm AI</small></div>
             <button className="chatNewButton" onClick={newChat} title="Cuộc trò chuyện mới"><Plus size={17} /></button>
-            <button className="iconButton" onClick={() => setOpen(false)} aria-label="Đóng chatbot"><X size={18} /></button>
+            <button className="chatCloseButton" onClick={() => setOpen(false)} aria-label="Đóng chatbot"><X size={18} /></button>
           </div>
 
           {historyOpen ? (
@@ -348,16 +348,45 @@ export function ChatWidget() {
 
                   {message.products?.length ? (
                     <div className="chatProducts">
-                      {message.products.slice(0, 6).map((product) => (
-                        <div className="chatProduct" key={product.id}>
-                          <Link href={`/product/${product.id}`} onClick={() => setOpen(false)}>
-                            <Image src={product.image} alt={product.name} width={58} height={72} />
-                            <span><strong>{product.name}</strong><small>{formatPrice(product.price)}</small><em>{product.variants?.filter((variant) => variant.stock > 0).map((variant) => variant.size).slice(0, 5).join(" · ")}</em></span>
-                            <ChevronRight size={15} />
-                          </Link>
-                          <button onClick={() => quickAdd(product)} aria-label={`Thêm ${product.name} vào giỏ`}><ShoppingBag size={13} /></button>
-                        </div>
-                      ))}
+                      {message.products.slice(0, 6).map((product) => {
+                        const liked = wishlist.includes(product.id);
+                        const availableSizes = product.variants?.filter((variant) => variant.stock > 0).map((variant) => variant.size).slice(0, 4).join(" · ") || product.sizes.slice(0, 4).join(" · ");
+                        return (
+                          <div className="chatProductCard" key={product.id}>
+                            <Link className="chatProductBody" href={`/product/${product.id}`} onClick={() => setOpen(false)}>
+                              <div className="chatProductMedia">
+                                <Image src={product.image} alt={product.name} width={56} height={70} />
+                              </div>
+                              <div className="chatProductInfo">
+                                <strong>{product.name}</strong>
+                                <span className="chatProductPrice">{formatPrice(product.price)}</span>
+                                <span className="chatProductSizes">Size: {availableSizes}</span>
+                              </div>
+                              <ChevronRight size={16} className="chatProductArrow" />
+                            </Link>
+                            <div className="chatProductActionRow">
+                              <button
+                                type="button"
+                                className="chatAddBtn"
+                                onClick={() => quickAdd(product)}
+                                aria-label={`Thêm ${product.name} vào giỏ`}
+                              >
+                                <ShoppingBag size={13} />
+                                <span>Thêm giỏ</span>
+                              </button>
+                              <button
+                                type="button"
+                                className={`chatLikeBtn ${liked ? "active" : ""}`}
+                                onClick={() => toggleWishlist(product.id)}
+                                aria-label={liked ? "Bỏ yêu thích" : "Yêu thích"}
+                              >
+                                <Heart size={13} fill={liked ? "currentColor" : "none"} />
+                                <span>{liked ? "Đã thích" : "Yêu thích"}</span>
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : null}
 

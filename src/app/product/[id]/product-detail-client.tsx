@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Check, Heart, Package, Ruler, Share2, ShoppingBag, Star, Truck } from "lucide-react";
+import { Check, Heart, Package, Ruler, ShoppingBag, Star, Truck } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatPrice } from "@/lib/products";
@@ -96,6 +96,10 @@ export function ProductDetailClient({ productId }: { productId: string }) {
   const shownCount = reviewCount || product.reviewCount || 0;
 
   function add() {
+    if (!user) {
+      router.push(`/login?next=${encodeURIComponent(`/product/${currentProduct.id}`)}`);
+      return;
+    }
     if (selectedStock <= 0) return;
     addToCart(currentProduct, size);
     setAdded(true);
@@ -103,29 +107,22 @@ export function ProductDetailClient({ productId }: { productId: string }) {
   }
 
   function buyNow() {
+    if (!user) {
+      router.push(`/login?next=${encodeURIComponent(`/product/${currentProduct.id}`)}`);
+      return;
+    }
     if (selectedStock <= 0) return;
     addToCart(currentProduct, size);
     closeCartDrawer();
     router.push("/checkout");
   }
 
-  async function shareProduct() {
-    const url = window.location.href;
-    void fetch("/api/social/events", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: "share", channel: typeof navigator.share === "function" ? "native" : "copy", productId: currentProduct.id })
-    });
-    if (typeof navigator.share === "function") {
-      await navigator.share({ title: currentProduct.name, text: currentProduct.subtitle, url }).catch(() => undefined);
-    } else {
-      await navigator.clipboard.writeText(url);
-      setReviewMessage("Đã sao chép link sản phẩm.");
-    }
-  }
-
   async function submitReview(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!user) {
+      router.push(`/login?next=${encodeURIComponent(`/product/${currentProduct.id}`)}`);
+      return;
+    }
     const data = new FormData(event.currentTarget);
     const response = await fetch(`/api/products/${currentProduct.id}/reviews`, {
       method: "POST",
@@ -170,8 +167,15 @@ export function ProductDetailClient({ productId }: { productId: string }) {
           {colorVariants.length > 1 ? <div className="variantSwatches" aria-label="Các màu cùng thiết kế">{colorVariants.map((item) => <Link key={item.id} href={`/product/${item.id}`} className={item.id === product.id ? "active" : ""} title={item.color}><span className={`miniSwatch swatch-${item.colorFamily}`} style={item.colorHex ? { backgroundColor: item.colorHex } : undefined} /><small>{item.color}</small></Link>)}</div> : null}
           <div className="optionLabel"><span>Chọn cỡ</span><Link href="/size-guide"><Ruler size={13} /> Hướng dẫn chọn cỡ</Link></div>
           <div className="sizeGrid">{sizeOptions.map((item) => <button disabled={item.stock <= 0} className={`sizeButton ${size === item.size ? "active" : ""} ${item.stock <= 0 ? "soldOut" : ""}`} key={item.size} onClick={() => setSize(item.size)}>{item.size}{item.stock <= 0 ? <small>Hết</small> : null}</button>)}</div>
-          <div className="stockNote"><span className="statusDot" /> {selectedStock > 0 ? (product.stockTracked === false ? `Cỡ ${size} đang có sẵn` : `Còn ${selectedStock} sản phẩm size ${size}`) : `Cỡ ${size} tạm hết hàng`}</div>
-          <div className="detailActions"><button className="btn" disabled={selectedStock <= 0} onClick={add}>{added ? <><Check size={17} /> Đã thêm vào giỏ</> : <><ShoppingBag size={17} /> Thêm vào giỏ</>}</button><button className="btn secondary" aria-label="Yêu thích" onClick={() => toggleWishlist(product.id)}><Heart size={18} fill={liked ? "currentColor" : "none"} /></button><button className="btn secondary" aria-label="Chia sẻ" onClick={shareProduct}><Share2 size={18} /></button></div>
+          <div className="detailActions">
+            <button className="btn" disabled={selectedStock <= 0} onClick={add}>
+              {added ? <><Check size={17} /> Đã thêm vào giỏ</> : <><ShoppingBag size={17} /> Thêm vào giỏ</>}
+            </button>
+            <button className={`btn secondary heartActionBtn ${liked ? "active" : ""}`} aria-label={liked ? "Bỏ yêu thích" : "Thêm vào yêu thích"} onClick={() => toggleWishlist(product.id)}>
+              <Heart size={18} fill={liked ? "currentColor" : "none"} />
+              <span>{liked ? "Đã thích" : "Yêu thích"}</span>
+            </button>
+          </div>
           <button className="buyNow" disabled={selectedStock <= 0} onClick={buyNow}>Mua ngay · {formatPrice(product.price)}</button>
           <div className="deliveryHighlights"><div><Truck size={17} /><span><strong>Freeship từ 699K</strong><small>Giao tiêu chuẩn 2–5 ngày</small></span></div><div><Package size={17} /><span><strong>Đổi cỡ trong 7 ngày</strong><small>Áp dụng sản phẩm nguyên tag</small></span></div></div>
           <div className="productAccordions"><details open><summary>Chi tiết sản phẩm</summary><p>SKU: {product.sku ?? product.id}. Chất liệu: {product.material}. Phom: {product.fit}. Thiết kế theo tinh thần {product.style.join(", ")}.</p>{product.sourceUpdatedAt ? <small className="productSourceNote">Dữ liệu sản phẩm được đối chiếu ngày {new Intl.DateTimeFormat("vi-VN").format(new Date(product.sourceUpdatedAt))}.{product.sourceUrl ? <> <a href={product.sourceUrl} target="_blank" rel="noreferrer">Xem nguồn</a></> : null}</small> : null}</details><details><summary>Chăm sóc sản phẩm</summary><p>Giặt nhẹ với màu tương đồng, tránh sấy nhiệt cao. Ủi mặt trái ở nhiệt độ thấp.</p></details><details><summary>Giao hàng & đổi trả</summary><p>Hỗ trợ COD hoặc chuyển khoản QR. Có thể đổi cỡ trong 7 ngày nếu sản phẩm còn nguyên trạng và nguyên tag.</p></details></div>

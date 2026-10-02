@@ -12,12 +12,48 @@ function fallbackReply(message: string, products: Product[], hasOrderContext: bo
   const text = message.toLowerCase();
   if (agentNotes.length) return agentNotes[0];
   if (hasOrderContext && (text.includes("đơn") || text.includes("order") || text.includes("vận đơn") || text.includes("giao"))) {
-    return "Mình đã lấy trạng thái đơn hàng gần nhất của bạn. Bạn có thể mở đúng đơn ngay từ hành động bên dưới.";
+    return "LSOUL đã tra cứu thông tin đơn hàng gần nhất của bạn. Bạn có thể bấm vào thẻ đơn hàng bên dưới để xem chi tiết tình trạng vận chuyển nhé.";
   }
+
+  // Sizing inquiry
+  if (text.includes("size") || text.includes("cỡ") || text.includes("eo") || text.includes("ngực") || text.includes("nặng") || text.includes("cao") || text.includes("mặc vừa")) {
+    return `Dạ đối với phom dáng thiết kế LSOUL:
+• Size S: Ngực 80-84cm, Eo 60-64cm (Dưới 48kg)
+• Size M: Ngực 84-88cm, Eo 64-68cm (48 - 54kg)
+• Size L: Ngực 88-94cm, Eo 68-74cm (55 - 62kg)
+• Size XL: Ngực 94-100cm, Eo 74-80cm (62 - 70kg)
+
+✨ Lưu ý: Các mẫu Corset LSOUL có phần đan dây phía sau lưng giúp linh hoạt tăng giảm độ ôm eo 3-4cm. Nếu bạn có vòng 1 đầy đặn hoặc nằm giữa 2 size, nên chọn tăng 1 size để thoải mái nhất nhé!`;
+  }
+
+  // Policies inquiry
+  if (text.includes("đổi") || text.includes("trả") || text.includes("ship") || text.includes("freeship") || text.includes("giao hàng") || text.includes("bảo hành")) {
+    return `Dạ chính sách mua sắm tại LSOUL:
+• Freeship toàn quốc cho đơn hàng từ 699.000đ.
+• Đổi size / đổi mẫu trong vòng 7 ngày kể từ khi nhận hàng (yêu cầu còn nguyên tag mác, chưa qua sử dụng).
+• Giao hàng hỏa tốc 2-4h nội thành Hà Nội & TP.HCM, giao tiêu chuẩn 2-4 ngày toàn quốc.
+• Hỗ trợ thanh toán COD (kiểm tra hàng) và chuyển khoản VietQR tự động.`;
+  }
+
+  // Occasions / Styling
+  if (text.includes("tiệc") || text.includes("party") || text.includes("prom") || text.includes("quẩy") || text.includes("club")) {
+    if (products.length) {
+      return `Dạ đi tiệc hoặc sự kiện thì phong cách quyến rũ, tôn dáng của LSOUL là chuẩn nhất! Bạn có thể chọn corset gọng ôm eo phối cùng chân váy xếp ly xòe hoặc diện đầm ôm bodycon gợi cảm. Dưới đây là những mẫu tiệc cực hot dành cho bạn:`;
+    }
+  }
+
+  if (text.includes("hẹn hò") || text.includes("date")) {
+    if (products.length) {
+      return `Dạ cho buổi hẹn hò lãng mạn, LSOUL gợi ý bạn những mẫu đầm midi hoặc corset phối chân váy mềm mại, vừa quyến rũ vừa sang trọng. Mời bạn tham khảo các thiết kế bên dưới nhé:`;
+    }
+  }
+
   if (products.length) {
-    return `Mình tìm được ${products.length} lựa chọn đang còn hàng khá sát yêu cầu. Bạn có thể mở sản phẩm hoặc yêu cầu mình thao tác tiếp.`;
+    const names = products.slice(0, 3).map((p) => p.name).join(", ");
+    return `Dạ LSOUL tìm thấy các thiết kế rất hợp gu của bạn (${names}). Bạn có thể bấm vào sản phẩm để xem chi tiết hoặc bấm "Thêm giỏ" để lưu ngay nhé!`;
   }
-  return "Mình chưa thấy thiết kế khớp hoàn toàn. Bạn cho mình thêm ngân sách, màu hoặc dịp mặc để mình lọc chính xác hơn nhé.";
+
+  return "Dạ mình có thể giúp bạn tìm trang phục theo màu sắc (đen, trắng, đỏ...), kiểu dáng (corset, đầm tiệc, chân váy, blazer) hoặc tư vấn chọn size chuẩn. Bạn muốn tìm đồ diện cho dịp nào nè?";
 }
 
 function wantsOrderContext(message: string) {

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Heart, Instagram, MessageCircle, Send, Share2, ShoppingBag } from "lucide-react";
+import { Heart, Instagram, MessageCircle, Send, ShoppingBag } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { useStore } from "@/components/store-provider";
 import type { Product } from "@/lib/products";
@@ -45,16 +45,6 @@ export default function SocialPage() {
     });
   }
 
-  async function share(post: SocialPostView) {
-    const url = `${window.location.origin}/social#${post.slug}`;
-    void track(post, "share", typeof navigator.share === "function" ? "native" : "copy");
-    if (typeof navigator.share === "function") await navigator.share({ title: "LSOUL Social", text: post.caption, url }).catch(() => undefined);
-    else {
-      await navigator.clipboard.writeText(url);
-      setMessage("Đã sao chép link bài viết.");
-    }
-  }
-
   async function submitPost(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -87,10 +77,10 @@ export default function SocialPage() {
       <div className="socialFeed">{posts.map((post) => <article className="socialCard" id={post.slug} key={post.id}>
         <div className="socialMedia"><Image src={post.image} alt={post.caption} fill sizes="(max-width:760px) 100vw, 50vw" /></div>
         <div className="socialContent">
-          <div className="socialAuthor"><span><strong>{post.authorName}</strong><small>{post.authorHandle} · {post.platform}</small></span><button onClick={() => share(post)} aria-label="Chia sẻ"><Share2 size={17} /></button></div>
+          <div className="socialAuthor"><span><strong>{post.authorName}</strong><small>{post.authorHandle} · {post.platform}</small></span></div>
           <p>{post.caption}</p>
           <div className="socialSignals"><span><Heart size={15} /> {post.likes.toLocaleString("vi-VN")}</span><span><MessageCircle size={15} /> {post.comments.toLocaleString("vi-VN")}</span><span><ShoppingBag size={15} /> Shop the look</span></div>
-          <div className="socialTagged">{post.products.map((product) => <div className="socialTaggedProduct" key={product.id}><Link href={`/product/${product.id}`} onClick={() => track(post, "product_click", post.platform, product.id)}><div><Image src={product.image} alt={product.name} fill sizes="60px" /></div><span><strong>{product.name}</strong><small>{formatPrice(product.price)}</small></span></Link><button onClick={() => { const size = product.variants?.find((variant) => variant.stock > 0)?.size ?? product.sizes[0]; addToCart(product, size); void track(post, "add_to_cart", post.platform, product.id); }}>+</button></div>)}</div>
+          <div className="socialTagged">{post.products.map((product) => <div className="socialTaggedProduct" key={product.id}><Link href={`/product/${product.id}`} onClick={() => track(post, "product_click", post.platform, product.id)}><div><Image src={product.image} alt={product.name} fill sizes="60px" /></div><span><strong>{product.name}</strong><small>{formatPrice(product.price)}</small></span></Link><button title="Thêm vào giỏ" aria-label={`Thêm ${product.name} vào giỏ`} onClick={() => { const size = product.variants?.find((variant) => variant.stock > 0)?.size ?? product.sizes[0]; addToCart(product, size); void track(post, "add_to_cart", post.platform, product.id); }}><ShoppingBag size={13} /></button></div>)}</div>
         </div>
       </article>)}</div>
     </section>

@@ -27,6 +27,10 @@ export async function POST(request: Request) {
   if (!db) return NextResponse.json({ error: "Cơ sở dữ liệu chưa sẵn sàng." }, { status: 503 });
 
   const currentUser = await getCurrentUser();
+  if (!currentUser) {
+    return NextResponse.json({ error: "Vui lòng đăng nhập để thanh toán đơn hàng." }, { status: 401 });
+  }
+
   const body = await request.json() as OrderRequest;
   const items = (body.items ?? []).filter((line) => line.product?.id && line.size && line.quantity > 0);
 

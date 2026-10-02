@@ -112,7 +112,9 @@ main { min-height: 60vh; }
 .sizeGrid { display: flex; gap: 8px; flex-wrap: wrap; }
 .sizeButton { min-width: 48px; height: 42px; border: 1px solid var(--line); background: var(--paper); cursor: pointer; }
 .sizeButton.active { border-color: var(--ink); background: var(--ink); color: white; }
-.detailActions { display: grid; grid-template-columns: 1fr 50px; gap: 8px; margin: 25px 0; }
+.detailActions { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin: 20px 0; }
+.detailActions .heartActionBtn { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 0 20px; white-space: nowrap; font-size: 13px; }
+.detailActions .heartActionBtn.active { color: #e53e3e; border-color: #feb2b2; background: #fff5f5; }
 .infoList { border-top: 1px solid var(--line); margin-top: 30px; }
 .infoList div { display: flex; justify-content: space-between; gap: 20px; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 12px; }
 .infoList span { color: var(--muted); }

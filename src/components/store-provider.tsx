@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import type { CustomerAddress, CustomerUser } from "@/lib/account";
 import {
   CART_KEY, CATALOG_KEY, COUPON_KEY, CartLine, CouponState, ORDER_KEY, OrderRecord,
@@ -109,6 +110,7 @@ function mergeCart(primary: CartLine[], secondary: CartLine[]) {
 }
 
 export function StoreProvider({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const [cart, setCart] = useState<CartLine[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [orders, setOrders] = useState<OrderRecord[]>([]);
@@ -152,6 +154,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (!response.ok) {
         setUser(null);
         setAddresses([]);
+        setCart([]);
+        setWishlist([]);
+        setOrders([]);
+        if (typeof window !== "undefined") {
+          window.localStorage.removeItem(CART_KEY);
+          window.localStorage.removeItem(WISHLIST_KEY);
+          window.localStorage.removeItem(ORDER_KEY);
+        }
         setAccountReady(true);
         return;
       }
@@ -165,10 +175,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         addresses: CustomerAddress[];
       };
 
+      if (!data.authenticated || !data.user) {
+        setUser(null);
+        setAddresses([]);
+        setCart([]);
+        setWishlist([]);
+        setOrders([]);
+        if (typeof window !== "undefined") {
+          window.localStorage.removeItem(CART_KEY);
+          window.localStorage.removeItem(WISHLIST_KEY);
+          window.localStorage.removeItem(ORDER_KEY);
+        }
+        setAccountReady(true);
+        return;
+      }
+
       const guestCart = mergeGuest ? cart : [];
       const guestWishlist = mergeGuest ? wishlist : [];
-      const nextCart = mergeGuest ? mergeCart(data.cart, guestCart) : data.cart;
-      const nextWishlist = mergeGuest ? Array.from(new Set([...data.wishlist, ...guestWishlist])) : data.wishlist;
+      const nextCart = mergeGuest && guestCart.length ? mergeCart(data.cart, guestCart) : data.cart;
+      const nextWishlist = mergeGuest && guestWishlist.length ? Array.from(new Set([...data.wishlist, ...guestWishlist])) : data.wishlist;
 
       setUser(data.user);
       setAddresses(data.addresses);
@@ -183,7 +208,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         setOrders(data.orders);
       }
 
-      if (mergeGuest) {
+      if (mergeGuest && (guestCart.length || guestWishlist.length)) {
         await Promise.all([
           fetch("/api/account/cart", {
             method: "PUT", headers: { "Content-Type": "application/json" },
@@ -215,9 +240,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     void refreshAccount(false);
   }, []);
 
-  useEffect(() => { if (hydrated) window.localStorage.setItem(CART_KEY, JSON.stringify(cart)); }, [cart, hydrated]);
-  useEffect(() => { if (hydrated) window.localStorage.setItem(WISHLIST_KEY, JSON.stringify(wishlist)); }, [wishlist, hydrated]);
-  useEffect(() => { if (hydrated) window.localStorage.setItem(ORDER_KEY, JSON.stringify(orders)); }, [orders, hydrated]);
+  useEffect(() => {
+    if (!hydrated) return;
+    if (user) {
+      window.localStorage.setItem(CART_KEY, JSON.stringify(cart));
+      window.localStorage.setItem(WISHLIST_KEY, JSON.stringify(wishlist));
+      window.localStorage.setItem(ORDER_KEY, JSON.stringify(orders));
+    } else {
+      window.localStorage.removeItem(CART_KEY);
+      window.localStorage.removeItem(WISHLIST_KEY);
+      window.localStorage.removeItem(ORDER_KEY);
+    }
+  }, [user, cart, wishlist, orders, hydrated]);
   useEffect(() => { if (hydrated) window.localStorage.setItem(CATALOG_KEY, JSON.stringify(catalog)); }, [catalog, hydrated]);
   useEffect(() => { if (hydrated) window.localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); }, [settings, hydrated]);
   useEffect(() => {
@@ -256,6 +290,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [persistenceMode, user, showNotice, refreshCatalog]);
 
   const addToCart = useCallback((product: Product, size?: string, quantity = 1) => {
+    if (!user) {
+      showNotice("Yêu cầu đăng nhập", "Vui lòng đăng nhập để thêm sản phẩm vào giỏ hàng.");
+      const currentUrl = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/";
+      router.push(`/login?next=${encodeURIComponent(currentUrl || "/")}`);
+      return;
+    }
     const limit = sizeStock(product, size);
     if (product.active === false || limit <= 0) return;
     setCart((current) => {
@@ -266,16 +306,22 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     showNotice("Đã thêm vào giỏ", `${product.name}${size ? ` · Cỡ ${size}` : ""}`);
     trackBehavior("cart_add", product.id, { size, quantity });
     setCartDrawerOpen(true);
-  }, [showNotice]);
+  }, [user, router, showNotice]);
 
   const addBundleToCart = useCallback((items: Array<{ product: Product; size?: string; quantity?: number }>) => {
+    if (!user) {
+      showNotice("Yêu cầu đăng nhập", "Vui lòng đăng nhập để thêm bộ đồ vào giỏ hàng.");
+      const currentUrl = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/";
+      router.push(`/login?next=${encodeURIComponent(currentUrl || "/")}`);
+      return;
+    }
     const valid = items.filter(({ product, size }) => product.active !== false && sizeStock(product, size) > 0);
     if (!valid.length) return;
     setCart((current) => mergeCart(current, valid.map(({ product, size, quantity = 1 }) => ({ product, size, quantity }))));
     showNotice("Đã thêm bộ đồ vào giỏ", `${valid.length} sản phẩm từ trợ lý LSOUL`);
     valid.forEach(({ product, size, quantity = 1 }) => trackBehavior("cart_add", product.id, { size, quantity, bundle: true }));
     setCartDrawerOpen(true);
-  }, [showNotice]);
+  }, [user, router, showNotice]);
 
   const removeFromCart = useCallback((productId: string, size?: string) => {
     setCart((current) => current.filter((line) => !(line.product.id === productId && line.size === size)));
@@ -291,6 +337,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const toggleWishlist = useCallback((productId: string) => {
+    if (!user) {
+      showNotice("Yêu cầu đăng nhập", "Vui lòng đăng nhập để lưu sản phẩm vào danh sách yêu thích.");
+      const currentUrl = typeof window !== "undefined" ? window.location.pathname + window.location.search : "/";
+      router.push(`/login?next=${encodeURIComponent(currentUrl || "/")}`);
+      return;
+    }
     setWishlist((current) => {
       const liked = current.includes(productId);
       const next = liked ? current.filter((id) => id !== productId) : [...current, productId];
@@ -299,7 +351,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       trackBehavior(liked ? "wishlist_remove" : "wishlist_add", productId);
       return next;
     });
-  }, [catalog, showNotice]);
+  }, [user, router, catalog, showNotice]);
 
   const applyCoupon = useCallback(async (rawCode: string) => {
     const subtotal = cart.reduce((sum, line) => sum + line.product.price * line.quantity, 0);
@@ -315,6 +367,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [cart, showNotice]);
 
   const placeOrder = useCallback(async (draft: OrderRecord) => {
+    if (!user) {
+      showNotice("Yêu cầu đăng nhập", "Vui lòng đăng nhập để tiến hành thanh toán.");
+      router.push("/login?next=/checkout");
+      throw new Error("Vui lòng đăng nhập để thanh toán.");
+    }
     if (persistenceMode !== "database") throw new Error("Cơ sở dữ liệu chưa sẵn sàng.");
 
     const response = await fetch("/api/orders", {
@@ -330,7 +387,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setCartDrawerOpen(false);
     await refreshCatalog();
     return data.order;
-  }, [persistenceMode, coupon, refreshCatalog]);
+  }, [user, router, showNotice, persistenceMode, coupon, refreshCatalog]);
 
   const updateOrderStatus = useCallback((id: string, status: OrderStatus, extra?: { paymentStatus?: PaymentStatus; shippingCarrier?: string; trackingCode?: string }) => {
     setOrders((current) => current.map((order) => order.id === id ? { ...order, status, ...extra } : order));

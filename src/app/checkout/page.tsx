@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Check, CreditCard, QrCode, UserRound } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { useStore } from "@/components/store-provider";
@@ -11,13 +12,20 @@ import { formatPrice } from "@/lib/products";
 type Shipping = { name: string; phone: string; address: string; city: string; note: string };
 
 export default function CheckoutPage() {
-  const { cart, coupon, placeOrder, user, addresses } = useStore();
+  const router = useRouter();
+  const { cart, coupon, placeOrder, user, addresses, accountLoading } = useStore();
   const [payment, setPayment] = useState<"qr" | "cod">("qr");
   const [completedOrder, setCompletedOrder] = useState<OrderRecord | null>(null);
   const [shippingInfo, setShippingInfo] = useState<Shipping>({ name: "", phone: "", address: "", city: "", note: "" });
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [paymentIssue, setPaymentIssue] = useState("");
+
+  useEffect(() => {
+    if (!accountLoading && !user) {
+      router.push("/login?next=/checkout");
+    }
+  }, [accountLoading, user, router]);
 
   useEffect(() => {
     if (!user) return;
@@ -76,6 +84,36 @@ export default function CheckoutPage() {
     }
   }
 
+  if (accountLoading) {
+    return (
+      <div className="emptyState">
+        <div>
+          <h2>Đang tải thông tin thanh toán...</h2>
+          <p>Vui lòng đợi trong giây lát.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <section className="checkoutPage">
+        <div className="panel" style={{ textAlign: "center", padding: "64px 24px", maxWidth: 500, margin: "40px auto" }}>
+          <div className="authIcon" style={{ margin: "0 auto 16px" }}><UserRound size={32} /></div>
+          <p className="eyebrow">YÊU CẦU ĐĂNG NHẬP</p>
+          <h2 style={{ marginBottom: 12 }}>Đăng nhập để thanh toán</h2>
+          <p style={{ color: "var(--muted)", marginBottom: 28, fontSize: 14, lineHeight: 1.6 }}>
+            Vui lòng đăng nhập vào tài khoản LSOUL của bạn để tiếp tục thanh toán, áp dụng ưu đãi và theo dõi đơn hàng.
+          </p>
+          <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+            <Link className="btn" href="/login?next=/checkout">Đăng nhập ngay</Link>
+            <Link className="btn secondary" href="/register?next=/checkout">Tạo tài khoản</Link>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   if (!cart.length && !completedOrder) return <div className="emptyState"><div><h2>Chưa có sản phẩm để thanh toán</h2><Link className="btn" href="/shop">Quay lại cửa hàng</Link></div></div>;
 
   if (completedOrder) return (
@@ -85,7 +123,6 @@ export default function CheckoutPage() {
   return (
     <section className="checkoutPage">
       <div className="pageHero" style={{padding: 0, border: 0, marginBottom: 30}}><p className="eyebrow">SECURE CHECKOUT</p><h1>Thanh toán</h1></div>
-      {!user ? <div className="checkoutAccountPrompt"><UserRound size={18} /><div><strong>Đã có tài khoản?</strong><span>Đăng nhập để dùng địa chỉ đã lưu và theo dõi đơn hàng.</span></div><Link href="/login?next=/checkout">Đăng nhập</Link></div> : null}
       <form onSubmit={submit} className="twoCol">
         <div className="panel">
           <div className="checkoutSectionHead"><h2>Thông tin nhận hàng</h2>{user && addresses.length ? <span>Đang dùng địa chỉ đã lưu</span> : null}</div>

@@ -68,7 +68,7 @@ function firstSize(product: Product) {
 export function TryOnClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { catalog, wishlist, addBundleToCart } = useStore();
+  const { catalog, wishlist, addBundleToCart, user } = useStore();
 
   const wishlistProducts = useMemo(
     () => catalog.filter((product) => product.active !== false && Boolean(product.tryOnImage) && wishlist.includes(product.id)),
@@ -258,6 +258,10 @@ export function TryOnClient() {
   }
 
   function buySet(goCheckout = false) {
+    if (!user) {
+      router.push(`/login?next=${encodeURIComponent("/try-on")}`);
+      return;
+    }
     const bundle = configured.flatMap((item) => {
       const product = catalog.find((candidate) => candidate.id === item.productId);
       if (!product) return [];
@@ -274,12 +278,6 @@ export function TryOnClient() {
 
   return (
     <section className="fittingRoomPage">
-      <div className="fittingHero" data-reveal>
-        <p className="eyebrow">PHÒNG THỬ ĐỒ AI LSOUL</p>
-        <h1>Thử trước.<br />Ưng thì mặc.</h1>
-        <p>Chọn những món đã lưu, thử trực tiếp trên ảnh của bạn bằng AI, rồi chỉnh màu và cỡ trước khi mua cả bộ.</p>
-      </div>
-
       <div className="fittingWorkspace">
         <aside className="fittingSidebar">
           <div className="fittingStep">
@@ -292,8 +290,8 @@ export function TryOnClient() {
           </div>
 
           <div className="fittingStep">
-            <div className="fittingStepHead"><span>02</span><div><strong>Tủ đồ đã lưu</strong><small>Áo + quần/chân váy (+ áo khoác), hoặc váy/đầm riêng</small></div><Sparkles size={17} /></div>
-            <div className="fittingLookSummary"><span>BỘ ĐỒ</span><strong>{outfitLabel(selectedProducts)}</strong></div>
+            <div className="fittingStepHead"><span>02</span><div><strong>Chọn trang phục thử</strong><small>Thử từng món riêng lẻ hoặc kết hợp cả bộ</small></div><Sparkles size={17} /></div>
+            <div className="fittingLookSummary"><span>ĐANG CHỌN</span><strong>{outfitLabel(selectedProducts)}</strong></div>
             <div className="fittingWishlist fittingWardrobeGroups">
               {(["tops", "bottoms", "dresses", "outerwear"] as WardrobeGroup[]).map((group) => {
                 const grouped = fallbackProducts.filter((product) => wardrobeGroup(product) === group);
@@ -316,7 +314,7 @@ export function TryOnClient() {
             {loading ? <LoaderCircle className="spin" size={17} /> : <WandSparkles size={17} />}
             {loading ? "Đang tạo fitting..." : `Thử ${outfitLabel(selectedProducts)} bằng AI`}
           </button>
-          {!outfitReady && selectedProducts.length ? <p className="fittingCompositionHint">Outfit chưa hoàn chỉnh · cần áo + quần/chân váy, hoặc một váy/đầm.</p> : null}
+          {!selectedProducts.length ? <p className="fittingCompositionHint">Vui lòng chọn ít nhất 1 món đồ từ danh sách trên để thử.</p> : null}
           <p className="fittingStatus">{message}</p>
         </aside>
 

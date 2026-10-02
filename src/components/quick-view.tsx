@@ -34,7 +34,10 @@ export function QuickView({ product, onClose }: { product: Product; onClose: () 
           <div className="colorSwatchRow"><span className={`swatch swatch-${product.colorFamily}`} /><small>{product.color}</small></div>
           <div className="optionLabel"><span>Chọn size</span><span>Còn {selectedStock}</span></div>
           <div className="sizeGrid">{product.sizes.map((value) => { const stock = product.variants?.find((variant) => variant.size === value)?.stock ?? product.stock; return <button disabled={stock <= 0} className={`sizeButton ${size === value ? "active" : ""} ${stock <= 0 ? "soldOut" : ""}`} key={value} onClick={() => setSize(value)}>{value}</button>; })}</div>
-          <div className="quickViewActions"><button className="btn block" disabled={selectedStock <= 0} onClick={() => { addToCart(product, size); onClose(); }}><ShoppingBag size={16} /> Thêm vào giỏ</button><button className="btn secondary" onClick={() => toggleWishlist(product.id)} aria-label="Yêu thích"><Heart size={17} fill={liked ? "currentColor" : "none"} /></button></div>
+          <div className="quickViewActions">
+            <button className="btn block" disabled={selectedStock <= 0} onClick={() => { addToCart(product, size); onClose(); }}><ShoppingBag size={16} /> Thêm vào giỏ</button>
+            <button className={`btn secondary ${liked ? "active" : ""}`} onClick={() => toggleWishlist(product.id)} aria-label="Yêu thích"><Heart size={16} fill={liked ? "currentColor" : "none"} /> <span>{liked ? "Đã thích" : "Thích"}</span></button>
+          </div>
           <Link className="quickViewDetail" href={`/product/${product.id}`} onClick={onClose}>Xem chi tiết sản phẩm <ArrowRight size={14} /></Link>
         </div>
       </div>

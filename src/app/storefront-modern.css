@@ -75,7 +75,9 @@
 .quickViewInfo > p:not(.eyebrow) { color:var(--muted); font-size:12px; }
 .quickViewPrice { font-size:18px; margin:24px 0 5px; }
 .quickViewPrice del { color:var(--muted); font-size:11px; margin-left:8px; }
-.quickViewActions { display:grid; grid-template-columns:1fr 50px; gap:7px; margin-top:24px; }
+.quickViewActions { display:grid; grid-template-columns:1fr auto; gap:8px; margin-top:24px; }
+.quickViewActions .btn.secondary { display:flex; align-items:center; justify-content:center; gap:6px; padding:0 16px; font-size:13px; white-space:nowrap; }
+.quickViewActions .btn.secondary.active { color:#e53e3e; border-color:#feb2b2; background:#fff5f5; }
 .quickViewDetail { display:flex; align-items:center; justify-content:center; gap:7px; margin-top:16px; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.08em; }
 .variantSwatches { display:flex; flex-wrap:wrap; gap:7px; margin:12px 0 5px; }
 .variantSwatches a { display:flex; align-items:center; gap:6px; border:1px solid var(--line); padding:7px 9px; background:var(--paper); font-size:9px; }

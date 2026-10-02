@@ -109,7 +109,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Có sản phẩm không còn khả dụng." }, { status: 400 });
     }
     if (!isValidOutfit(selected)) {
-      return NextResponse.json({ error: "Outfit không hợp lệ. Hãy phối áo + quần/chân váy (+ áo khoác), hoặc chọn một váy/set riêng." }, { status: 400 });
+      return NextResponse.json({ error: "Vui lòng chọn từ 1 đến 3 món đồ hợp lệ để thử." }, { status: 400 });
     }
 
     const ordered = sortOutfitProducts(selected);

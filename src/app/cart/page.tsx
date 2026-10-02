@@ -2,14 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { Minus, Plus, ShoppingBag, Trash2, UserRound } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { useStore } from "@/components/store-provider";
 import { calculateCouponDiscount } from "@/lib/cart";
 import { formatPrice } from "@/lib/products";
 
 export default function CartPage() {
-  const { cart, updateQuantity, removeFromCart, coupon, applyCoupon, clearCoupon } = useStore();
+  const { cart, updateQuantity, removeFromCart, coupon, applyCoupon, clearCoupon, user } = useStore();
   const [couponInput, setCouponInput] = useState("");
   const [couponMessage, setCouponMessage] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
@@ -40,6 +40,16 @@ export default function CartPage() {
         <div className="shippingProgressHead"><strong>{remaining === 0 ? "Bạn đã được miễn phí vận chuyển." : `Thêm ${formatPrice(remaining)} để được freeship.`}</strong><span>{Math.round(progress)}%</span></div>
         <div className="progressTrack"><div className="progressFill" style={{width: `${progress}%`}} /></div>
       </div>
+      {!user ? (
+        <div className="checkoutAccountPrompt" style={{ marginBottom: 20 }}>
+          <UserRound size={18} />
+          <div>
+            <strong>Yêu cầu đăng nhập</strong>
+            <span>Vui lòng đăng nhập để lưu trữ giỏ hàng và tiến hành thanh toán an toàn.</span>
+          </div>
+          <Link href="/login?next=/cart">Đăng nhập</Link>
+        </div>
+      ) : null}
       <div className="twoCol">
         <div className="panel">
           {cart.map((line) => (
@@ -63,7 +73,7 @@ export default function CartPage() {
           </div>
 
           <p style={{color: "var(--muted)", fontSize: 12, lineHeight: 1.6}}>Thanh toán khi nhận hàng hoặc chuyển khoản nhanh bằng QR.</p>
-          <Link className="btn block" href="/checkout">Tiến hành thanh toán</Link>
+          <Link className="btn block" href={user ? "/checkout" : "/login?next=/checkout"}>Tiến hành thanh toán</Link>
           <Link className="btn ghost block" href="/shop" style={{marginTop: 8}}>Tiếp tục mua sắm</Link>
         </aside>
       </div>
