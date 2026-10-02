@@ -12,7 +12,7 @@ export async function GET() {
       where: { role: "customer" },
       include: {
         _count: { select: { orders: true, wishlist: true, addresses: true } },
-        orders: { where: { status: { not: "cancelled" } }, select: { total: true, createdAt: true }, orderBy: { createdAt: "desc" } }
+        orders: { where: { OR: [{ paymentStatus: "paid" }, { payment: "cod", status: "completed" }] }, select: { total: true, createdAt: true }, orderBy: { createdAt: "desc" } }
       },
       orderBy: { createdAt: "desc" }
     });
