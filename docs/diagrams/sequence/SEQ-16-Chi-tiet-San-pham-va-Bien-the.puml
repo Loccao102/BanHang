@@ -1,0 +1,25 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+title SEQ-16 - CHI TIẾT SẢN PHẨM & BIẾN THỂ
+actor "Người dùng" as U
+boundary "Product Detail UI" as UI
+control "Product/Review API" as API
+control "Catalog Service" as S
+control "Prisma Client" as P
+database "PostgreSQL" as DB
+U -> UI : Chọn sản phẩm
+UI -> API : GET product detail/reviews
+API -> S : loadProductDetail()
+S -> P : find Product + variants + reviews
+P -> DB : SELECT Product/Variant/Review
+S --> API : detail + variants + rating
+API --> UI : Hiển thị
+U -> UI : Chọn màu
+UI -> UI : Đổi ảnh/variant
+U -> UI : Chọn cỡ
+UI -> UI : Kiểm tra stock
+UI --> U : Còn hàng / hết hàng
+@enduml

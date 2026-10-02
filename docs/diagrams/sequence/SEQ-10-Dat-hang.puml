@@ -1,0 +1,31 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+title SEQ-10 - ĐẶT HÀNG
+actor "Khách hàng" as U
+boundary "Checkout UI" as UI
+control "Orders API" as API
+control "Order Service" as S
+control "Prisma Client" as P
+database "PostgreSQL" as DB
+U -> UI : Nhập thông tin nhận hàng
+U -> UI : Chọn QR/COD
+U -> UI : Xác nhận đặt hàng
+UI -> API : POST /api/orders
+API -> S : createOrder()
+S -> P : load products/variants/coupon
+P -> DB : SELECT Product/Variant/Coupon
+alt Hết hàng / coupon lỗi
+ S --> API : rejected
+ API --> UI : 400/409
+ UI --> U : Yêu cầu cập nhật giỏ
+else Hợp lệ
+ S -> P : Serializable transaction
+ P -> DB : UPDATE stock + INSERT Order/Items + clear cart
+ S --> API : created order
+ API --> UI : 201 + order
+ UI --> U : Xác nhận đơn
+end
+@enduml

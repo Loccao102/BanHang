@@ -3,40 +3,28 @@ skinparam monochrome true
 skinparam shadowing false
 skinparam sequenceMessageAlign center
 skinparam responseMessageBelowArrow true
-
 title SEQ-01 - ĐĂNG NHẬP
-
-actor "Người dùng" as User
+actor "Người dùng" as U
 boundary "Login UI" as UI
 control "Auth API" as API
-control "Auth Service" as Service
-control "Prisma Client" as Prisma
+control "Auth Service" as S
+control "Prisma Client" as P
 database "PostgreSQL" as DB
-
-User -> UI : 1. Nhập email + mật khẩu
-UI -> API : 2. POST /api/auth/login
-API -> Service : 3. login(email, password)
-Service -> Prisma : 4. findUnique(User by email)
-Prisma -> DB : 5. SELECT User
-Service -> Service : 6. verifyPassword()
-
-alt Sai email / mật khẩu
-    Service --> API : 7a. Authentication failed
-    API --> UI : 8a. 401 + error
-    UI --> User : 9a. Hiển thị lỗi
-else Thông tin hợp lệ
-    Service -> Prisma : 7b. create Session(tokenHash, expiresAt)
-    Prisma -> DB : 8b. INSERT Session
-    Service --> API : 9b. Authenticated user + session token
-    API --> UI : 10b. 200 + Set-Cookie lsoul_session
-
-    UI -> API : 11b. GET /api/account/state
-    API -> Service : 12b. getCurrentUser()
-    Service -> Prisma : 13b. find Session + User
-    Prisma -> DB : 14b. SELECT Session/User/account state
-    Service --> API : 15b. User + account state
-    API --> UI : 16b. authenticated=true
-    UI --> User : 17b. Redirect next hoặc /account
+U -> UI : Nhập email + mật khẩu
+UI -> API : POST /api/auth/login
+API -> S : login(email,password)
+S -> P : findUnique(User by email)
+P -> DB : SELECT User
+S -> S : verifyPassword()
+alt Sai thông tin
+  S --> API : authentication failed
+  API --> UI : 401 + error
+  UI --> U : Hiển thị lỗi
+else Hợp lệ
+  S -> P : create Session
+  P -> DB : INSERT Session
+  S --> API : user + session
+  API --> UI : 200 + Set-Cookie
+  UI --> U : Redirect /account
 end
-
 @enduml

@@ -1,0 +1,38 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+title SEQ-04 - QUẢN LÝ TÀI KHOẢN
+actor "Khách hàng" as U
+boundary "Account UI" as UI
+control "Account API" as API
+control "Account Service" as S
+control "Prisma Client" as P
+database "PostgreSQL" as DB
+U -> UI : Mở tài khoản
+UI -> API : GET /api/account/state
+API -> S : loadAccountState()
+S -> P : query account data
+P -> DB : SELECT User/Address/Cart/Order
+S --> API : account state
+API --> UI : data
+group Cập nhật hồ sơ
+ U -> UI : Sửa họ tên / điện thoại
+ UI -> API : PATCH /account/profile
+ API -> S : updateProfile()
+ S -> P : update User
+ P -> DB : UPDATE User
+ S --> API : updated user
+ API --> UI : success
+end
+group Đổi mật khẩu / địa chỉ
+ U -> UI : Thao tác
+ UI -> API : PATCH/POST/DELETE
+ API -> S : validate + update
+ S -> P : persist changes
+ P -> DB : UPDATE/INSERT/DELETE
+ S --> API : success
+ API --> UI : refreshed state
+end
+@enduml

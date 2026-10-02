@@ -1,0 +1,27 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+title SEQ-15 - QUẢN TRỊ SẢN PHẨM & BÁN HÀNG
+actor "Quản trị viên" as A
+boundary "Admin UI" as UI
+control "Admin API" as API
+control "Admin Service" as S
+control "Prisma Client" as P
+database "PostgreSQL" as DB
+A -> UI : Mở dashboard
+UI -> API : Yêu cầu dữ liệu quản trị
+API -> S : requireAdmin() + load data
+S -> P : query products/orders/customers/coupons
+P -> DB : SELECT admin data
+S --> API : dashboard data
+API --> UI : Hiển thị
+A -> UI : Thêm/sửa sản phẩm hoặc bán hàng
+UI -> API : POST/PATCH admin APIs
+API -> S : validate admin action
+S -> P : persist business data
+P -> DB : UPSERT/UPDATE
+S --> API : saved
+API --> UI : refreshed state
+@enduml

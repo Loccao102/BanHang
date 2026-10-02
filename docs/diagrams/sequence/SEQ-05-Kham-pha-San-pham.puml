@@ -1,0 +1,25 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+title SEQ-05 - KHÁM PHÁ & LỰA CHỌN SẢN PHẨM
+actor "Người dùng" as U
+boundary "Shop UI" as UI
+control "Store API" as API
+control "Catalog Service" as S
+control "Prisma Client" as P
+database "PostgreSQL" as DB
+U -> UI : Mở Shop
+UI -> API : GET /api/store/bootstrap
+API -> S : loadCatalog()
+S -> P : find active products + variants
+P -> DB : SELECT Product/Variant
+S --> API : catalog + settings
+API --> UI : product list
+UI -> UI : Search / filter / sort
+U -> UI : Chọn sản phẩm
+UI -> UI : Hiển thị detail
+U -> UI : Chọn màu / size
+UI -> UI : Cập nhật variant + stock
+@enduml

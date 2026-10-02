@@ -1,0 +1,31 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+title SEQ-08 - ĐÁNH GIÁ OUTFIT & PHẢN HỒI AI STYLIST
+actor "Người dùng" as U
+boundary "Try-On UI" as UI
+control "Stylist API" as API
+control "Stylist Service" as S
+participant "Gemini / AI Stylist" as AI
+control "Prisma Client" as P
+database "PostgreSQL" as DB
+UI -> API : POST /api/tryon/assess
+API -> S : assessOutfit()
+S -> P : load style context
+P -> DB : SELECT style-learning data
+S -> AI : evaluate rendered outfit
+AI --> S : score + explanation
+S -> P : save OutfitAssessment
+P -> DB : INSERT OutfitAssessment
+S --> API : assessment
+API --> UI : Hiển thị đánh giá
+U -> UI : Gửi feedback
+UI -> API : POST /api/tryon/feedback
+API -> S : recordFeedback()
+S -> P : persist feedback
+P -> DB : INSERT/UPDATE learning data
+S --> API : saved
+API --> UI : updated state
+@enduml
