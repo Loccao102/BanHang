@@ -27,7 +27,6 @@ async function reset() {
   await prisma.socialEvent.deleteMany();
   await prisma.socialPostProduct.deleteMany();
   await prisma.socialPost.deleteMany();
-  await prisma.review.deleteMany();
   await prisma.session.deleteMany();
   await prisma.passwordResetToken.deleteMany();
   await prisma.cartItem.deleteMany();
@@ -243,38 +242,6 @@ async function seedCommerce() {
   }
 }
 
-async function seedReviews() {
-  const completed = await prisma.orderItem.findMany({
-    where: { order: { status: "completed", userId: { not: null } } },
-    include: { order: true },
-    take: 24
-  });
-
-  const seen = new Set<string>();
-  let index = 0;
-  for (const item of completed) {
-    if (!item.order.userId) continue;
-    const key = `${item.order.userId}::${item.productId}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    const rating = [5, 5, 4, 5][index % 4];
-
-    await prisma.review.create({
-      data: {
-        userId: item.order.userId,
-        productId: item.productId,
-        orderItemId: item.id,
-        rating,
-        title: rating === 5 ? "Lên dáng rất đẹp" : "Phom đẹp, nên chọn đúng cỡ",
-        content: rating === 5 ? "Thiết kế tôn dáng, màu ngoài đời đẹp và lên hình tốt." : "Phom ổn, mình khuyên xem kỹ bảng cỡ trước khi đặt.",
-        images: [],
-        verified: true,
-        approved: true
-      }
-    });
-    index += 1;
-  }
-}
 
 type PersonaEvent = { type: BehaviorEventType; sku: string; repeat?: number; weight?: number };
 
@@ -366,7 +333,6 @@ async function main() {
   await seedProducts();
   await seedAccounts();
   await seedCommerce();
-  await seedReviews();
   await seedLearning();
 
   console.log("\nLSOUL demo dataset seeded successfully.");
