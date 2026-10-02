@@ -40,8 +40,7 @@ export async function loadAvailableProducts(db: PrismaClient | null): Promise<Pr
   const rows = await db.product.findMany({
     where: { active: true, stock: { gt: 0 } },
     include: {
-      variants: { where: { active: true }, orderBy: { size: "asc" } },
-      reviews: { where: { approved: true }, select: { rating: true } }
+      variants: { where: { active: true }, orderBy: { size: "asc" } }
     }
   });
   return rows.map(fromProductRow);
@@ -142,11 +141,10 @@ export function retrieveProducts(
       if (refinement && contextTypes.has(item.type)) score += 7;
       else if (refinement && contextCategories.has(item.category)) score += 4;
       if (item.featured) score += 2;
-      if ((item.rating ?? 0) >= 4.5) score += 1;
       return { item, score };
     })
     .filter(({ item, score }) => score > 0 || (!category && !requestedTypes.length && !colors.length && !occasionGroups.length && (!budget || item.price <= budget)))
-    .sort((a, b) => b.score - a.score || (b.item.rating ?? 0) - (a.item.rating ?? 0) || a.item.price - b.item.price)
+    .sort((a, b) => b.score - a.score || Number(Boolean(b.item.featured)) - Number(Boolean(a.item.featured)) || a.item.price - b.item.price)
     .slice(0, limit)
     .map(({ item }) => item);
 
