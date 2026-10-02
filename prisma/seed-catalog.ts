@@ -5,6 +5,15 @@ import { toProductRow } from "../src/lib/server/product-db";
 const prisma = new PrismaClient();
 
 async function main() {
+  const sourceIds = products.map((product) => product.id);
+
+  // Không xóa sản phẩm cũ để giữ khóa ngoại từ order/review,
+  // nhưng loại chúng khỏi storefront nếu không còn trong catalog source hiện tại.
+  await prisma.product.updateMany({
+    where: { id: { notIn: sourceIds } },
+    data: { active: false, analyzerReady: false }
+  });
+
   for (const product of products) {
     const row = toProductRow(product);
     const { id, ...update } = row;
