@@ -17,7 +17,7 @@ export async function GET() {
         orderBy: { sortOrder: "asc" },
         include: {
           product: {
-            include: { variants: true, reviews: { where: { approved: true }, select: { rating: true } } }
+            include: { variants: true }
           }
         }
       }
