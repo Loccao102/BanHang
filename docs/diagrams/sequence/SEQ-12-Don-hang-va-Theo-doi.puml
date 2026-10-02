@@ -1,0 +1,22 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+title SEQ-12 - LỊCH SỬ & THEO DÕI ĐƠN HÀNG
+actor "Khách hàng" as U
+boundary "Orders UI" as UI
+control "Account API" as API
+control "Order Service" as S
+control "Prisma Client" as P
+database "PostgreSQL" as DB
+U -> UI : UC29 Mở lịch sử đơn hàng
+UI -> API : GET /api/account/state
+API -> S : loadOrders(userId)
+S -> P : find Orders + Items
+P -> DB : SELECT Order / OrderItem
+S --> API : orders
+API --> UI : danh sách đơn
+U -> UI : UC30 Chọn đơn để theo dõi
+UI -> UI : Hiển thị status / carrier / trackingCode
+@enduml
