@@ -477,6 +477,46 @@ const data: Seed[] = [
     style: ["Y2K", "gothic", "statement"], occasion: ["đi chơi", "concert"], material: "Vải loang phối dây da",
     fit: "Slim strappy crop", silhouette: "fitted", lengthClass: "cropped", neckline: "square", sleeveLength: "sleeveless", colorTemperature: "warm", tryOn: true
   }
+  {
+    sku: "A25102840", name: "Jio Bodysuit", subtitle: "Bodysuit cotton co giãn phong cách Y2K",
+    category: "tops", type: "bodysuit", price: 979000, color: "Đen / trắng / xám / hồng", colorFamily: "black",
+    image: "https://dosi-in.com/img/600/vn-11134207-820l4-mhaa4n099p1paa.webp",
+    sourceUrl: "https://dosi-in.com/san-pham/lsoul-bodysuit-cotton-co-gian-goi-cam-phong-cach-y2k-jio-bodysuit-a25102840-269491027.49901802775/",
+    style: ["Y2K", "basic", "sexy"], occasion: ["đi chơi", "hẹn hò"], material: "Cotton",
+    fit: "Fitted bodysuit", silhouette: "fitted", lengthClass: "regular", neckline: "scoop", sleeveLength: "sleeveless", tryOn: true
+  },
+  {
+    sku: "A26072917", name: "Risse Top", subtitle: "Áo corset cúp ngực dáng ôm định hình đính nơ",
+    category: "tops", type: "corset", price: 4068000, color: "Tím lilac", colorFamily: "pink",
+    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-msb0nwru4dmqf8.webp",
+    sourceUrl: "https://dosi-in.com/san-pham/mo-ban-lsoul-ao-kieu-corset-cup-nguc-dang-om-dinh-hinh-dinh-no-nguc-quyen-ru-ca-tinh-risse-top-a26072917-269491027.54862695886/",
+    style: ["corset", "romantic", "statement"], occasion: ["hẹn hò", "đi tiệc"], material: "Vải corset định hình",
+    fit: "Structured corset", silhouette: "corset", lengthClass: "regular", neckline: "strapless", sleeveLength: "sleeveless", colorTemperature: "cool", tryOn: true
+  },
+  {
+    sku: "A26062912", name: "Therric Top", subtitle: "Áo corset cúp ngực ôm định hình đính nơ",
+    category: "tops", type: "corset", price: 3682250, color: "Nâu caramel", colorFamily: "brown",
+    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-mq8n27eslsle50.webp",
+    sourceUrl: "https://dosi-in.com/san-pham/mo-ban-lsoul-ao-kieu-corset-cup-nguc-om-dinh-hinh-dinh-no-nguc-quyen-ru-ca-tinh-therric-top-a26062912-269491027.44612715204/",
+    style: ["corset", "elegant", "statement"], occasion: ["hẹn hò", "đi tiệc"], material: "Vải corset định hình",
+    fit: "Structured corset", silhouette: "corset", lengthClass: "regular", neckline: "sweetheart", sleeveLength: "sleeveless", colorTemperature: "warm", tryOn: true
+  },
+  {
+    sku: "A26062913", name: "Kat Top", subtitle: "Áo corset cúp ngực dáng ôm đính nơ",
+    category: "tops", type: "corset", price: 3850000, color: "Hồng lilac", colorFamily: "pink",
+    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-msjfu5rue4g739.webp",
+    sourceUrl: "https://dosi-in.com/san-pham/deal-mo-ban-lsoul-ao-kieu-corset-cup-nguc-dang-om-dinh-hinh-dinh-no-nguc-quyen-ru-ca-tinh-kat-top-a26062913-269491027.56667286928/",
+    style: ["corset", "romantic", "nữ tính"], occasion: ["hẹn hò", "đi tiệc"], material: "Vải corset định hình",
+    fit: "Structured corset", silhouette: "corset", lengthClass: "regular", neckline: "sweetheart", sleeveLength: "sleeveless", colorTemperature: "cool", tryOn: true
+  },
+  {
+    sku: "V2609031", name: "Liu Top", subtitle: "Áo bustier crop cổ tim xếp nhún tay bồng",
+    category: "tops", type: "crop-top", price: 4068000, color: "Trắng kem", colorFamily: "white",
+    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-msnxcfimdnuub4.webp",
+    sourceUrl: "https://dosi-in.com/san-pham/mo-ban-lsoul-ao-bustier-crop-co-tim-xep-nhun-tay-bong-om-sat-ton-dang-liu-top-v2609031-269491027.46867306231/",
+    style: ["romantic", "elegant", "nữ tính"], occasion: ["hẹn hò", "đi tiệc"], material: "Vải co giãn xếp nhún",
+    fit: "Fitted bustier crop", silhouette: "fitted", lengthClass: "cropped", neckline: "sweetheart", sleeveLength: "short", tryOn: true
+  }
 ];
 
 export const extendedProducts: Product[] = data.map(makeProduct);
