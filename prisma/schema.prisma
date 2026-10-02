@@ -54,6 +54,7 @@ model User {
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
   sessions     Session[]
+  passwordResetTokens PasswordResetToken[]
   addresses    Address[]
   wishlist     WishlistItem[]
   cartItems    CartItem[]
@@ -94,6 +95,19 @@ model Session {
   tokenHash String   @unique
   userId    String
   expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 

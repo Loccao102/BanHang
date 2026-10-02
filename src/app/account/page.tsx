@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Home, ArrowRight, LogOut, MapPin, Package, Plus, ShieldCheck, Trash2, UserRound } from "lucide-react";
+import { Home, ArrowRight, LogOut, MapPin, Package, Pencil, Plus, ShieldCheck, Trash2, UserRound, X } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/components/store-provider";
@@ -16,6 +16,7 @@ export default function AccountPage() {
   const { user, addresses, orders, wishlist, cartCount, accountLoading, refreshAccount, logout } = useStore();
   const [tab, setTab] = useState<Tab>("overview");
   const [addressForm, setAddressForm] = useState(false);
+  const [editingAddress, setEditingAddress] = useState<CustomerAddress | null>(null);
   const [profileMessage, setProfileMessage] = useState("");
   const [passwordMessage, setPasswordMessage] = useState("");
 
@@ -60,21 +61,33 @@ export default function AccountPage() {
     if (response.ok) (event.currentTarget as HTMLFormElement).reset();
   }
 
-  async function addAddress(event: FormEvent<HTMLFormElement>) {
+  async function saveAddress(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    const response = await fetch("/api/account/addresses", {
-      method: "POST",
+    const payload = {
+      label: data.get("label"), recipientName: data.get("recipientName"), phone: data.get("phone"),
+      address: data.get("address"), city: data.get("city"), isDefault: data.get("isDefault") === "on"
+    };
+    const response = await fetch(editingAddress ? `/api/account/addresses/${editingAddress.id}` : "/api/account/addresses", {
+      method: editingAddress ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        label: data.get("label"), recipientName: data.get("recipientName"), phone: data.get("phone"),
-        address: data.get("address"), city: data.get("city"), isDefault: data.get("isDefault") === "on"
-      })
+      body: JSON.stringify(payload)
     });
     if (response.ok) {
       setAddressForm(false);
+      setEditingAddress(null);
       await refreshAccount(false);
     }
+  }
+
+  function startEditAddress(address: CustomerAddress) {
+    setEditingAddress(address);
+    setAddressForm(true);
+  }
+
+  function closeAddressForm() {
+    setAddressForm(false);
+    setEditingAddress(null);
   }
 
   async function setDefault(address: CustomerAddress) {
@@ -100,7 +113,7 @@ export default function AccountPage() {
   return (
     <section className="accountPage">
       <div className="accountHero">
-        <div><p className="eyebrow">MY LSOUL</p><h1>Xin chào, {user.name.split(" ").slice(-1)[0]}.</h1><p>{user.email}</p></div>
+        <div><p className="eyebrow">TÀI KHOẢN LSOUL</p><h1>Xin chào, {user.name.split(" ").slice(-1)[0]}.</h1><p>{user.email}</p></div>
         <button className="btn ghost small" onClick={signOut}><LogOut size={15} /> Đăng xuất</button>
       </div>
 
@@ -112,12 +125,12 @@ export default function AccountPage() {
       {tab === "overview" ? <div className="accountOverview">
         <div className="accountStat"><Package size={20} /><span>Đơn hàng</span><strong>{orders.length}</strong><button onClick={() => setTab("orders")}>Xem lịch sử</button></div>
         <div className="accountStat"><Home size={20} /><span>Địa chỉ đã lưu</span><strong>{addresses.length}</strong><button onClick={() => setTab("addresses")}>Quản lý</button></div>
-        <div className="accountStat"><UserRound size={20} /><span>Wishlist</span><strong>{wishlist.length}</strong><Link href="/wishlist">Xem wishlist</Link></div>
+        <div className="accountStat"><UserRound size={20} /><span>Yêu thích</span><strong>{wishlist.length}</strong><Link href="/wishlist">Xem yêu thích</Link></div>
         <div className="accountStat"><ShieldCheck size={20} /><span>Giỏ hàng</span><strong>{cartCount}</strong><Link href="/cart">Xem giỏ hàng</Link></div>
       </div> : null}
 
       {tab === "profile" ? <div className="accountPanel narrowPanel">
-        <div className="accountPanelHead"><div><p className="eyebrow">PROFILE</p><h2>Thông tin cá nhân</h2></div></div>
+        <div className="accountPanelHead"><div><p className="eyebrow">HỒ SƠ</p><h2>Thông tin cá nhân</h2></div></div>
         <form className="accountForm" onSubmit={saveProfile}>
           <label><span>Họ tên</span><input name="name" defaultValue={user.name} required /></label>
           <label><span>Email</span><input value={user.email} disabled /></label>
@@ -127,7 +140,7 @@ export default function AccountPage() {
         </form>
         <div className="accountDivider" />
         <form className="accountForm" onSubmit={changePassword}>
-          <p className="eyebrow">SECURITY</p>
+          <p className="eyebrow">BẢO MẬT</p>
           <h3>Đổi mật khẩu</h3>
           <label><span>Mật khẩu hiện tại</span><input name="currentPassword" type="password" required autoComplete="current-password" /></label>
           <label><span>Mật khẩu mới</span><input name="newPassword" type="password" minLength={8} required autoComplete="new-password" /></label>
@@ -138,25 +151,26 @@ export default function AccountPage() {
       </div> : null}
 
       {tab === "addresses" ? <div className="accountPanel">
-        <div className="accountPanelHead"><div><p className="eyebrow">DELIVERY ADDRESSES</p><h2>Sổ địa chỉ</h2></div><button className="btn small" onClick={() => setAddressForm((value) => !value)}><Plus size={14} /> Thêm địa chỉ</button></div>
-        {addressForm ? <form className="addressForm" onSubmit={addAddress}>
-          <label><span>Nhãn</span><input name="label" placeholder="Nhà / Công ty" /></label>
-          <label><span>Người nhận</span><input name="recipientName" required defaultValue={user.name} /></label>
-          <label><span>Số điện thoại</span><input name="phone" required defaultValue={user.phone ?? ""} /></label>
-          <label><span>Tỉnh / Thành</span><input name="city" required /></label>
-          <label className="full"><span>Địa chỉ</span><input name="address" required placeholder="Số nhà, đường, phường/xã..." /></label>
-          <label className="addressCheck"><input type="checkbox" name="isDefault" /> Đặt làm địa chỉ mặc định</label>
-          <button className="btn" type="submit">Lưu địa chỉ</button>
+        <div className="accountPanelHead"><div><p className="eyebrow">ĐỊA CHỈ GIAO HÀNG</p><h2>Sổ địa chỉ</h2></div><button className="btn small" onClick={() => { setEditingAddress(null); setAddressForm(true); }}><Plus size={14} /> Thêm địa chỉ</button></div>
+        {addressForm ? <form className="addressForm" onSubmit={saveAddress}>
+          <div className="addressFormTitle"><strong>{editingAddress ? "Sửa địa chỉ" : "Thêm địa chỉ mới"}</strong><button type="button" onClick={closeAddressForm} aria-label="Đóng"><X size={16} /></button></div>
+          <label><span>Nhãn</span><input name="label" defaultValue={editingAddress?.label ?? ""} placeholder="Nhà / Công ty" /></label>
+          <label><span>Người nhận</span><input name="recipientName" required defaultValue={editingAddress?.recipientName ?? user.name} /></label>
+          <label><span>Số điện thoại</span><input name="phone" required defaultValue={editingAddress?.phone ?? user.phone ?? ""} /></label>
+          <label><span>Tỉnh / Thành</span><input name="city" required defaultValue={editingAddress?.city ?? ""} /></label>
+          <label className="full"><span>Địa chỉ</span><input name="address" required defaultValue={editingAddress?.address ?? ""} placeholder="Số nhà, đường, phường/xã..." /></label>
+          <label className="addressCheck"><input type="checkbox" name="isDefault" defaultChecked={editingAddress?.isDefault ?? false} /> Đặt làm địa chỉ mặc định</label>
+          <button className="btn" type="submit">{editingAddress ? "Cập nhật địa chỉ" : "Lưu địa chỉ"}</button>
         </form> : null}
         <div className="addressGrid">{addresses.map((address) => <article className="addressCard" key={address.id}>
           <div className="addressTop"><MapPin size={18} /><strong>{address.label}</strong>{address.isDefault ? <span>Mặc định</span> : null}</div>
           <h3>{address.recipientName}</h3><p>{address.phone}</p><p>{address.address}, {address.city}</p>
-          <div className="addressActions">{!address.isDefault ? <button onClick={() => setDefault(address)}>Đặt mặc định</button> : <span /> }<button onClick={() => removeAddress(address.id)}><Trash2 size={13} /> Xóa</button></div>
+          <div className="addressActions"><div>{!address.isDefault ? <button onClick={() => setDefault(address)}>Đặt mặc định</button> : <span />}</div><div><button onClick={() => startEditAddress(address)}><Pencil size={13} /> Sửa</button><button onClick={() => removeAddress(address.id)}><Trash2 size={13} /> Xóa</button></div></div>
         </article>)}</div>
       </div> : null}
 
       {tab === "orders" ? <div className="accountPanel">
-        <div className="accountPanelHead"><div><p className="eyebrow">ORDER HISTORY</p><h2>Đơn hàng của bạn</h2></div></div>
+        <div className="accountPanelHead"><div><p className="eyebrow">LỊCH SỬ ĐƠN HÀNG</p><h2>Đơn hàng của bạn</h2></div></div>
         {orders.length ? <div className="accountOrders">{orders.map((order) => <article key={order.id}>
           <div className="accountOrderHead"><div><strong>#{order.id}</strong><small>{new Intl.DateTimeFormat("vi-VN",{dateStyle:"medium"}).format(new Date(order.createdAt))}</small></div><span>{order.status === "processing" ? "Đang xử lý" : order.status === "confirmed" ? "Đã xác nhận" : order.status === "shipping" ? "Đang giao" : order.status === "completed" ? "Hoàn tất" : "Đã hủy"}</span></div>
           <div className="accountOrderItems">{order.items.slice(0,4).map((line) => <div key={`${order.id}-${line.product.id}-${line.size}`} className="accountOrderItem"><div><Image src={line.product.image} alt={line.product.name} fill sizes="64px" /></div><span><strong>{line.product.name}</strong><small>Size {line.size ?? "-"} · SL {line.quantity}</small></span></div>)}</div>

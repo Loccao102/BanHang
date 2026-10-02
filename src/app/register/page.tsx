@@ -47,7 +47,7 @@ export default function RegisterPage() {
   return (
     <section className="authPage registerLayout">
       <div className="authVisual">
-        <div><p className="eyebrow">JOIN LSOUL</p><h1>Your wardrobe,<br />remembered.</h1><p>Tạo tài khoản để đồng bộ wishlist, giỏ hàng, địa chỉ và lịch sử mua sắm.</p></div>
+        <div><p className="eyebrow">THAM GIA LSOUL</p><h1>Tủ đồ của bạn,<br />được ghi nhớ.</h1><p>Tạo tài khoản để đồng bộ sản phẩm yêu thích, giỏ hàng, địa chỉ và lịch sử mua sắm.</p></div>
       </div>
       <div className="authPanel">
         <form className="authForm" onSubmit={submit}>

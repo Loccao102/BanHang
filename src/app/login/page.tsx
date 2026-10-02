@@ -40,7 +40,7 @@ export default function LoginPage() {
   return (
     <section className="authPage">
       <div className="authVisual">
-        <div><p className="eyebrow">LSOUL ACCOUNT</p><h1>Welcome back.</h1><p>Lưu giỏ hàng, wishlist, địa chỉ giao nhận và theo dõi toàn bộ đơn hàng ở một nơi.</p></div>
+        <div><p className="eyebrow">TÀI KHOẢN LSOUL</p><h1>Chào mừng bạn trở lại.</h1><p>Lưu giỏ hàng, sản phẩm yêu thích, địa chỉ giao nhận và theo dõi đơn hàng trong cùng một tài khoản.</p></div>
       </div>
       <div className="authPanel">
         <form className="authForm" onSubmit={submit}>
@@ -49,6 +49,7 @@ export default function LoginPage() {
           <h2>Tài khoản của bạn</h2>
           <label><span>Email</span><input name="email" type="email" autoComplete="email" required placeholder="you@example.com" /></label>
           <label><span>Mật khẩu</span><input name="password" type="password" autoComplete="current-password" required placeholder="••••••••" /></label>
+          <div className="authForgot"><Link href="/forgot-password">Quên mật khẩu?</Link></div>
           {error ? <div className="authError">{error}</div> : null}
           <button className="btn block" type="submit" disabled={loading}>{loading ? "Đang đăng nhập..." : <>Đăng nhập <ArrowRight size={15} /></>}</button>
           <p className="authSwitch">Chưa có tài khoản? <Link href="/register">Tạo tài khoản</Link></p>

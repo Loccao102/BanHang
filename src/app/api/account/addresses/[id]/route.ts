@@ -37,7 +37,19 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
     const user = await requireUser();
     const db = getDb()!;
     const { id } = await params;
-    await db.address.deleteMany({ where: { id, userId: user.id } });
+    const current = await db.address.findFirst({ where: { id, userId: user.id } });
+    if (!current) return NextResponse.json({ error: "Không tìm thấy địa chỉ." }, { status: 404 });
+
+    await db.$transaction(async (tx) => {
+      await tx.address.delete({ where: { id } });
+      if (current.isDefault) {
+        const replacement = await tx.address.findFirst({
+          where: { userId: user.id },
+          orderBy: { createdAt: "asc" }
+        });
+        if (replacement) await tx.address.update({ where: { id: replacement.id }, data: { isDefault: true } });
+      }
+    });
     return NextResponse.json({ deleted: true });
   } catch {
     return NextResponse.json({ error: "Bạn cần đăng nhập." }, { status: 401 });
