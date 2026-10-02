@@ -1,6 +1,14 @@
 # UML diagrams – LSOUL
 
-Toàn bộ sơ đồ trong thư mục này là file **.drawio editable trực tiếp** bằng diagrams.net / draw.io.
+Bộ UML của dự án được duy trì **song song ở hai định dạng editable**:
+
+1. **draw.io / diagrams.net**  
+   - Lưu trực tiếp trong GitHub dưới dạng `.drawio`.
+   - Đây là bản nguồn chính để version control, backup và chỉnh sửa lâu dài.
+
+2. **FigJam**  
+   - Dùng để review trực quan, kéo thả và chỉnh nhanh trên canvas.
+   - Mọi thay đổi quan trọng sẽ được đồng bộ lại về file `.drawio` trong GitHub.
 
 ## Quy trình
 
@@ -8,8 +16,9 @@ Toàn bộ sơ đồ trong thư mục này là file **.drawio editable trực ti
 2. Chia Use Case theo nhóm chức năng và actor.
 3. Hoàn thiện/duyệt toàn bộ Use Case.
 4. Sau đó mới bắt đầu Sequence Diagram.
-
-Hiện tại **chưa tạo Sequence Diagram** theo đúng quy trình trên.
+5. Mỗi sơ đồ mới phải có cả:
+   - bản `.drawio` trong GitHub;
+   - bản FigJam editable.
 
 ## Use Case tổng quan
 
@@ -45,7 +54,6 @@ Hiện tại **chưa tạo Sequence Diagram** theo đúng quy trình trên.
 - `usecase/UC-G06-Quan-tri.drawio`
   - UC35–UC36.
   - Actor: Quản trị viên.
-  - Có các Use Case con để thể hiện phạm vi của UC35/UC36 nhưng không tăng số Use Case chính thức.
 
 ## Actor chuẩn
 
@@ -57,7 +65,16 @@ Hiện tại **chưa tạo Sequence Diagram** theo đúng quy trình trên.
 - A06 – Dịch vụ AI tư vấn & Stylist.
 - A07 – Dịch vụ thanh toán.
 
-Chi tiết và bảng mapping nằm trong `docs/USE_CASES.md`.
+Chi tiết mapping nằm trong `docs/USE_CASES.md`.
+
+## FigJam
+
+Board FigJam hiện tại:
+https://www.figma.com/board/RpD76jtjbKzyJcrJsY1vwm
+
+Tên board: `LSOUL - UML Use Cases`
+
+FigJam không thay thế draw.io. Hai bản được duy trì song song.
 
 ## Sequence Diagram
 
