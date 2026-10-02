@@ -33,8 +33,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       ? await db.product.findMany({
           where: { id: { in: productIds } },
           include: {
-            variants: { where: { active: true } },
-            reviews: { where: { approved: true }, select: { rating: true } }
+            variants: { where: { active: true } }
           }
         })
       : [];
