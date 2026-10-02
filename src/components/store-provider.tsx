@@ -51,7 +51,33 @@ type StoreContextValue = {
 };
 
 const StoreContext = createContext<StoreContextValue | null>(null);
-const defaultSettings: StoreSettings = { promoText: "NEW DROP · FREESHIP ĐƠN TỪ 699K · ĐỔI SIZE TRONG 7 NGÀY" };
+const defaultSettings: StoreSettings = { promoText: "HÀNG MỚI · MIỄN PHÍ GIAO HÀNG TỪ 699K · ĐỔI CỠ TRONG 7 NGÀY" };
+
+function analyticsGuestKey() {
+  if (typeof window === "undefined") return "";
+  const key = "lsoul_analytics_guest";
+  let value = window.localStorage.getItem(key);
+  if (!value) {
+    value = crypto.randomUUID();
+    window.localStorage.setItem(key, value);
+  }
+  return value;
+}
+
+function trackBehavior(type: string, productId?: string, metadata?: Record<string, unknown>) {
+  if (typeof window === "undefined") return;
+  void fetch("/api/analytics/events", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      type,
+      productId,
+      guestKey: analyticsGuestKey(),
+      source: "storefront",
+      metadata: metadata ?? {}
+    })
+  }).catch(() => undefined);
+}
 
 function readLocal<T>(key: string, fallback: T): T {
   if (typeof window === "undefined") return fallback;
@@ -237,7 +263,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       if (index === -1) return [...current, { product, size, quantity: Math.min(quantity, limit) }];
       return current.map((line, i) => i === index ? { ...line, quantity: Math.min(line.quantity + quantity, limit) } : line);
     });
-    showNotice("Đã thêm vào giỏ", `${product.name}${size ? ` · Size ${size}` : ""}`);
+    showNotice("Đã thêm vào giỏ", `${product.name}${size ? ` · Cỡ ${size}` : ""}`);
+    trackBehavior("cart_add", product.id, { size, quantity });
     setCartDrawerOpen(true);
   }, [showNotice]);
 
@@ -245,12 +272,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     const valid = items.filter(({ product, size }) => product.active !== false && sizeStock(product, size) > 0);
     if (!valid.length) return;
     setCart((current) => mergeCart(current, valid.map(({ product, size, quantity = 1 }) => ({ product, size, quantity }))));
-    showNotice("Đã thêm outfit vào giỏ", `${valid.length} sản phẩm từ LSOUL Stylist`);
+    showNotice("Đã thêm bộ đồ vào giỏ", `${valid.length} sản phẩm từ trợ lý LSOUL`);
+    valid.forEach(({ product, size, quantity = 1 }) => trackBehavior("cart_add", product.id, { size, quantity, bundle: true }));
     setCartDrawerOpen(true);
   }, [showNotice]);
 
   const removeFromCart = useCallback((productId: string, size?: string) => {
     setCart((current) => current.filter((line) => !(line.product.id === productId && line.size === size)));
+    trackBehavior("cart_remove", productId, { size });
   }, []);
 
   const updateQuantity = useCallback((productId: string, size: string | undefined, quantity: number) => {
@@ -266,7 +295,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const liked = current.includes(productId);
       const next = liked ? current.filter((id) => id !== productId) : [...current, productId];
       const product = catalog.find((item) => item.id === productId);
-      showNotice(liked ? "Đã bỏ khỏi wishlist" : "Đã lưu vào wishlist", product?.name);
+      showNotice(liked ? "Đã bỏ khỏi yêu thích" : "Đã lưu vào yêu thích", product?.name);
+      trackBehavior(liked ? "wishlist_remove" : "wishlist_add", productId);
       return next;
     });
   }, [catalog, showNotice]);

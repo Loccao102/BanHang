@@ -89,13 +89,11 @@ Các nhóm chính:
 - Quần & chân váy.
 - Váy / đầm.
 - Áo khoác.
-- Set nguyên bộ.
 
 ### UC18 – Phối trang phục
 Quy tắc chính:
 - Áo + quần/chân váy + áo khoác tùy chọn.
 - Váy/đầm là một bộ riêng.
-- Set nguyên bộ là một bộ riêng.
 - Quần và chân váy dùng chung một vị trí phối đồ.
 
 ### UC20 – Thử trang phục bằng AI

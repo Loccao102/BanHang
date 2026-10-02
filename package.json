@@ -20,7 +20,8 @@
     "docker:up:d": "docker compose up -d --build",
     "docker:down": "docker compose down",
     "docker:reset": "docker compose down -v",
-    "docker:logs": "docker compose logs -f web postgres"
+    "docker:logs": "docker compose logs -f web postgres",
+    "ai:rebuild": "tsx scripts/rebuild-ai-profiles.ts"
   },
   "dependencies": {
     "@prisma/client": "^6.0.0",

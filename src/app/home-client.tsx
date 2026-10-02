@@ -10,7 +10,7 @@ import { useStore } from "@/components/store-provider";
 const categories = [
   { title: "Đầm", subtitle: "Các mẫu đầm LSOUL đã đối chiếu", href: "/shop?category=dress", image: "https://down-vn.img.susercontent.com/file/vn-11134207-7ra0g-m6nne8nuelvcba" },
   { title: "Đi tiệc", subtitle: "Phom corset và dáng nổi bật", href: "/shop?category=dress", image: "https://down-vn.img.susercontent.com/file/vn-11134207-7ras8-m1f1r7brp00o0c" },
-  { title: "Bộ phối", subtitle: "Đầm và corset phối sẵn", href: "/shop?category=set", image: "https://down-vn.img.susercontent.com/file/vn-11134207-7ras8-md43u55pmwf045" }
+  { title: "Quần & chân váy", subtitle: "Denim, chân váy và các phom bottom dễ phối", href: "/shop?category=bottoms", image: "https://down-vn.img.susercontent.com/file/vn-11134207-7ras8-mcfweda66dlvc6" }
 ];
 
 export function HomeClient() {

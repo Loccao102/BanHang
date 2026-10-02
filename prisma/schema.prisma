@@ -44,6 +44,41 @@ enum SocialPostStatus {
   rejected
 }
 
+enum BehaviorEventType {
+  product_view
+  search
+  wishlist_add
+  wishlist_remove
+  cart_add
+  cart_remove
+  tryon_start
+  tryon_success
+  tryon_retry
+  tryon_reject
+  recommendation_shown
+  recommendation_click
+  recommendation_accept
+  recommendation_reject
+  order_created
+  purchase
+  review
+}
+
+enum RecommendationFeedback {
+  unknown
+  accepted
+  rejected
+  neutral
+}
+
+enum TryOnStatus {
+  created
+  processing
+  completed
+  failed
+  rejected
+}
+
 model User {
   id           String         @id @default(uuid())
   email        String         @unique
@@ -63,6 +98,11 @@ model User {
   socialPosts  SocialPost[]
   socialEvents SocialEvent[]
   chatConversations ChatConversation[]
+  styleProfile UserStyleProfile?
+  behaviorEvents UserBehaviorEvent[]
+  productAffinities ProductAffinity[]
+  aiRecommendations AIRecommendation[]
+  tryOnSessions TryOnSession[]
 }
 
 model ChatConversation {
@@ -73,6 +113,7 @@ model ChatConversation {
   updatedAt DateTime      @updatedAt
   user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   messages  ChatMessage[]
+  recommendations AIRecommendation[]
 
   @@index([userId, updatedAt])
 }
@@ -186,7 +227,25 @@ model Product {
   active          Boolean             @default(true)
   sourceUrl       String?
   sourceUpdatedAt DateTime?
-  createdAt       DateTime            @default(now())
+  sourceType       String              @default("demo")
+  tryOnCategory    String?
+  tryOnPhotoType   String?
+  tryOnImage       String?
+  silhouette       String?
+  lengthClass      String?
+  neckline         String?
+  sleeveLength     String?
+  pattern          String?
+  season           Json                @default("[]")
+  formality        Int                 @default(2)
+  warmth           Int                 @default(2)
+  stretch          Int                 @default(2)
+  coverage         Int                 @default(2)
+  colorTemperature String?
+  styleKeywords    Json                @default("[]")
+  aiSearchText     String              @default("")
+  analyzerReady    Boolean             @default(false)
+  createdAt        DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
   variants        ProductVariant[]
   wishlistItems   WishlistItem[]
@@ -194,8 +253,12 @@ model Product {
   reviews         Review[]
   socialLinks     SocialPostProduct[]
   socialEvents    SocialEvent[]
+  behaviorEvents  UserBehaviorEvent[]
+  affinities      ProductAffinity[]
 
   @@index([groupCode])
+  @@index([category, type])
+  @@index([analyzerReady, active])
 }
 
 model ProductVariant {
@@ -372,6 +435,100 @@ model SocialEvent {
   post      SocialPost? @relation(fields: [postId], references: [id], onDelete: SetNull)
 
   @@index([type, channel, createdAt])
+}
+
+model UserStyleProfile {
+  userId               String   @id
+  preferredCategories  Json     @default("{}")
+  preferredTypes       Json     @default("{}")
+  preferredColors      Json     @default("{}")
+  preferredStyles      Json     @default("{}")
+  preferredOccasions   Json     @default("{}")
+  preferredFits        Json     @default("{}")
+  priceMin             Int      @default(0)
+  priceMax             Int      @default(5000000)
+  sizeProfile          Json     @default("{}")
+  avoidAttributes      Json     @default("[]")
+  confidence           Float    @default(0)
+  eventCount           Int      @default(0)
+  lastLearnedAt        DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserBehaviorEvent {
+  id        String            @id @default(uuid())
+  userId    String?
+  guestKey  String?
+  productId String?
+  type      BehaviorEventType
+  source    String            @default("storefront")
+  query     String?
+  metadata  Json              @default("{}")
+  weight    Float             @default(1)
+  createdAt DateTime          @default(now())
+  user      User?             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product?          @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([productId, type, createdAt])
+  @@index([guestKey, createdAt])
+}
+
+model ProductAffinity {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  score     Float    @default(0)
+  signals   Json     @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+  @@index([userId, score])
+}
+
+model AIRecommendation {
+  id                 String                 @id @default(uuid())
+  userId             String?
+  conversationId     String?
+  requestText        String
+  context            Json                   @default("{}")
+  productIds         Json                   @default("[]")
+  scores             Json                   @default("{}")
+  reason             String?
+  model              String                 @default("rules+llm")
+  feedback           RecommendationFeedback @default(unknown)
+  acceptedProductIds Json                   @default("[]")
+  createdAt          DateTime               @default(now())
+  feedbackAt         DateTime?
+  user               User?                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  conversation       ChatConversation?      @relation(fields: [conversationId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([conversationId])
+}
+
+model TryOnSession {
+  id               String      @id @default(uuid())
+  userId           String?
+  personImageHash  String?
+  productIds       Json        @default("[]")
+  categorySequence Json        @default("[]")
+  status           TryOnStatus @default(created)
+  resultUrl        String?
+  rating           Int?
+  accepted         Boolean?
+  errorMessage     String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  user             User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
 }
 
 model StoreSetting {
