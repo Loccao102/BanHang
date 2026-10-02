@@ -39,10 +39,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ recorded: true, learned: false, alreadyRecorded: true });
     }
 
-    await db.tryOnSession.update({
-      where: { id: session.id },
-      data: { accepted: reaction.accepted, rating: reaction.rating }
-    });
+    await db.$transaction([
+      db.tryOnSession.update({
+        where: { id: session.id },
+        data: { accepted: reaction.accepted, rating: reaction.rating }
+      }),
+      db.outfitAssessment.updateMany({
+        where: { tryOnSessionId: session.id },
+        data: { feedback: body.reaction, feedbackAt: new Date() }
+      })
+    ]);
 
     if (user) {
       for (const productId of productIds(session.productIds)) {
