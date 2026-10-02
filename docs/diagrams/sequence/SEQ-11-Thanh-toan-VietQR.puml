@@ -1,0 +1,35 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+title SEQ-11 - THANH TOÁN VIETQR / SEPAY
+actor "Khách hàng" as U
+boundary "Payment UI" as UI
+control "Payment API" as API
+participant "SePay" as SP
+control "Payment Service" as S
+control "Prisma Client" as P
+database "PostgreSQL" as DB
+U -> UI : Chọn VietQR
+UI -> API : GET payment status
+API -> S : getPaymentStatus()
+S -> P : read Order + transaction
+P -> DB : SELECT Order/PaymentTransaction
+S --> API : status + total + reference
+API --> UI : QR + pending
+U -> SP : Chuyển khoản
+SP -> API : Webhook
+API -> S : verify HMAC + match order
+S -> P : payment transaction
+P -> DB : INSERT PaymentTransaction + UPDATE Order
+S --> API : accepted
+API --> SP : success=true
+UI -> API : Poll status
+API -> S : getPaymentStatus()
+S -> P : read Order
+P -> DB : SELECT Order
+S --> API : paid
+API --> UI : Thành công
+UI --> U : Đơn đã thanh toán
+@enduml

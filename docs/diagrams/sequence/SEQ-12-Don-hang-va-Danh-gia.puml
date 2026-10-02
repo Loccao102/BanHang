@@ -1,0 +1,36 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+title SEQ-12 - LỊCH SỬ, THEO DÕI ĐƠN & ĐÁNH GIÁ
+actor "Khách hàng" as U
+boundary "Orders/Product UI" as UI
+control "Account/Review API" as API
+control "Order/Review Service" as S
+control "Prisma Client" as P
+database "PostgreSQL" as DB
+U -> UI : Mở lịch sử đơn hàng
+UI -> API : GET account state
+API -> S : loadOrders()
+S -> P : find Orders + Items
+P -> DB : SELECT Order/OrderItem
+S --> API : orders
+API --> UI : danh sách
+U -> UI : Chọn đơn theo dõi
+UI -> UI : Hiển thị status/tracking
+U -> UI : Gửi đánh giá
+UI -> API : POST product review
+API -> S : submitReview()
+S -> P : check completed order + existing review
+P -> DB : SELECT Review/OrderItem
+alt Chưa đủ điều kiện
+ S --> API : rejected
+ API --> UI : error
+else Đủ điều kiện
+ S -> P : create Review
+ P -> DB : INSERT Review
+ S --> API : saved
+ API --> UI : Hiển thị đánh giá
+end
+@enduml

@@ -1,0 +1,36 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+title SEQ-03 - QUÊN & ĐẶT LẠI MẬT KHẨU
+actor "Khách truy cập" as U
+boundary "Reset UI" as UI
+control "Password API" as API
+control "Password Service" as S
+control "Prisma Client" as P
+database "PostgreSQL" as DB
+U -> UI : Nhập email
+UI -> API : POST /forgot-password
+API -> S : requestReset(email)
+S -> P : find User + create reset token
+P -> DB : SELECT User / INSERT ResetToken
+S --> API : accepted=true
+API --> UI : Phản hồi yêu cầu
+U -> UI : Nhập mật khẩu mới
+UI -> API : POST /reset-password
+API -> S : resetPassword(token,password)
+S -> P : find token
+P -> DB : SELECT ResetToken
+alt Token lỗi / hết hạn
+  S --> API : rejected
+  API --> UI : 400 + error
+else Token hợp lệ
+  S -> P : update password + invalidate token/sessions
+  P -> DB : UPDATE User/Token + DELETE Sessions
+  S -> P : create Session mới
+  P -> DB : INSERT Session
+  S --> API : updated=true
+  API --> UI : Set-Cookie
+end
+@enduml

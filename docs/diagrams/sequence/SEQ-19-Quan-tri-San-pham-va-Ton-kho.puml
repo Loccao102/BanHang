@@ -1,0 +1,27 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+title SEQ-19 - QUẢN TRỊ SẢN PHẨM & TỒN KHO
+actor "Quản trị viên" as A
+boundary "Admin Product UI" as UI
+control "Product Admin API" as API
+control "Product Admin Service" as S
+control "Prisma Client" as P
+database "PostgreSQL" as DB
+A -> UI : Mở quản lý sản phẩm
+UI -> API : Tải danh sách
+API -> S : requireAdmin() + loadProducts()
+S -> P : find Products + Variants
+P -> DB : SELECT Product/Variant
+S --> API : product data
+API --> UI : danh sách
+A -> UI : Thêm/sửa sản phẩm, màu, size, stock
+UI -> API : POST /api/products
+API -> S : normalize variants + validate
+S -> P : upsert Product + Variants
+P -> DB : UPSERT Product/Variant
+S --> API : saved
+API --> UI : refresh catalog
+@enduml

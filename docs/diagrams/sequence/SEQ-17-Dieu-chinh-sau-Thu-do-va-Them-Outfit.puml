@@ -1,0 +1,31 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+title SEQ-17 - ĐIỀU CHỈNH SAU TRY-ON & THÊM OUTFIT
+actor "Người dùng" as U
+boundary "Try-On UI" as UI
+control "Try-On API" as API
+control "Try-On Service" as S
+participant "FASHN / HF VTON" as AI
+control "Cart Service" as C
+database "PostgreSQL" as DB
+U -> UI : Đổi màu/size/món trong outfit
+UI -> API : Gửi cấu hình mới
+API -> S : validateAdjustedOutfit()
+S -> AI : Render lại outfit
+AI --> S : adjusted image
+S --> API : result
+API --> UI : Hiển thị ảnh mới
+U -> UI : Thêm cả outfit vào giỏ
+UI -> C : addBundleToCart(items)
+alt Có món hết size
+ C --> UI : thiếu tồn kho
+ UI --> U : Chọn size khác
+else Tất cả còn hàng
+ C -> DB : Lưu CartItem nếu đã đăng nhập
+ C --> UI : cart updated
+ UI --> U : Đã thêm outfit
+end
+@enduml

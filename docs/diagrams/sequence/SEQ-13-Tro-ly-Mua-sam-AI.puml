@@ -1,0 +1,29 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+title SEQ-13 - TRỢ LÝ MUA SẮM AI
+actor "Người dùng" as U
+boundary "Chat UI" as UI
+control "Chat API" as API
+control "Chat Agent Service" as S
+participant "Gemini" as AI
+control "Prisma Client" as P
+database "PostgreSQL" as DB
+U -> UI : Gửi yêu cầu tư vấn
+UI -> API : POST /api/chat
+API -> S : build context + retrieve products
+S -> P : load catalog/affinity/orders/coupons
+P -> DB : SELECT context data
+S -> S : buildAgentPlan()
+S -> AI : askGemini()
+AI --> S : reply
+S -> P : persist chat nếu đăng nhập
+P -> DB : INSERT ChatMessage / UPDATE Conversation
+S --> API : reply + products + actions
+API --> UI : Hiển thị kết quả
+opt Có action autoExecute
+ UI -> UI : Thực thi action mua sắm
+end
+@enduml

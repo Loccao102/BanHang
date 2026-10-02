@@ -1,0 +1,34 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+title SEQ-18 - AI THỰC THI THAO TÁC MUA SẮM
+actor "Người dùng" as U
+boundary "Chat UI" as UI
+control "Chat API" as API
+control "Chat Agent Service" as S
+control "Store Actions" as Store
+control "Prisma Client" as P
+database "PostgreSQL" as DB
+U -> UI : Yêu cầu thao tác mua sắm
+UI -> API : POST /api/chat
+API -> S : buildAgentPlan()
+S -> S : xác định action + kiểm tra điều kiện
+S --> API : actions[] + reply
+API --> UI : action autoExecute
+alt add_to_cart / add_bundle
+ UI -> Store : add items
+ Store -> P : persist cart nếu đăng nhập
+ P -> DB : INSERT/UPDATE CartItem
+ Store --> UI : updated
+else apply_coupon
+ UI -> Store : validate coupon
+ Store -> P : find Coupon
+ P -> DB : SELECT Coupon
+ Store --> UI : discount / invalid
+else open_product/order/checkout
+ UI -> UI : Điều hướng
+end
+UI --> U : Hiển thị kết quả
+@enduml

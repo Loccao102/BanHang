@@ -1,0 +1,33 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+title SEQ-09 - GIỎ HÀNG & MÃ GIẢM GIÁ
+actor "Người dùng" as U
+boundary "Cart UI" as UI
+control "Cart/Coupon API" as API
+control "Cart Service" as S
+control "Prisma Client" as P
+database "PostgreSQL" as DB
+U -> UI : Thêm sản phẩm vào giỏ
+UI -> UI : addToCart()
+UI -> API : PUT /api/account/cart
+API -> S : saveCart()
+S -> P : replace CartItem
+P -> DB : DELETE/INSERT CartItem
+S --> API : saved
+API --> UI : synced
+U -> UI : Đổi số lượng / xóa dòng
+UI -> API : PUT cart mới
+API -> S : saveCart()
+S -> P : update items
+P -> DB : UPDATE CartItem
+U -> UI : Nhập coupon
+UI -> API : POST /api/coupons/validate
+API -> S : validateCoupon()
+S -> P : find Coupon
+P -> DB : SELECT Coupon
+S --> API : valid + discount / invalid
+API --> UI : Tổng tiền mới
+@enduml

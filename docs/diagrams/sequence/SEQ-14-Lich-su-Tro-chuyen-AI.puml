@@ -1,0 +1,34 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+title SEQ-14 - QUẢN LÝ LỊCH SỬ TRÒ CHUYỆN AI
+actor "Khách hàng" as U
+boundary "Chat History UI" as UI
+control "Conversation API" as API
+control "Chat Service" as S
+control "Prisma Client" as P
+database "PostgreSQL" as DB
+U -> UI : Mở lịch sử chat
+UI -> API : GET conversations
+API -> S : listConversations()
+S -> P : find conversations
+P -> DB : SELECT Conversation/Message
+S --> API : summaries
+API --> UI : danh sách
+U -> UI : Chọn cuộc trò chuyện
+UI -> API : GET conversation/:id
+API -> S : loadConversation()
+S -> P : find owned messages
+P -> DB : SELECT Conversation/Message
+S --> API : detail
+API --> UI : messages
+U -> UI : Tạo cuộc trò chuyện mới
+UI -> API : POST conversations
+API -> S : createConversation()
+S -> P : create record
+P -> DB : INSERT ChatConversation
+S --> API : new conversation
+API --> UI : mở cuộc trò chuyện
+@enduml

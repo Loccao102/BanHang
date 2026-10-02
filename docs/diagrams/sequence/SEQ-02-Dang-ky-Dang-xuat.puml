@@ -1,0 +1,35 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+title SEQ-02 - ĐĂNG KÝ & ĐĂNG XUẤT
+actor "Người dùng" as U
+boundary "Auth UI" as UI
+control "Auth API" as API
+control "Auth Service" as S
+control "Prisma Client" as P
+database "PostgreSQL" as DB
+U -> UI : Nhập thông tin đăng ký
+UI -> API : POST /api/auth/register
+API -> S : register()
+S -> P : check email
+P -> DB : SELECT User
+alt Email đã dùng / dữ liệu sai
+  S --> API : rejected
+  API --> UI : 400/409
+else Hợp lệ
+  S -> P : create User + Session
+  P -> DB : INSERT User / Session
+  S --> API : user + session
+  API --> UI : 201 + Set-Cookie
+end
+U -> UI : Đăng xuất
+UI -> API : POST /api/auth/logout
+API -> S : destroySession()
+S -> P : delete Session
+P -> DB : DELETE Session
+S --> API : success
+API --> UI : clear cookie
+UI --> U : Trạng thái khách
+@enduml

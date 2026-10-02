@@ -1,0 +1,30 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+title SEQ-06 - YÊU THÍCH & PHỐI TRANG PHỤC
+actor "Người dùng" as U
+boundary "Wishlist/Outfit UI" as UI
+control "Wishlist API" as API
+control "Wishlist/Outfit Service" as S
+control "Prisma Client" as P
+database "PostgreSQL" as DB
+U -> UI : Thêm/xóa yêu thích
+alt Chưa đăng nhập
+ UI -> UI : Giữ wishlist trong browser state
+else Đã đăng nhập
+ UI -> API : PUT /api/account/wishlist
+ API -> S : saveWishlist()
+ S -> P : replace WishlistItem
+ P -> DB : DELETE/INSERT WishlistItem
+ S --> API : saved
+ API --> UI : synced
+end
+U -> UI : Xem wishlist theo nhóm
+UI -> UI : Group by category/role
+U -> UI : Chọn món để phối
+UI -> S : composeOutfit()
+S --> UI : Outfit hợp lệ
+UI --> U : Hiển thị outfit
+@enduml

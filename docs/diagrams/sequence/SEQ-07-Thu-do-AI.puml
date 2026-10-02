@@ -1,0 +1,31 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+title SEQ-07 - THỬ TRANG PHỤC BẰNG AI
+actor "Người dùng" as U
+boundary "Try-On UI" as UI
+control "Try-On API" as API
+control "Try-On Service" as S
+participant "FASHN / HF VTON" as AI
+U -> UI : Upload ảnh + chọn outfit
+UI -> API : POST /api/tryon
+API -> S : validate + render
+alt Có FASHN API key
+ S -> AI : FASHN v1.6 request
+ AI --> S : rendered image
+else Fallback
+ S -> AI : HF FASHN VTON 1.5
+ AI --> S : rendered image
+end
+S --> API : result + provider
+API --> UI : try-on result
+UI --> U : Hiển thị ảnh thử đồ
+U -> UI : Đổi màu/size
+UI -> API : rerun
+API -> S : render adjusted outfit
+S -> AI : try-on request
+AI --> S : adjusted render
+S --> UI : result
+@enduml

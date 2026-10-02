@@ -1,0 +1,34 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+title SEQ-20 - QUẢN TRỊ ĐƠN HÀNG & BÁN HÀNG
+actor "Quản trị viên" as A
+boundary "Admin Sales UI" as UI
+control "Admin Orders API" as API
+control "Sales Admin Service" as S
+control "Prisma Client" as P
+database "PostgreSQL" as DB
+A -> UI : Mở quản lý bán hàng
+UI -> API : GET /api/admin/orders
+API -> S : requireAdmin() + loadOrders()
+S -> P : find Orders + Items
+P -> DB : SELECT Order/OrderItem
+S --> API : orders
+API --> UI : danh sách
+A -> UI : Cập nhật trạng thái/vận chuyển/thanh toán
+UI -> API : PATCH /api/orders/:id
+API -> S : validateAdminUpdate()
+S -> P : update Order
+P -> DB : UPDATE Order
+S --> API : saved
+API --> UI : refreshed order
+A -> UI : Xem khách hàng/coupon/thống kê
+UI -> API : GET admin business data
+API -> S : loadSalesData()
+S -> P : aggregate business data
+P -> DB : SELECT User/Coupon/Order
+S --> API : sales data
+API --> UI : hiển thị
+@enduml
