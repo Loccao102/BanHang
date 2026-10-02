@@ -71,7 +71,7 @@ export function TryOnClient() {
   const { catalog, wishlist, addBundleToCart } = useStore();
 
   const wishlistProducts = useMemo(
-    () => catalog.filter((product) => product.active !== false && wishlist.includes(product.id)),
+    () => catalog.filter((product) => product.active !== false && Boolean(product.tryOnImage) && wishlist.includes(product.id)),
     [catalog, wishlist]
   );
 
@@ -80,10 +80,12 @@ export function TryOnClient() {
     [searchParams]
   );
 
-  const fallbackProducts = wishlistProducts.length ? wishlistProducts : catalog.filter((product) => product.active !== false);
+  const fallbackProducts = wishlistProducts.length
+    ? wishlistProducts
+    : catalog.filter((product) => product.active !== false && Boolean(product.tryOnImage));
   const initialProducts = useMemo(() => {
     const chosen = initialIds.flatMap((id) => {
-      const product = catalog.find((item) => item.id === id && item.active !== false);
+      const product = catalog.find((item) => item.id === id && item.active !== false && Boolean(item.tryOnImage));
       return product ? [product] : [];
     });
     return chosen.length ? chosen : fallbackProducts.slice(0, 1);
