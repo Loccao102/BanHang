@@ -17,6 +17,7 @@ const bySku = new Map(products.map((product) => [product.sku!, product]));
 async function reset() {
   await prisma.paymentTransaction.deleteMany();
   await prisma.aIRecommendation.deleteMany();
+  await prisma.outfitAssessment.deleteMany();
   await prisma.tryOnSession.deleteMany();
   await prisma.productAffinity.deleteMany();
   await prisma.userBehaviorEvent.deleteMany();
@@ -86,6 +87,18 @@ async function seedProducts() {
       stretch: product.stretch ?? 2,
       coverage: product.coverage ?? 2,
       colorTemperature: product.colorTemperature ?? null,
+      hoverImage: product.hoverImage ?? product.images?.[1] ?? product.image,
+      waistRise: product.waistRise ?? (/low-rise|cạp thấp/i.test(product.fit) ? "low" : null),
+      recommendedUndertones: product.recommendedUndertones ?? (
+        product.colorTemperature === "warm" ? ["warm", "neutral"] :
+        product.colorTemperature === "cool" ? ["cool", "neutral"] :
+        ["warm", "cool", "neutral"]
+      ),
+      bodyShapeCompatibility: product.bodyShapeCompatibility ?? [],
+      pairingTags: product.pairingTags ?? product.styleKeywords ?? product.style,
+      avoidPairingTags: product.avoidPairingTags ?? [],
+      visualWeight: product.visualWeight ?? Math.max(1, Math.min(5, product.formality ?? 3)),
+      volume: product.volume ?? (/wide|flare|tiered|babydoll|ruffle|xòe/i.test([product.fit, product.silhouette].filter(Boolean).join(" ")) ? "voluminous" : /slim|bodycon|corset|fitted|ôm/i.test([product.fit, product.silhouette].filter(Boolean).join(" ")) ? "fitted" : "balanced"),
       styleKeywords: product.styleKeywords ?? product.style,
       aiSearchText: product.aiSearchText ?? "",
       analyzerReady: product.analyzerReady ?? false
