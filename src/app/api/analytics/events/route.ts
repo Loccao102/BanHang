@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { BehaviorEventType } from "@prisma/client";
+import type { BehaviorEventType, Prisma } from "@prisma/client";
 import { getCurrentUser } from "@/lib/server/auth";
 import { getDb } from "@/lib/server/db";
 import { recordBehaviorEvent, rebuildUserStyleProfile } from "@/lib/server/style-learning";
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     guestKey?: string;
     source?: string;
     query?: string;
-    metadata?: Record<string, unknown>;
+    metadata?: Prisma.InputJsonObject;
   };
 
   if (!body.type || !allowed.has(body.type)) {
