@@ -103,6 +103,7 @@ model User {
   productAffinities ProductAffinity[]
   aiRecommendations AIRecommendation[]
   tryOnSessions TryOnSession[]
+  outfitAssessments OutfitAssessment[]
 }
 
 model ChatConversation {
@@ -242,9 +243,17 @@ model Product {
   stretch          Int                 @default(2)
   coverage         Int                 @default(2)
   colorTemperature String?
-  styleKeywords    Json                @default("[]")
-  aiSearchText     String              @default("")
-  analyzerReady    Boolean             @default(false)
+  hoverImage        String?
+  waistRise         String?
+  recommendedUndertones Json           @default("[]")
+  bodyShapeCompatibility Json          @default("[]")
+  pairingTags       Json                @default("[]")
+  avoidPairingTags  Json                @default("[]")
+  visualWeight      Int                 @default(3)
+  volume            String?
+  styleKeywords     Json                @default("[]")
+  aiSearchText      String              @default("")
+  analyzerReady     Boolean             @default(false)
   createdAt        DateTime            @default(now())
   updatedAt       DateTime            @updatedAt
   variants        ProductVariant[]
@@ -526,9 +535,39 @@ model TryOnSession {
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
   user             User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assessment       OutfitAssessment?
 
   @@index([userId, createdAt])
   @@index([status, createdAt])
+}
+
+model OutfitAssessment {
+  id                String   @id @default(uuid())
+  tryOnSessionId    String   @unique
+  userId            String?
+  productIds        Json     @default("[]")
+  overallScore      Int
+  colorScore        Int
+  proportionScore   Int
+  styleScore        Int
+  preferenceScore  Int
+  renderScore       Int
+  verdict           String
+  summary           String
+  positives         Json     @default("[]")
+  cautions          Json     @default("[]")
+  suggestions       Json     @default("[]")
+  mode              String
+  profileConfidence Int      @default(0)
+  feedback          String?
+  feedbackAt        DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  tryOnSession      TryOnSession @relation(fields: [tryOnSessionId], references: [id], onDelete: Cascade)
+  user              User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([overallScore, createdAt])
 }
 
 model StoreSetting {
