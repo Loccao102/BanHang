@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BrainCircuit, Camera, Check, Heart, LoaderCircle, ShoppingBag, Sparkles, ThumbsDown, ThumbsUp, Upload, WandSparkles } from "lucide-react";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
@@ -68,7 +69,7 @@ function firstSize(product: Product) {
 export function TryOnClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { catalog, wishlist, addBundleToCart, user } = useStore();
+  const { catalog, wishlist, addBundleToCart, user, toggleWishlist } = useStore();
 
   const wishlistProducts = useMemo(
     () => catalog.filter((product) => product.active !== false && Boolean(product.tryOnImage) && wishlist.includes(product.id)),
@@ -80,16 +81,24 @@ export function TryOnClient() {
     [searchParams]
   );
 
-  const fallbackProducts = wishlistProducts.length
-    ? wishlistProducts
-    : catalog.filter((product) => product.active !== false && Boolean(product.tryOnImage));
+  useEffect(() => {
+    if (!user || !initialIds.length) return;
+    initialIds.forEach((id) => {
+      if (!wishlist.includes(id)) {
+        toggleWishlist(id);
+      }
+    });
+  }, [user, initialIds, wishlist, toggleWishlist]);
+
+  // The fitting-room wardrobe only offers items the customer has saved to their wishlist.
   const initialProducts = useMemo(() => {
     const chosen = initialIds.flatMap((id) => {
-      const product = catalog.find((item) => item.id === id && item.active !== false && Boolean(item.tryOnImage));
+      const product = wishlistProducts.find((item) => item.id === id) ??
+        (user ? catalog.find((item) => item.id === id && item.active !== false && Boolean(item.tryOnImage)) : undefined);
       return product ? [product] : [];
     });
-    return chosen.length ? chosen : fallbackProducts.slice(0, 1);
-  }, [initialIds, catalog, fallbackProducts]);
+    return chosen.length ? chosen : wishlistProducts.slice(0, 1);
+  }, [initialIds, wishlistProducts, catalog, user]);
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [configured, setConfigured] = useState<ConfiguredItem[]>([]);
@@ -293,8 +302,21 @@ export function TryOnClient() {
             <div className="fittingStepHead"><span>02</span><div><strong>Chọn trang phục thử</strong><small>Thử từng món riêng lẻ hoặc kết hợp cả bộ</small></div><Sparkles size={17} /></div>
             <div className="fittingLookSummary"><span>ĐANG CHỌN</span><strong>{outfitLabel(selectedProducts)}</strong></div>
             <div className="fittingWishlist fittingWardrobeGroups">
+              {!wishlistProducts.length ? (
+                <div className="fittingCompositionHint">
+                  <strong>Tủ đồ thử trống.</strong>
+                  <p>
+                    {user
+                      ? "Tủ đồ chỉ gồm các sản phẩm trong danh sách yêu thích. Hãy thả tim món bạn muốn thử trước."
+                      : "Vui lòng đăng nhập và lưu sản phẩm vào danh sách yêu thích để thử đồ."}
+                  </p>
+                  <Link className="btn" href={user ? "/shop" : "/login?next=/try-on"}>
+                    <Heart size={14} /> {user ? "Khám phá sản phẩm" : "Đăng nhập"}
+                  </Link>
+                </div>
+              ) : null}
               {(["tops", "bottoms", "dresses", "outerwear"] as WardrobeGroup[]).map((group) => {
-                const grouped = fallbackProducts.filter((product) => wardrobeGroup(product) === group);
+                const grouped = wishlistProducts.filter((product) => wardrobeGroup(product) === group);
                 if (!grouped.length) return null;
                 return <div className="fittingWardrobeGroup" key={group}>
                   <div className="fittingWardrobeGroupTitle">{wardrobeGroupLabels[group]}</div>

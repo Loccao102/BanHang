@@ -18,7 +18,9 @@ import {
   EyeInvisibleOutlined,
   EyeOutlined,
   InboxOutlined,
+  LoadingOutlined,
   MinusOutlined,
+  PictureOutlined,
   PlusOutlined,
   ReloadOutlined,
   SaveOutlined,
@@ -26,7 +28,8 @@ import {
   SettingOutlined,
   ShoppingOutlined,
   SyncOutlined,
-  TagOutlined
+  TagOutlined,
+  UploadOutlined
 } from "@ant-design/icons";
 import { useStore } from "@/components/store-provider";
 import type { OrderStatus } from "@/lib/cart";
@@ -181,6 +184,81 @@ function AdminContent() {
         </div>
       </section>
     );
+  }
+
+  const [uploadingField, setUploadingField] = useState<string | null>(null);
+
+  async function uploadProductImage(file: File): Promise<string> {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData
+      });
+      if (res.ok) {
+        const data = (await res.json()) as { url?: string };
+        if (data.url) return data.url;
+      }
+    } catch (err) {
+      console.warn("Upload to server failed, falling back to data URL:", err);
+    }
+
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleSingleUpload(
+    field: "image" | "hoverImage" | "tryOnImage",
+    file: File | undefined
+  ) {
+    if (!file || !editing) return;
+    setUploadingField(field);
+    try {
+      const url = await uploadProductImage(file);
+      if (field === "image") {
+        setEditing({
+          ...editing,
+          image: url,
+          images: editing.images.length ? [url, ...editing.images.slice(1)] : [url]
+        });
+      } else {
+        setEditing({ ...editing, [field]: url });
+      }
+    } finally {
+      setUploadingField(null);
+    }
+  }
+
+  async function handleAlbumUpload(files: FileList | null) {
+    if (!files || !files.length || !editing) return;
+    setUploadingField("images");
+    try {
+      const uploadPromises = Array.from(files).map((f) => uploadProductImage(f));
+      const urls = await Promise.all(uploadPromises);
+      const nextImages = [...editing.images, ...urls];
+      setEditing({
+        ...editing,
+        images: nextImages,
+        image: editing.image || urls[0] || ""
+      });
+    } finally {
+      setUploadingField(null);
+    }
+  }
+
+  function removeAlbumImage(indexToRemove: number) {
+    if (!editing) return;
+    const nextImages = editing.images.filter((_, idx) => idx !== indexToRemove);
+    setEditing({
+      ...editing,
+      images: nextImages,
+      image: indexToRemove === 0 ? nextImages[0] || "" : editing.image
+    });
   }
 
   function openNewProduct() {
@@ -1172,31 +1250,113 @@ function AdminContent() {
                 <div className="antFormSection">
                   <div className="antSectionTitle">Hình ảnh sản phẩm</div>
                   <div className="antFormGrid">
-                    <label className="antFormField full">
-                      <span className="antFormLabel">Ảnh chính (URL) *</span>
-                      <input
-                        required
-                        className="antInput"
-                        value={editing.image}
-                        onChange={(event) =>
-                          setEditing({
-                            ...editing,
-                            image: event.target.value,
-                            images: [
-                              event.target.value,
-                              ...editing.images.slice(1)
-                            ]
-                          })
-                        }
-                      />
-                    </label>
-                    <label className="antFormField full">
-                      <span className="antFormLabel">
-                        Album ảnh chi tiết (Mỗi URL một dòng)
-                      </span>
+                    {/* Ảnh chính */}
+                    <div className="antFormField full">
+                      <span className="antFormLabel">Ảnh chính (URL hoặc Tải ảnh từ máy) *</span>
+                      <div className="antImageInputRow">
+                        <input
+                          required
+                          className="antInput"
+                          placeholder="https://... hoặc tải ảnh từ máy tính"
+                          value={editing.image}
+                          onChange={(event) =>
+                            setEditing({
+                              ...editing,
+                              image: event.target.value,
+                              images: [
+                                event.target.value,
+                                ...editing.images.slice(1)
+                              ]
+                            })
+                          }
+                        />
+                        <label className={`antUploadBtn ${uploadingField === "image" ? "loading" : ""}`}>
+                          {uploadingField === "image" ? (
+                            <LoadingOutlined spin />
+                          ) : (
+                            <UploadOutlined />
+                          )}
+                          <span>{uploadingField === "image" ? "Đang tải..." : "Tải ảnh lên"}</span>
+                          <input
+                            type="file"
+                            hidden
+                            accept="image/*"
+                            disabled={uploadingField === "image"}
+                            onChange={(e) => handleSingleUpload("image", e.target.files?.[0])}
+                          />
+                        </label>
+                      </div>
+                      {editing.image && (
+                        <div className="antImageThumbPreview">
+                          <img src={editing.image} alt="Ảnh chính" />
+                          <div className="antThumbInfo">
+                            <span className="antThumbLabel">Ảnh đại diện chính của sản phẩm</span>
+                            <span className="antThumbUrl">{editing.image}</span>
+                          </div>
+                          <button
+                            type="button"
+                            className="antThumbRemoveBtn"
+                            onClick={() => setEditing({ ...editing, image: "" })}
+                            title="Xóa ảnh"
+                          >
+                            <CloseOutlined />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Album ảnh chi tiết */}
+                    <div className="antFormField full">
+                      <div className="antAlbumHeadRow">
+                        <span className="antFormLabel">
+                          Album ảnh chi tiết ({editing.images.length} ảnh)
+                        </span>
+                        <label className={`antUploadBtn secondary ${uploadingField === "images" ? "loading" : ""}`}>
+                          {uploadingField === "images" ? (
+                            <LoadingOutlined spin />
+                          ) : (
+                            <UploadOutlined />
+                          )}
+                          <span>
+                            {uploadingField === "images"
+                              ? "Đang tải ảnh..."
+                              : "+ Tải thêm ảnh vào album"}
+                          </span>
+                          <input
+                            type="file"
+                            hidden
+                            multiple
+                            accept="image/*"
+                            disabled={uploadingField === "images"}
+                            onChange={(e) => handleAlbumUpload(e.target.files)}
+                          />
+                        </label>
+                      </div>
+
+                      {/* Visual Gallery of Album */}
+                      {editing.images.length > 0 && (
+                        <div className="antAlbumThumbGrid">
+                          {editing.images.map((imgUrl, idx) => (
+                            <div key={`${imgUrl}-${idx}`} className="antAlbumThumbItem">
+                              <img src={imgUrl} alt={`Ảnh ${idx + 1}`} />
+                              {idx === 0 && <span className="antMainBadge">Chính</span>}
+                              <button
+                                type="button"
+                                className="antAlbumDeleteBtn"
+                                onClick={() => removeAlbumImage(idx)}
+                                title="Xóa ảnh này khỏi album"
+                              >
+                                <CloseOutlined />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
                       <textarea
-                        rows={3}
+                        rows={2}
                         className="antInput antTextarea"
+                        placeholder="Mỗi URL ảnh một dòng (hoặc dùng nút Tải thêm ảnh phía trên)..."
                         value={editing.images.join("\n")}
                         onChange={(event) =>
                           setEditing({
@@ -1208,33 +1368,89 @@ function AdminContent() {
                           })
                         }
                       />
-                    </label>
-                    <label className="antFormField">
+                    </div>
+
+                    {/* Ảnh hover khi rê chuột */}
+                    <div className="antFormField">
                       <span className="antFormLabel">Ảnh hover khi rê chuột</span>
-                      <input
-                        className="antInput"
-                        value={editing.hoverImage ?? ""}
-                        onChange={(event) =>
-                          setEditing({
-                            ...editing,
-                            hoverImage: event.target.value || undefined
-                          })
-                        }
-                      />
-                    </label>
-                    <label className="antFormField">
+                      <div className="antImageInputRow">
+                        <input
+                          className="antInput"
+                          placeholder="https://... hoặc tải ảnh"
+                          value={editing.hoverImage ?? ""}
+                          onChange={(event) =>
+                            setEditing({
+                              ...editing,
+                              hoverImage: event.target.value || undefined
+                            })
+                          }
+                        />
+                        <label className={`antUploadBtn iconOnly ${uploadingField === "hoverImage" ? "loading" : ""}`} title="Tải ảnh hover từ máy">
+                          {uploadingField === "hoverImage" ? <LoadingOutlined spin /> : <UploadOutlined />}
+                          <input
+                            type="file"
+                            hidden
+                            accept="image/*"
+                            disabled={uploadingField === "hoverImage"}
+                            onChange={(e) => handleSingleUpload("hoverImage", e.target.files?.[0])}
+                          />
+                        </label>
+                      </div>
+                      {editing.hoverImage && (
+                        <div className="antImageThumbPreview small">
+                          <img src={editing.hoverImage} alt="Ảnh hover" />
+                          <button
+                            type="button"
+                            className="antThumbRemoveBtn"
+                            onClick={() => setEditing({ ...editing, hoverImage: undefined })}
+                            title="Xóa ảnh hover"
+                          >
+                            <CloseOutlined />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Ảnh dành cho Virtual Try-On */}
+                    <div className="antFormField">
                       <span className="antFormLabel">Ảnh dành cho Virtual Try-On</span>
-                      <input
-                        className="antInput"
-                        value={editing.tryOnImage ?? ""}
-                        onChange={(event) =>
-                          setEditing({
-                            ...editing,
-                            tryOnImage: event.target.value || undefined
-                          })
-                        }
-                      />
-                    </label>
+                      <div className="antImageInputRow">
+                        <input
+                          className="antInput"
+                          placeholder="https://... hoặc tải ảnh"
+                          value={editing.tryOnImage ?? ""}
+                          onChange={(event) =>
+                            setEditing({
+                              ...editing,
+                              tryOnImage: event.target.value || undefined
+                            })
+                          }
+                        />
+                        <label className={`antUploadBtn iconOnly ${uploadingField === "tryOnImage" ? "loading" : ""}`} title="Tải ảnh thử đồ từ máy">
+                          {uploadingField === "tryOnImage" ? <LoadingOutlined spin /> : <UploadOutlined />}
+                          <input
+                            type="file"
+                            hidden
+                            accept="image/*"
+                            disabled={uploadingField === "tryOnImage"}
+                            onChange={(e) => handleSingleUpload("tryOnImage", e.target.files?.[0])}
+                          />
+                        </label>
+                      </div>
+                      {editing.tryOnImage && (
+                        <div className="antImageThumbPreview small">
+                          <img src={editing.tryOnImage} alt="Ảnh Try-On" />
+                          <button
+                            type="button"
+                            className="antThumbRemoveBtn"
+                            onClick={() => setEditing({ ...editing, tryOnImage: undefined })}
+                            title="Xóa ảnh Try-On"
+                          >
+                            <CloseOutlined />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 

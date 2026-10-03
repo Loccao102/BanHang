@@ -217,9 +217,9 @@ async function seedCommerce() {
   }
 
   const wishlistByUser: Record<string, string[]> = {
-    "usr-linh": ["V25021658", "V24101633", "V23121589"],
-    "usr-nam": ["J26040831", "V24111637", "A25072829"],
-    "usr-mai": ["A25072829", "CV23120671", "V24101636"]
+    "usr-linh": ["DR-AURA-MAXI-BLK", "DR-AURA-MAXI-RED", "DR-NOIR-SLIP-BLK"],
+    "usr-nam": ["PT-ATELIER-WIDE-BLK", "BZ-MINIMAL-SUIT-BLK", "TP-VESPER-CORSET-BLK"],
+    "usr-mai": ["TP-VESPER-CORSET-BLK", "SK-TENNIS-PLEAT-BLK", "SK-TENNIS-PLEAT-WHT"]
   };
 
   for (const customer of customers) {
@@ -247,40 +247,40 @@ type PersonaEvent = { type: BehaviorEventType; sku: string; repeat?: number; wei
 
 const personas: Record<string, PersonaEvent[]> = {
   "usr-linh": [
-    { type: "product_view", sku: "V25021658", repeat: 4 },
-    { type: "wishlist_add", sku: "V25021658" },
-    { type: "tryon_success", sku: "V25021658" },
-    { type: "recommendation_accept", sku: "V25021658" },
-    { type: "product_view", sku: "V23121589", repeat: 3 },
-    { type: "wishlist_add", sku: "V23121589" },
-    { type: "cart_add", sku: "V23121589" },
-    { type: "product_view", sku: "V24101633", repeat: 2 },
-    { type: "wishlist_add", sku: "V24101633" },
-    { type: "recommendation_reject", sku: "J26040831" }
+    { type: "product_view", sku: "DR-AURA-MAXI-BLK", repeat: 4 },
+    { type: "wishlist_add", sku: "DR-AURA-MAXI-BLK" },
+    { type: "tryon_success", sku: "DR-AURA-MAXI-BLK" },
+    { type: "recommendation_accept", sku: "DR-AURA-MAXI-BLK" },
+    { type: "product_view", sku: "DR-NOIR-SLIP-BLK", repeat: 3 },
+    { type: "wishlist_add", sku: "DR-NOIR-SLIP-BLK" },
+    { type: "cart_add", sku: "DR-NOIR-SLIP-BLK" },
+    { type: "product_view", sku: "DR-AURA-MAXI-RED", repeat: 2 },
+    { type: "wishlist_add", sku: "DR-AURA-MAXI-RED" },
+    { type: "recommendation_reject", sku: "PT-ATELIER-WIDE-BLK" }
   ],
   "usr-nam": [
-    { type: "product_view", sku: "J26040831", repeat: 5 },
-    { type: "wishlist_add", sku: "J26040831" },
-    { type: "tryon_success", sku: "J26040831" },
-    { type: "cart_add", sku: "J26040831" },
-    { type: "product_view", sku: "V24111637", repeat: 4 },
-    { type: "wishlist_add", sku: "V24111637" },
-    { type: "recommendation_accept", sku: "V24111637" },
-    { type: "product_view", sku: "A25072829", repeat: 3 },
-    { type: "wishlist_add", sku: "A25072829" },
-    { type: "recommendation_reject", sku: "V24101633" }
+    { type: "product_view", sku: "PT-ATELIER-WIDE-BLK", repeat: 5 },
+    { type: "wishlist_add", sku: "PT-ATELIER-WIDE-BLK" },
+    { type: "tryon_success", sku: "PT-ATELIER-WIDE-BLK" },
+    { type: "cart_add", sku: "PT-ATELIER-WIDE-BLK" },
+    { type: "product_view", sku: "BZ-MINIMAL-SUIT-BLK", repeat: 4 },
+    { type: "wishlist_add", sku: "BZ-MINIMAL-SUIT-BLK" },
+    { type: "recommendation_accept", sku: "BZ-MINIMAL-SUIT-BLK" },
+    { type: "product_view", sku: "TP-VESPER-CORSET-BLK", repeat: 3 },
+    { type: "wishlist_add", sku: "TP-VESPER-CORSET-BLK" },
+    { type: "recommendation_reject", sku: "DR-AURA-MAXI-RED" }
   ],
   "usr-mai": [
-    { type: "product_view", sku: "A25072829", repeat: 4 },
-    { type: "wishlist_add", sku: "A25072829" },
-    { type: "tryon_success", sku: "A25072829" },
-    { type: "cart_add", sku: "A25072829" },
-    { type: "product_view", sku: "CV23120671", repeat: 4 },
-    { type: "wishlist_add", sku: "CV23120671" },
-    { type: "tryon_success", sku: "CV23120671" },
-    { type: "recommendation_accept", sku: "CV23120671" },
-    { type: "product_view", sku: "V24101636", repeat: 2 },
-    { type: "wishlist_add", sku: "V24101636" }
+    { type: "product_view", sku: "TP-VESPER-CORSET-BLK", repeat: 4 },
+    { type: "wishlist_add", sku: "TP-VESPER-CORSET-BLK" },
+    { type: "tryon_success", sku: "TP-VESPER-CORSET-BLK" },
+    { type: "cart_add", sku: "TP-VESPER-CORSET-BLK" },
+    { type: "product_view", sku: "SK-TENNIS-PLEAT-BLK", repeat: 4 },
+    { type: "wishlist_add", sku: "SK-TENNIS-PLEAT-BLK" },
+    { type: "tryon_success", sku: "SK-TENNIS-PLEAT-BLK" },
+    { type: "recommendation_accept", sku: "SK-TENNIS-PLEAT-BLK" },
+    { type: "product_view", sku: "SK-TENNIS-PLEAT-WHT", repeat: 2 },
+    { type: "wishlist_add", sku: "SK-TENNIS-PLEAT-WHT" }
   ]
 };
 
@@ -309,7 +309,7 @@ async function seedLearning() {
       {
         userId: "usr-linh",
         personImageHash: "demo-person-hash-linh",
-        productIds: [bySku.get("V25021658")!.id],
+        productIds: [bySku.get("DR-AURA-MAXI-BLK")!.id],
         categorySequence: ["one-pieces"],
         status: "completed",
         accepted: true,
@@ -318,7 +318,7 @@ async function seedLearning() {
       {
         userId: "usr-mai",
         personImageHash: "demo-person-hash-mai",
-        productIds: [bySku.get("A25072829")!.id, bySku.get("CV23120671")!.id],
+        productIds: [bySku.get("TP-VESPER-CORSET-BLK")!.id, bySku.get("SK-TENNIS-PLEAT-BLK")!.id],
         categorySequence: ["tops", "bottoms"],
         status: "completed",
         accepted: true,

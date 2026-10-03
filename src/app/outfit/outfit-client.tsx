@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState, type MouseEvent } from "react";
 import {
   Check,
   ChevronRight,
@@ -25,9 +25,10 @@ import {
 } from "@/lib/stylist-outfit-engine";
 
 export function OutfitClient() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const requiredProductId = searchParams.get("product") ?? undefined;
-  const { catalog, addToCart, addBundleToCart, wishlist, toggleWishlist } = useStore();
+  const { catalog, addToCart, addBundleToCart, wishlist, toggleWishlist, user } = useStore();
 
   const [setType, setSetType] = useState<OutfitSetType>("all");
   const [occasion, setOccasion] = useState<string>("all");
@@ -35,6 +36,7 @@ export function OutfitClient() {
   const [salt, setSalt] = useState<number>(() => Math.floor(Math.random() * 1000));
   const [isGenerating, setIsGenerating] = useState(false);
   const [addedSuccess, setAddedSuccess] = useState(false);
+  const [wishlistSuccess, setWishlistSuccess] = useState(false);
 
   // Generate current outfit
   const outfit: CoordinatedOutfit = useMemo(() => {
@@ -58,11 +60,68 @@ export function OutfitClient() {
     });
     setSelectedSizes(initialSizes);
     setAddedSuccess(false);
+    setWishlistSuccess(false);
   }, [outfit.id]);
 
   function handleSizeChange(productId: string, size: string) {
     setSelectedSizes((prev) => ({ ...prev, [productId]: size }));
   }
+
+  // Check if all items in current set are already favorited
+  const allInWishlist = useMemo(() => {
+    return (
+      outfit.items.length > 0 &&
+      outfit.items.every((it) => wishlist.includes(it.product.id))
+    );
+  }, [outfit.items, wishlist]);
+
+  // Toggle favorite for all items in the set
+  function handleToggleWishlistAll() {
+    if (!user) {
+      toggleWishlist(outfit.items[0]?.product.id);
+      return;
+    }
+
+    if (allInWishlist) {
+      outfit.items.forEach((it) => {
+        if (wishlist.includes(it.product.id)) {
+          toggleWishlist(it.product.id);
+        }
+      });
+      setWishlistSuccess(false);
+    } else {
+      outfit.items.forEach((it) => {
+        if (!wishlist.includes(it.product.id)) {
+          toggleWishlist(it.product.id);
+        }
+      });
+      setWishlistSuccess(true);
+      setTimeout(() => setWishlistSuccess(false), 2500);
+    }
+  }
+
+  // The fitting room only accepts wishlist items, so save the chosen pieces first,
+  // then open the fitting room with them preselected.
+  function tryOnLinkProps(productIds: string[]) {
+    const ids = productIds.filter(Boolean);
+    return {
+      href: `/try-on?products=${encodeURIComponent(ids.join(","))}`,
+      onClick: (event: MouseEvent<HTMLAnchorElement>) => {
+        event.preventDefault();
+        if (!user) {
+          // toggleWishlist redirects guests to the login page.
+          toggleWishlist(ids[0]);
+          return;
+        }
+        ids.forEach((id) => {
+          if (!wishlist.includes(id)) toggleWishlist(id);
+        });
+        router.push(`/try-on?products=${encodeURIComponent(ids.join(","))}`);
+      }
+    };
+  }
+
+  const setProductIds = outfit.items.map((it) => it.product.id);
 
   // Generate next coordinated set on click
   function handleGenerateNext(chosenType?: OutfitSetType) {
@@ -212,13 +271,39 @@ export function OutfitClient() {
           {/* Left Canvas: Coordinated Items Showcase */}
           <div className="outfitCanvasArea">
             <div className="outfitCanvasHeader">
-              <div className="outfitTypeTag">
-                <span className="dot" />
-                <span>{outfit.setTypeName}</span>
+              <div className="outfitCanvasMeta">
+                <div className="outfitTypeTag">
+                  <span className="dot" />
+                  <span>{outfit.setTypeName}</span>
+                </div>
+                <div className="outfitMatchBadge">
+                  <Sparkles size={14} />
+                  <span>{outfit.matchBadge} ({outfit.score}/100)</span>
+                </div>
               </div>
-              <div className="outfitMatchBadge">
-                <Sparkles size={14} />
-                <span>{outfit.matchBadge} ({outfit.score}/100)</span>
+
+              <div className="outfitCanvasQuickActions">
+                <button
+                  type="button"
+                  className={`outfitQuickWishlistBtn ${allInWishlist ? "active" : ""}`}
+                  onClick={handleToggleWishlistAll}
+                  title={allInWishlist ? "Bỏ yêu thích trọn set" : "Yêu thích cả set"}
+                >
+                  <Heart
+                    size={14}
+                    fill={allInWishlist ? "#e11d48" : "none"}
+                    color={allInWishlist ? "#e11d48" : "currentColor"}
+                  />
+                  <span>{allInWishlist ? "Đã thích cả set" : "Yêu thích cả set"}</span>
+                </button>
+                <Link
+                  {...tryOnLinkProps(setProductIds)}
+                  className="outfitQuickTryOnBtn"
+                  title="Cho trọn bộ này vào phòng thử đồ AI"
+                >
+                  <Sparkles size={14} />
+                  <span>Phòng thử đồ</span>
+                </Link>
               </div>
             </div>
 
@@ -283,14 +368,23 @@ export function OutfitClient() {
                         </div>
                       </div>
 
-                      {/* Single Add to Cart Button for this piece */}
-                      <button
-                        type="button"
-                        className="singleAddBtn"
-                        onClick={() => addToCart(item.product, currentSize, 1)}
-                      >
-                        <ShoppingBag size={14} /> Thêm lẻ món này
-                      </button>
+                      {/* Action buttons for this piece */}
+                      <div className="outfitCardActions">
+                        <button
+                          type="button"
+                          className="singleAddBtn"
+                          onClick={() => addToCart(item.product, currentSize, 1)}
+                        >
+                          <ShoppingBag size={14} /> Thêm lẻ món này
+                        </button>
+                        <Link
+                          {...tryOnLinkProps([item.product.id])}
+                          className="singleTryOnBtn"
+                          title="Cho riêng món này vào phòng thử đồ"
+                        >
+                          <Sparkles size={14} /> Thử đồ
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 );
@@ -344,7 +438,7 @@ export function OutfitClient() {
               </div>
             </div>
 
-            {/* Primary Action: Add Full Set to Cart */}
+            {/* Actions for Set */}
             <div className="outfitActionGroup">
               <button
                 type="button"
@@ -362,6 +456,35 @@ export function OutfitClient() {
                 )}
               </button>
 
+              <Link
+                {...tryOnLinkProps(setProductIds)}
+                className="tryOnFullSetBtn"
+                title="Cho cả set đồ này vào phòng thử đồ AI"
+              >
+                <Sparkles size={18} />
+                <span>Cho vào phòng thử đồ ({outfit.items.length} món)</span>
+              </Link>
+
+              <button
+                type="button"
+                className={`wishlistFullSetBtn ${allInWishlist ? "active" : ""}`}
+                onClick={handleToggleWishlistAll}
+                title={allInWishlist ? "Bỏ yêu thích trọn set" : "Lưu trọn bộ vào danh sách yêu thích"}
+              >
+                <Heart
+                  size={18}
+                  fill={allInWishlist ? "#e11d48" : "none"}
+                  color={allInWishlist ? "#e11d48" : "currentColor"}
+                />
+                <span>
+                  {wishlistSuccess
+                    ? "Đã lưu trọn set vào yêu thích!"
+                    : allInWishlist
+                    ? "Đã lưu trọn set vào yêu thích"
+                    : `Yêu thích cả set (${outfit.items.length} món)`}
+                </span>
+              </button>
+
               <button
                 type="button"
                 className="nextOutfitBtn"
@@ -375,8 +498,8 @@ export function OutfitClient() {
             <div className="outfitTryOnShortcut">
               <Sparkles size={16} className="sparkle" />
               <span>Muốn xem thử đồ lên dáng người?</span>
-              <Link href={`/try-on?product=${outfit.items[0]?.product.id}`}>
-                Thử đồ AI ngay <ChevronRight size={14} />
+              <Link {...tryOnLinkProps(setProductIds)}>
+                Thử cả set AI ngay <ChevronRight size={14} />
               </Link>
             </div>
           </aside>

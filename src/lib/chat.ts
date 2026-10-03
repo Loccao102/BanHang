@@ -21,6 +21,13 @@ export type ChatAgentAction =
     }
   | {
       id: string;
+      type: "open_try_on";
+      label: string;
+      productIds: string[];
+      autoExecute?: boolean;
+    }
+  | {
+      id: string;
       type: "apply_coupon";
       label: string;
       code: string;

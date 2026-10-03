@@ -94,6 +94,7 @@ export function buildAgentPlan(args: AgentPlanArgs) {
   const explicitBundle = /(them|add|bo|cho).*(ca|nguyen|toan).*(set|outfit|bo).*(gio|cart)/.test(text);
   const wantsOutfit = /(phoi|outfit|nguyen set|ca set|full look)/.test(text);
   const wantsOpen = /(mo|xem).*(cai|mau|san pham|mon)/.test(text);
+  const wantsTryOn = /(thu|phong thu).*(do|set|outfit|bo|mon|cai)|(?:thu do|thu bo|thu set|vao phong thu|phong thu do|thu len dang)\b/.test(text);
   const requestedSize = extractSize(args.message);
 
   const referencePool = args.contextProducts.length ? args.contextProducts : args.found;
@@ -140,6 +141,39 @@ export function buildAgentPlan(args: AgentPlanArgs) {
           autoExecute: false
         });
       }
+
+      // Allow trying on the coordinated outfit in the AI virtual fitting room
+      actions.push({
+        id: randomUUID(),
+        type: "open_try_on",
+        label: "✨ Thử cả set trong phòng thử AI (" + outfit.products.length + " món)",
+        productIds: outfit.products.map((item) => item.id),
+        autoExecute: false
+      });
+      notes.push("Đã tạo sẵn nút cho phép khách đưa cả set phối vào phòng thử đồ AI để xem đồ lên dáng người.");
+    }
+  } else if (wantsTryOn) {
+    const isFullSet = /(ca|nguyen|toan|bo|set|outfit)/.test(text);
+    const targetProducts = (isFullSet && referencePool.length > 1
+      ? referencePool.slice(0, 3)
+      : [referenced ?? args.found[0]]).filter(Boolean);
+
+    if (targetProducts.length) {
+      products = targetProducts;
+      actions.push({
+        id: randomUUID(),
+        type: "open_try_on",
+        label: targetProducts.length > 1
+          ? "✨ Thử cả set trong phòng thử AI (" + targetProducts.length + " món)"
+          : "✨ Thử " + targetProducts[0].name + " trong phòng thử AI",
+        productIds: targetProducts.map((item) => item.id),
+        autoExecute: true
+      });
+      notes.push(
+        targetProducts.length > 1
+          ? "Khách muốn thử cả set đồ trong phòng thử đồ AI. Hệ thống sẽ mở phòng thử với " + targetProducts.length + " món này."
+          : 'Khách muốn thử món "' + targetProducts[0].name + '" trong phòng thử đồ AI. Hệ thống sẽ mở phòng thử ngay.'
+      );
     }
   } else if (explicitAdd && referenced) {
     const size = inStockSize(referenced, requestedSize);

@@ -161,6 +161,28 @@ export function ChatWidget() {
         router.push(`/product/${encodeURIComponent(action.productId)}`);
       }
 
+      if (action.type === "open_try_on") {
+        const productIds = action.productIds.filter(Boolean);
+        if (!productIds.length) throw new Error("Chưa có sản phẩm nào để thử.");
+
+        if (!user) {
+          setOpen(false);
+          const targetUrl = `/try-on?products=${encodeURIComponent(productIds.join(","))}`;
+          router.push(`/login?next=${encodeURIComponent(targetUrl)}`);
+          return;
+        }
+
+        // Add items to wishlist so fitting room shows them
+        productIds.forEach((id) => {
+          if (!wishlist.includes(id)) {
+            toggleWishlist(id);
+          }
+        });
+
+        setOpen(false);
+        router.push(`/try-on?products=${encodeURIComponent(productIds.join(","))}`);
+      }
+
       if (action.type === "open_checkout") {
         setOpen(false);
         router.push("/checkout");
@@ -264,6 +286,19 @@ export function ChatWidget() {
   function quickAdd(product: Product) {
     const size = firstAvailableSize(product);
     if (size) addToCart(product, size);
+  }
+
+  function quickTryOn(product: Product) {
+    if (!user) {
+      setOpen(false);
+      router.push(`/login?next=${encodeURIComponent(`/try-on?products=${product.id}`)}`);
+      return;
+    }
+    if (!wishlist.includes(product.id)) {
+      toggleWishlist(product.id);
+    }
+    setOpen(false);
+    router.push(`/try-on?products=${encodeURIComponent(product.id)}`);
   }
 
   function actionLabel(action: ChatAgentAction) {
@@ -374,18 +409,29 @@ export function ChatWidget() {
                                 className="chatAddBtn"
                                 onClick={() => quickAdd(product)}
                                 aria-label={`Thêm ${product.name} vào giỏ`}
+                                title="Thêm vào giỏ hàng"
                               >
                                 <ShoppingBag size={13} />
                                 <span>Thêm giỏ</span>
                               </button>
                               <button
                                 type="button"
+                                className="chatTryBtn"
+                                onClick={() => quickTryOn(product)}
+                                aria-label={`Thử ${product.name} trong phòng thử đồ AI`}
+                                title="Thử đồ AI trên vóc dáng"
+                              >
+                                <Sparkles size={13} />
+                                <span>Thử đồ</span>
+                              </button>
+                              <button
+                                type="button"
                                 className={`chatLikeBtn ${liked ? "active" : ""}`}
                                 onClick={() => toggleWishlist(product.id)}
                                 aria-label={liked ? "Bỏ yêu thích" : "Yêu thích"}
+                                title={liked ? "Bỏ yêu thích" : "Lưu vào yêu thích"}
                               >
-                                <Heart size={13} fill={liked ? "currentColor" : "none"} />
-                                <span>{liked ? "Đã thích" : "Yêu thích"}</span>
+                                <Heart size={14} fill={liked ? "currentColor" : "none"} />
                               </button>
                             </div>
                           </div>
@@ -398,11 +444,19 @@ export function ChatWidget() {
                     <div className="chatAgentActions">
                       {message.actions.map((action) => {
                         const state = actionState[action.id];
-                        return <button key={action.id} className={state ? `state-${state}` : ""} disabled={state === "running" || state === "done"} onClick={() => void executeAction(action)}>
-                          {state === "done" ? <Check size={12} /> : <Sparkles size={12} />}
-                          <span>{actionLabel(action)}</span>
-                          {!state ? <ChevronRight size={12} /> : null}
-                        </button>;
+                        const isTryOn = action.type === "open_try_on";
+                        return (
+                          <button
+                            key={action.id}
+                            className={`${state ? `state-${state}` : ""} ${isTryOn ? "action-try-on" : ""}`}
+                            disabled={state === "running" || state === "done"}
+                            onClick={() => void executeAction(action)}
+                          >
+                            {state === "done" ? <Check size={12} /> : <Sparkles size={12} />}
+                            <span>{actionLabel(action)}</span>
+                            {!state ? <ChevronRight size={12} /> : null}
+                          </button>
+                        );
                       })}
                     </div>
                   ) : null}

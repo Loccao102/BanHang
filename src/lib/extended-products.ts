@@ -1,7 +1,14 @@
 import type { Product } from "./products";
 
+const sizes = ["S", "M", "L", "XL"];
+
+function slug(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
 type Seed = {
   sku: string;
+  groupCode: string;
   name: string;
   subtitle: string;
   category: Product["category"];
@@ -9,8 +16,8 @@ type Seed = {
   price: number;
   color: string;
   colorFamily: Product["colorFamily"];
+  colorHex: string;
   image: string;
-  sourceUrl: string;
   style: string[];
   occasion: string[];
   material: string;
@@ -19,18 +26,9 @@ type Seed = {
   lengthClass: string;
   neckline?: string;
   sleeveLength?: string;
-  pattern?: string;
-  colorTemperature?: Product["colorTemperature"];
   waistRise?: Product["waistRise"];
-  volume?: Product["volume"];
-  tryOn?: boolean;
+  colorTemperature?: Product["colorTemperature"];
 };
-
-const sizes = ["S", "M", "L", "XL"];
-
-function slug(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-}
 
 function makeProduct(item: Seed): Product {
   const id = `lsoul-${slug(item.name)}-${item.sku.toLowerCase()}`;
@@ -47,7 +45,7 @@ function makeProduct(item: Seed): Product {
   return {
     id,
     sku: item.sku,
-    groupCode: item.sku,
+    groupCode: item.groupCode,
     name: item.name,
     subtitle: item.subtitle,
     category: item.category,
@@ -56,6 +54,7 @@ function makeProduct(item: Seed): Product {
     price: item.price,
     color: item.color,
     colorFamily: item.colorFamily,
+    colorHex: item.colorHex,
     sizes,
     stock: 48,
     stockTracked: false,
@@ -75,27 +74,26 @@ function makeProduct(item: Seed): Product {
     featured: false,
     isNew: true,
     active: true,
-    sourceUrl: item.sourceUrl,
-    sourceUpdatedAt: "2026-10-02",
     sourceType: "retailer-corroborated",
+    sourceUpdatedAt: "2026-10-03",
     tryOnCategory:
       item.category === "bottoms" ? "bottoms" :
       item.category === "dress" ? "one-pieces" :
       "tops",
-    tryOnPhotoType: item.tryOn ? "model" : undefined,
-    tryOnImage: item.tryOn ? item.image : undefined,
+    tryOnPhotoType: "flat-lay",
+    tryOnImage: item.image,
     silhouette: item.silhouette,
     lengthClass: item.lengthClass,
     neckline: item.neckline,
     sleeveLength: item.sleeveLength,
-    pattern: item.pattern ?? "solid",
-    season: ["spring", "summer", "autumn"],
-    formality: item.occasion.some((value) => /tiệc|sự kiện|event/i.test(value)) ? 5 : 3,
+    pattern: "solid",
+    season: ["spring", "summer", "autumn", "winter"],
+    formality: item.occasion.some((value) => /tiệc|sự kiện|event|gala/i.test(value)) ? 5 : 3,
     warmth: item.category === "outerwear" ? 5 : 2,
     stretch: /co giãn|knit|len|thun/i.test(`${item.material} ${item.fit}`) ? 4 : 2,
     coverage: item.lengthClass === "maxi" ? 5 : item.lengthClass === "midi" ? 4 : 2,
     colorTemperature: item.colorTemperature ?? "neutral",
-    waistRise: item.waistRise ?? (item.category === "bottoms" ? "low" : "not-applicable"),
+    waistRise: item.waistRise ?? (item.category === "bottoms" ? "high" : "not-applicable"),
     recommendedUndertones:
       item.colorTemperature === "warm" ? ["warm", "neutral"] :
       item.colorTemperature === "cool" ? ["cool", "neutral"] :
@@ -103,8 +101,8 @@ function makeProduct(item: Seed): Product {
     bodyShapeCompatibility: [],
     pairingTags: styleKeywords,
     avoidPairingTags: [],
-    visualWeight: item.category === "outerwear" ? 5 : item.volume === "voluminous" ? 4 : 3,
-    volume: item.volume ?? "balanced",
+    visualWeight: item.category === "outerwear" ? 5 : 3,
+    volume: "balanced",
     styleKeywords,
     aiSearchText: [
       item.name,
@@ -123,399 +121,1780 @@ function makeProduct(item: Seed): Product {
 
 const data: Seed[] = [
   {
-    sku: "V26011699", name: "Aller Dress", subtitle: "Đầm corset cổ yếm hai dây thắt nơ dáng chữ A xếp ly",
-    category: "dress", type: "mini-dress", price: 3122074, color: "Trắng kem", colorFamily: "white",
-    image: "https://dosi-in.com/img/600/vn-11134207-820l4-mj6r6kq66tc2b4.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-dam-corset-co-yem-hai-day-that-no-dang-chu-a-xep-ly-quyen-ru-aller-dress-v26011699-269491027.49804304151/",
-    style: ["corset", "nữ tính", "romantic"], occasion: ["hẹn hò", "đi tiệc"], material: "Vải dệt tổng hợp",
-    fit: "Corset fit & flare", silhouette: "a-line", lengthClass: "mini", neckline: "halter", sleeveLength: "sleeveless", tryOn: true
+    "sku": "DR-NOIR-SLIP-BLK",
+    "groupCode": "DR-NOIR-SLIP",
+    "name": "Noir Silk Slip Midi Dress",
+    "subtitle": "Đầm lụa hai dây cổ đổ dáng midi thướt tha quyến rũ (Đen)",
+    "category": "dress",
+    "type": "midi-dress",
+    "price": 2150000,
+    "color": "Đen",
+    "colorFamily": "black",
+    "colorHex": "#111111",
+    "image": "/products/dress-satin-slip-black.jpg",
+    "style": [
+      "minimal",
+      "sexy",
+      "glam"
+    ],
+    "occasion": [
+      "hẹn hò",
+      "đi tiệc",
+      "sự kiện buổi tối"
+    ],
+    "material": "Lụa satin cao cấp dệt chéo",
+    "fit": "Bias-cut cowl neck",
+    "silhouette": "sheath",
+    "lengthClass": "midi",
+    "neckline": "cowl",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "neutral"
   },
   {
-    sku: "V26041711", name: "Fette Dress", subtitle: "Đầm mini lệch vai ôm body co giãn tối giản",
-    category: "dress", type: "bodycon-dress", price: 3080000, color: "Lilac / đỏ", colorFamily: "pink",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-mso7i4683c3ud0.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-dam-mini-lech-vai-om-body-co-gian-ton-dang-phong-cach-toi-gian-quyen-ru-fette-dress-v26041711-269491027.56910010459/",
-    style: ["minimal", "sexy", "statement"], occasion: ["hẹn hò", "đi tiệc"], material: "100% Polyester",
-    fit: "Body-hugging draped", silhouette: "bodycon", lengthClass: "mini", neckline: "asymmetric", sleeveLength: "sleeveless", colorTemperature: "cool", tryOn: true
+    "sku": "DR-NOIR-SLIP-RED",
+    "groupCode": "DR-NOIR-SLIP",
+    "name": "Noir Silk Slip Midi Dress",
+    "subtitle": "Đầm lụa hai dây cổ đổ dáng midi quyến rũ quý phái (Đỏ rượu)",
+    "category": "dress",
+    "type": "midi-dress",
+    "price": 2150000,
+    "color": "Đỏ rượu",
+    "colorFamily": "red",
+    "colorHex": "#7A1C2E",
+    "image": "/products/dress-bodycon-maxi-red.jpg",
+    "style": [
+      "glam",
+      "sexy",
+      "statement"
+    ],
+    "occasion": [
+      "hẹn hò",
+      "đi tiệc",
+      "sự kiện buổi tối"
+    ],
+    "material": "Lụa satin cao cấp dệt chéo",
+    "fit": "Bias-cut cowl neck",
+    "silhouette": "sheath",
+    "lengthClass": "midi",
+    "neckline": "cowl",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "warm"
   },
   {
-    sku: "V26041707", name: "Jelly Dress", subtitle: "Đầm ngắn lệch vai ôm body rút dây",
-    category: "dress", type: "bodycon-dress", price: 2860000, color: "Lilac / xanh nhạt", colorFamily: "green",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-mso7i1gu62h09e.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-dam-ngan-lech-vai-co-gian-om-body-tao-form-eo-hong-rut-day-quyen-ru-jelly-dress-v26041707-269491027.55810010231/",
-    style: ["minimal", "sexy"], occasion: ["hẹn hò", "đi tiệc"], material: "Vải co giãn",
-    fit: "Ruched bodycon", silhouette: "bodycon", lengthClass: "mini", neckline: "asymmetric", sleeveLength: "sleeveless", colorTemperature: "cool", tryOn: true
+    "sku": "DR-NOIR-SLIP-WHT",
+    "groupCode": "DR-NOIR-SLIP",
+    "name": "Noir Silk Slip Midi Dress",
+    "subtitle": "Đầm lụa hai dây cổ đổ dáng midi thanh khiết trang nhã (Trắng ngà)",
+    "category": "dress",
+    "type": "midi-dress",
+    "price": 2150000,
+    "color": "Trắng ngà",
+    "colorFamily": "white",
+    "colorHex": "#F5F4EE",
+    "image": "/products/dress-bodycon-maxi-white.jpg",
+    "style": [
+      "minimal",
+      "elegant",
+      "nữ tính"
+    ],
+    "occasion": [
+      "hẹn hò",
+      "đi tiệc",
+      "sự kiện"
+    ],
+    "material": "Lụa satin cao cấp dệt chéo",
+    "fit": "Bias-cut cowl neck",
+    "silhouette": "sheath",
+    "lengthClass": "midi",
+    "neckline": "cowl",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "neutral"
   },
   {
-    sku: "V26011701", name: "Vivier Dress", subtitle: "Đầm lụa dự tiệc cổ yếm dáng dài hở lưng",
-    category: "dress", type: "maxi-dress", price: 3740000, color: "Đỏ rượu", colorFamily: "red",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-mso7i8cmvklg58.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-dam-lua-du-tiec-co-yem-cach-dieu-dang-dai-thiet-ke-ho-lung-vivier-dress-v26011701-269491027.44604604190/",
-    style: ["elegant", "glam", "nữ tính"], occasion: ["đi tiệc", "sự kiện buổi tối"], material: "Lụa",
-    fit: "Draped slim fit", silhouette: "column", lengthClass: "maxi", neckline: "halter", sleeveLength: "sleeveless", colorTemperature: "warm", tryOn: true
+    "sku": "DR-SIREN-MINI-BLK",
+    "groupCode": "DR-SIREN-MINI",
+    "name": "Siren Bandeau Cut-Out Mini Dress",
+    "subtitle": "Đầm cúp ngực bandeau ôm body cut-out eo táo bạo (Đen)",
+    "category": "dress",
+    "type": "mini-dress",
+    "price": 1850000,
+    "color": "Đen",
+    "colorFamily": "black",
+    "colorHex": "#111111",
+    "image": "/products/dress-slip-mini-black.webp",
+    "style": [
+      "sexy",
+      "Y2K",
+      "statement"
+    ],
+    "occasion": [
+      "đi tiệc",
+      "clubbing",
+      "concert"
+    ],
+    "material": "Thun poly dày dặn co giãn 4 chiều",
+    "fit": "Bandeau bodycon cut-out",
+    "silhouette": "bodycon",
+    "lengthClass": "mini",
+    "neckline": "strapless",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "neutral"
   },
   {
-    sku: "V24121641", name: "Lory Dress", subtitle: "Đầm ôm body cổ yếm đổ phối dây da",
-    category: "dress", type: "mini-dress", price: 2090000, color: "Vàng ánh kim", colorFamily: "brown",
-    image: "https://dosi-in.com/img/600/vn-11134207-7ras8-m5b6vfkjdfmf75.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-dam-thiet-ke-om-body-co-yem-do-khoet-nguc-ho-lung-dinh-kem-day-da-bo-lory-dress-v24121641-269491027.28174209301/",
-    style: ["Y2K", "glam", "statement"], occasion: ["đi tiệc", "concert"], material: "Vải ánh kim phối dây da",
-    fit: "Slim halter fit", silhouette: "bodycon", lengthClass: "mini", neckline: "halter", sleeveLength: "sleeveless", colorTemperature: "warm", tryOn: true
+    "sku": "DR-SIREN-MINI-RED",
+    "groupCode": "DR-SIREN-MINI",
+    "name": "Siren Bandeau Cut-Out Mini Dress",
+    "subtitle": "Đầm cúp ngực bandeau ôm body cut-out eo gợi cảm (Đỏ mận)",
+    "category": "dress",
+    "type": "mini-dress",
+    "price": 1850000,
+    "color": "Đỏ mận",
+    "colorFamily": "red",
+    "colorHex": "#8B1E3F",
+    "image": "/products/dress-bodycon-maxi-red.jpg",
+    "style": [
+      "sexy",
+      "glam",
+      "statement"
+    ],
+    "occasion": [
+      "đi tiệc",
+      "clubbing",
+      "hẹn hò"
+    ],
+    "material": "Thun poly dày dặn co giãn 4 chiều",
+    "fit": "Bandeau bodycon cut-out",
+    "silhouette": "bodycon",
+    "lengthClass": "mini",
+    "neckline": "strapless",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "warm"
   },
   {
-    sku: "V25121692", name: "Fem Dress", subtitle: "Đầm satin hai dây chữ A cut-out layer nơ",
-    category: "dress", type: "mini-dress", price: 2860000, color: "Đen / đỏ / xám", colorFamily: "black",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-mso8adqy7xmo98.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-dam-satin-hai-day-dang-chu-a-cut-out-suon-lung-layer-no-xep-tang-fem-dress-v25121692-269491027.52103972342/",
-    style: ["nữ tính", "party", "statement"], occasion: ["hẹn hò", "đi tiệc"], material: "Satin",
-    fit: "A-line fitted waist", silhouette: "a-line", lengthClass: "mini", neckline: "square", sleeveLength: "sleeveless", tryOn: true
+    "sku": "DR-SIREN-MINI-WHT",
+    "groupCode": "DR-SIREN-MINI",
+    "name": "Siren Bandeau Cut-Out Mini Dress",
+    "subtitle": "Đầm cúp ngực bandeau ôm body cut-out eo trẻ trung (Trắng)",
+    "category": "dress",
+    "type": "mini-dress",
+    "price": 1850000,
+    "color": "Trắng",
+    "colorFamily": "white",
+    "colorHex": "#FFFFFF",
+    "image": "/products/dress-bodycon-maxi-white.jpg",
+    "style": [
+      "sexy",
+      "minimal",
+      "Y2K"
+    ],
+    "occasion": [
+      "đi tiệc",
+      "dạo phố",
+      "cafe"
+    ],
+    "material": "Thun poly dày dặn co giãn 4 chiều",
+    "fit": "Bandeau bodycon cut-out",
+    "silhouette": "bodycon",
+    "lengthClass": "mini",
+    "neckline": "strapless",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "neutral"
   },
   {
-    sku: "V25071678", name: "Zarae Dress", subtitle: "Đầm mini phối nón hoodie khóa kéo năng động",
-    category: "dress", type: "mini-dress", price: 2915000, color: "Xám", colorFamily: "gray",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-mso54zh4snwo50.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-dam-mini-phoi-non-hoodie-khoa-keo-vai-cotton-co-gian-nang-dong-zarae-dress-v25071678-269491027.51701641266/",
-    style: ["sporty", "streetwear", "Y2K"], occasion: ["đi chơi", "đi cafe"], material: "Cotton co giãn",
-    fit: "Fitted hoodie dress", silhouette: "fit-and-flare", lengthClass: "mini", neckline: "hooded", sleeveLength: "sleeveless", colorTemperature: "cool", tryOn: true
+    "sku": "DR-CELESTE-MAXI-BLK",
+    "groupCode": "DR-CELESTE-MAXI",
+    "name": "Celeste Draped Column Maxi Dress",
+    "subtitle": "Đầm dạ hội xếp nếp draped dáng suông dài quyền quý (Đen)",
+    "category": "dress",
+    "type": "maxi-dress",
+    "price": 2450000,
+    "color": "Đen",
+    "colorFamily": "black",
+    "colorHex": "#141414",
+    "image": "/products/dress-bodycon-maxi-black.jpg",
+    "style": [
+      "glam",
+      "elegant",
+      "statement"
+    ],
+    "occasion": [
+      "sự kiện buổi tối",
+      "đi tiệc",
+      "gala"
+    ],
+    "material": "Chiffon lụa rủ cao cấp 2 lớp",
+    "fit": "Draped column fit",
+    "silhouette": "column",
+    "lengthClass": "maxi",
+    "neckline": "asymmetric",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "neutral"
   },
   {
-    sku: "V24121649", name: "Rue Dress", subtitle: "Đầm yếm cổ đổ chấm bi phối dây da",
-    category: "dress", type: "mini-dress", price: 1386000, color: "Trắng chấm bi", colorFamily: "white",
-    image: "https://dosi-in.com/img/600/vn-11134207-7ras8-m47bd2x7pg2o75.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-dam-yem-co-do-cham-bi-phoi-day-da-ca-tinh-rue-dress-v24121649-269491027.29371719280/",
-    style: ["retro", "Y2K", "statement"], occasion: ["đi chơi", "hẹn hò"], material: "Vải dệt phối dây da",
-    fit: "Halter mini fit", silhouette: "bodycon", lengthClass: "mini", neckline: "cowl-halter", sleeveLength: "sleeveless", pattern: "polka-dot", tryOn: true
+    "sku": "DR-CELESTE-MAXI-RED",
+    "groupCode": "DR-CELESTE-MAXI",
+    "name": "Celeste Draped Column Maxi Dress",
+    "subtitle": "Đầm dạ hội xếp nếp draped dáng suông dài kiêu sa (Đỏ rượu)",
+    "category": "dress",
+    "type": "maxi-dress",
+    "price": 2450000,
+    "color": "Đỏ rượu",
+    "colorFamily": "red",
+    "colorHex": "#6B1D2F",
+    "image": "/products/dress-bodycon-maxi-red.jpg",
+    "style": [
+      "glam",
+      "elegant",
+      "statement"
+    ],
+    "occasion": [
+      "sự kiện buổi tối",
+      "đi tiệc",
+      "gala"
+    ],
+    "material": "Chiffon lụa rủ cao cấp 2 lớp",
+    "fit": "Draped column fit",
+    "silhouette": "column",
+    "lengthClass": "maxi",
+    "neckline": "asymmetric",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "warm"
   },
   {
-    sku: "V25051666", name: "Soren Dress", subtitle: "Đầm body cổ sơ mi phối sequin sọc dọc",
-    category: "dress", type: "mini-dress", price: 3520000, color: "Xám xanh", colorFamily: "gray",
-    image: "https://dosi-in.com/img/600/vn-11134207-820l4-mhcx0umkok5kbb.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-soren-dress-dam-body-co-so-mi-thanh-lich-phoi-sequin-soc-doc-vai-thun-gan-co-gian-v25051666-269491027.50051927854/",
-    style: ["preppy", "glam", "nữ tính"], occasion: ["đi tiệc", "hẹn hò"], material: "Thun gân co giãn phối sequin",
-    fit: "Fitted shirt dress", silhouette: "bodycon", lengthClass: "mini", neckline: "shirt-collar", sleeveLength: "short", colorTemperature: "cool", tryOn: true
+    "sku": "DR-CELESTE-MAXI-WHT",
+    "groupCode": "DR-CELESTE-MAXI",
+    "name": "Celeste Draped Column Maxi Dress",
+    "subtitle": "Đầm dạ hội xếp nếp draped dáng suông dài tinh khôi (Trắng kem)",
+    "category": "dress",
+    "type": "maxi-dress",
+    "price": 2450000,
+    "color": "Trắng kem",
+    "colorFamily": "white",
+    "colorHex": "#F8F7F3",
+    "image": "/products/dress-bodycon-maxi-white.jpg",
+    "style": [
+      "elegant",
+      "nữ tính",
+      "minimal"
+    ],
+    "occasion": [
+      "sự kiện buổi tối",
+      "tiệc cưới",
+      "gala"
+    ],
+    "material": "Chiffon lụa rủ cao cấp 2 lớp",
+    "fit": "Draped column fit",
+    "silhouette": "column",
+    "lengthClass": "maxi",
+    "neckline": "asymmetric",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "neutral"
   },
   {
-    sku: "V25121690", name: "Winly Dress", subtitle: "Đầm len hở vai cao cổ phối khóa da",
-    category: "dress", type: "mini-dress", price: 3080000, color: "Kem", colorFamily: "beige",
-    image: "https://dosi-in.com/img/600/vn-11134207-820l4-mi47y66j1vcze8.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-dam-len-ho-vai-cao-co-phoi-khoa-da-bo-gan-sang-trong-winly-dress-v25121690-269491027.51902931460/",
-    style: ["cozy", "statement", "nữ tính"], occasion: ["đi chơi", "hẹn hò"], material: "Len bo gân phối da",
-    fit: "Relaxed upper / fitted hem", silhouette: "cocoon", lengthClass: "mini", neckline: "high-neck", sleeveLength: "long", colorTemperature: "warm", volume: "voluminous", tryOn: true
+    "sku": "DR-LUNA-HALTER-BLK",
+    "groupCode": "DR-LUNA-HALTER",
+    "name": "Luna Backless Halter Midi Dress",
+    "subtitle": "Đầm cổ yếm hở lưng thắt nơ lụa satin dáng xòe nhẹ (Đen)",
+    "category": "dress",
+    "type": "midi-dress",
+    "price": 2290000,
+    "color": "Đen",
+    "colorFamily": "black",
+    "colorHex": "#0D0D0D",
+    "image": "/products/dress-silk-black.jpg",
+    "style": [
+      "romantic",
+      "sexy",
+      "nữ tính"
+    ],
+    "occasion": [
+      "hẹn hò",
+      "đi tiệc",
+      "du lịch"
+    ],
+    "material": "Lụa tơ tằm dệt mềm mịn",
+    "fit": "Halter backless A-line",
+    "silhouette": "a-line",
+    "lengthClass": "midi",
+    "neckline": "halter",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "neutral"
   },
   {
-    sku: "V24121654", name: "Vamp Dress", subtitle: "Đầm cổ yếm hở lưng phối dây da cá tính",
-    category: "dress", type: "mini-dress", price: 1782000, color: "Đỏ đen", colorFamily: "red",
-    image: "https://dosi-in.com/img/600/vn-11134207-7ras8-m479uaotpp5sed.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-dam-co-yem-ho-lung-phoi-day-da-ca-tinh-vamp-dress-v24121654-269491027.24189831302/",
-    style: ["gothic", "Y2K", "statement"], occasion: ["concert", "đi tiệc"], material: "Vải co giãn phối dây da",
-    fit: "Halter bodycon", silhouette: "bodycon", lengthClass: "mini", neckline: "halter", sleeveLength: "sleeveless", colorTemperature: "warm", tryOn: true
+    "sku": "DR-LUNA-HALTER-RED",
+    "groupCode": "DR-LUNA-HALTER",
+    "name": "Luna Backless Halter Midi Dress",
+    "subtitle": "Đầm cổ yếm hở lưng thắt nơ lụa satin dáng xòe nhẹ (Đỏ ruby)",
+    "category": "dress",
+    "type": "midi-dress",
+    "price": 2290000,
+    "color": "Đỏ ruby",
+    "colorFamily": "red",
+    "colorHex": "#991B1B",
+    "image": "/products/dress-bodycon-maxi-red.jpg",
+    "style": [
+      "romantic",
+      "sexy",
+      "statement"
+    ],
+    "occasion": [
+      "hẹn hò",
+      "đi tiệc",
+      "sự kiện"
+    ],
+    "material": "Lụa tơ tằm dệt mềm mịn",
+    "fit": "Halter backless A-line",
+    "silhouette": "a-line",
+    "lengthClass": "midi",
+    "neckline": "halter",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "warm"
   },
   {
-    sku: "V24051608", name: "Aubé Dress", subtitle: "Đầm ngắn cổ yếm chân váy bí phồng phối thắt lưng",
-    category: "dress", type: "mini-dress", price: 4620000, color: "Đỏ", colorFamily: "red",
-    image: "https://dosi-in.com/img/600/vn-11134207-7r98o-lv2ott428m490e.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-dam-ngan-co-yem-xe-nguc-ho-lung-chan-vay-bi-phong-phoi-that-lung-aube-dress-v24051608-269491027.25629354943/",
-    style: ["statement", "romantic", "glam"], occasion: ["đi tiệc", "sự kiện"], material: "Vải dệt phối thắt lưng",
-    fit: "Fitted top / bubble skirt", silhouette: "bubble", lengthClass: "mini", neckline: "halter", sleeveLength: "sleeveless", colorTemperature: "warm", volume: "voluminous", tryOn: true
+    "sku": "DR-LUNA-HALTER-WHT",
+    "groupCode": "DR-LUNA-HALTER",
+    "name": "Luna Backless Halter Midi Dress",
+    "subtitle": "Đầm cổ yếm hở lưng thắt nơ lụa satin thanh thoát (Trắng tuyết)",
+    "category": "dress",
+    "type": "midi-dress",
+    "price": 2290000,
+    "color": "Trắng tuyết",
+    "colorFamily": "white",
+    "colorHex": "#FAFAFA",
+    "image": "/products/dress-bodycon-maxi-white.jpg",
+    "style": [
+      "romantic",
+      "nữ tính",
+      "minimal"
+    ],
+    "occasion": [
+      "hẹn hò",
+      "đi tiệc",
+      "du lịch"
+    ],
+    "material": "Lụa tơ tằm dệt mềm mịn",
+    "fit": "Halter backless A-line",
+    "silhouette": "a-line",
+    "lengthClass": "midi",
+    "neckline": "halter",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "neutral"
   },
   {
-    sku: "V25011656", name: "Dusk Dress", subtitle: "Váy xếp tầng bồng bềnh phối dây da đinh tán",
-    category: "dress", type: "mini-dress", price: 4125000, color: "Trắng", colorFamily: "white",
-    image: "https://dosi-in.com/img/600/vn-11134207-820l4-mhd4kquw2uq274.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-dusk-dress-vay-xep-tang-bong-benh-mix-day-that-da-dinh-tan-ca-tinh-v25011656-women-269491027.45801960343/",
-    style: ["romantic", "Y2K", "statement"], occasion: ["đi tiệc", "concert"], material: "Vải sheer xếp tầng phối da",
-    fit: "Voluminous tiered", silhouette: "tiered", lengthClass: "mini", neckline: "strapless", sleeveLength: "sleeveless", volume: "voluminous", tryOn: true
+    "sku": "DR-VELVET-BODY-BLK",
+    "groupCode": "DR-VELVET-BODY",
+    "name": "Velvet Corset Silhouette Bodycon Dress",
+    "subtitle": "Đầm nhung cúp ngực gọng corset ôm sát đường cong (Đen tuyền)",
+    "category": "dress",
+    "type": "bodycon-dress",
+    "price": 2650000,
+    "color": "Đen",
+    "colorFamily": "black",
+    "colorHex": "#111111",
+    "image": "/products/dress-bodycon-maxi-black.jpg",
+    "style": [
+      "corset",
+      "glam",
+      "sexy"
+    ],
+    "occasion": [
+      "đi tiệc",
+      "sự kiện buổi tối",
+      "hẹn hò"
+    ],
+    "material": "Nhung tuyết co giãn cao cấp lót lụa",
+    "fit": "Fitted corset bodycon",
+    "silhouette": "bodycon",
+    "lengthClass": "mini",
+    "neckline": "sweetheart",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "neutral"
   },
   {
-    sku: "V24031604", name: "Éthérée Dress", subtitle: "Đầm xuyên thấu chân váy ngắn xếp tầng",
-    category: "dress", type: "mini-dress", price: 1424500, color: "Trắng", colorFamily: "white",
-    image: "https://dosi-in.com/img/600/vn-11134207-7r98o-lu027j96q0whe7.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-dam-om-body-sexy-xuyen-thau-chan-vay-ngan-xep-tang-etheree-dess-v24031604-269491027.24823714126/",
-    style: ["sheer", "romantic", "statement"], occasion: ["đi tiệc", "sự kiện"], material: "Lưới sheer phối tầng",
-    fit: "Sheer fitted bodice", silhouette: "tiered", lengthClass: "mini", neckline: "high-neck", sleeveLength: "long", volume: "balanced", tryOn: true
+    "sku": "DR-VELVET-BODY-RED",
+    "groupCode": "DR-VELVET-BODY",
+    "name": "Velvet Corset Silhouette Bodycon Dress",
+    "subtitle": "Đầm nhung cúp ngực gọng corset sang chảnh quý phái (Đỏ đô)",
+    "category": "dress",
+    "type": "bodycon-dress",
+    "price": 2650000,
+    "color": "Đỏ",
+    "colorFamily": "red",
+    "colorHex": "#7F1D1D",
+    "image": "/products/dress-bodycon-maxi-red.jpg",
+    "style": [
+      "corset",
+      "glam",
+      "sexy",
+      "statement"
+    ],
+    "occasion": [
+      "đi tiệc",
+      "sự kiện buổi tối",
+      "gala"
+    ],
+    "material": "Nhung tuyết co giãn cao cấp lót lụa",
+    "fit": "Fitted corset bodycon",
+    "silhouette": "bodycon",
+    "lengthClass": "mini",
+    "neckline": "sweetheart",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "warm"
   },
   {
-    sku: "V26061719", name: "Desii Dress", subtitle: "Đầm mini lệch vai ôm dáng xếp ly phối nơ",
-    category: "dress", type: "bodycon-dress", price: 2832500, color: "Đen / đỏ", colorFamily: "black",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-mq8xn5fc9khtac.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/mo-ban-lsoul-dam-mini-lech-vai-om-dang-xep-ly-phoi-no-quyen-ru-ca-tinh-desii-dress-v26061719-v26061720-269491027.51062203450/",
-    style: ["minimal", "sexy", "nữ tính"], occasion: ["hẹn hò", "đi tiệc"], material: "Vải co giãn xếp ly",
-    fit: "Asymmetric bodycon", silhouette: "bodycon", lengthClass: "mini", neckline: "one-shoulder", sleeveLength: "sleeveless", tryOn: true
+    "sku": "DR-VELVET-BODY-WHT",
+    "groupCode": "DR-VELVET-BODY",
+    "name": "Velvet Corset Silhouette Bodycon Dress",
+    "subtitle": "Đầm nhung cúp ngực gọng corset kiêu sa tôn dáng (Trắng ngọc)",
+    "category": "dress",
+    "type": "bodycon-dress",
+    "price": 2650000,
+    "color": "Trắng",
+    "colorFamily": "white",
+    "colorHex": "#F9F9F8",
+    "image": "/products/dress-bodycon-maxi-white.jpg",
+    "style": [
+      "corset",
+      "glam",
+      "nữ tính"
+    ],
+    "occasion": [
+      "đi tiệc",
+      "sự kiện buổi tối",
+      "hẹn hò"
+    ],
+    "material": "Nhung tuyết co giãn cao cấp lót lụa",
+    "fit": "Fitted corset bodycon",
+    "silhouette": "bodycon",
+    "lengthClass": "mini",
+    "neckline": "sweetheart",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "neutral"
   },
   {
-    sku: "V26061715", name: "Liery Dress", subtitle: "Đầm maxi cổ yếm dáng ôm xếp ly đính nơ hông",
-    category: "dress", type: "maxi-dress", price: 3616000, color: "Xanh pastel", colorFamily: "blue",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-mq2ux3d4nhfm69.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/mo-ban-lsoul-dam-maxi-co-yem-dang-om-xep-ly-dinh-no-hong-quyen-ru-liery-dress-v26061715-269491027.54312650410/",
-    style: ["elegant", "romantic", "nữ tính"], occasion: ["đi tiệc", "sự kiện"], material: "Vải mềm xếp ly",
-    fit: "Slim maxi", silhouette: "column", lengthClass: "maxi", neckline: "halter", sleeveLength: "sleeveless", colorTemperature: "cool", tryOn: true
+    "sku": "TP-GOTHIC-LACE-BLK",
+    "groupCode": "TP-GOTHIC-LACE",
+    "name": "Gothic Lace-Up Boned Corset",
+    "subtitle": "Áo corset ren hoa thêu gọng định hình thắt dây lưng (Đen)",
+    "category": "tops",
+    "type": "corset",
+    "price": 1450000,
+    "color": "Đen",
+    "colorFamily": "black",
+    "colorHex": "#111111",
+    "image": "/products/top-corset-lace-black.jpg",
+    "style": [
+      "corset",
+      "sexy",
+      "gothic",
+      "statement"
+    ],
+    "occasion": [
+      "đi tiệc",
+      "hẹn hò",
+      "concert"
+    ],
+    "material": "Ren hoa cao cấp phối satin gọng kim loại mềm",
+    "fit": "Structured lace-up corset",
+    "silhouette": "fitted",
+    "lengthClass": "cropped",
+    "neckline": "sweetheart",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "neutral"
   },
   {
-    sku: "V24121644", name: "Lessa Dress", subtitle: "Đầm maxi cut-out cổ V phối lông",
-    category: "dress", type: "maxi-dress", price: 3520000, color: "Đen", colorFamily: "black",
-    image: "https://dosi-in.com/img/600/vn-11134207-7ras8-m45sx1ftrvgn9a.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-dam-dai-maxi-thiet-ke-cut-out-co-v-phoi-long-quyen-ru-lessa-dress-v24121644-269491027.28171616518/",
-    style: ["gothic", "glam", "statement"], occasion: ["đi tiệc", "sự kiện buổi tối"], material: "Vải dệt phối lông",
-    fit: "Cut-out maxi fit", silhouette: "column", lengthClass: "maxi", neckline: "deep-v", sleeveLength: "sleeveless", tryOn: true
+    "sku": "TP-GOTHIC-LACE-WHT",
+    "groupCode": "TP-GOTHIC-LACE",
+    "name": "Gothic Lace-Up Boned Corset",
+    "subtitle": "Áo corset ren hoa thêu gọng định hình thắt dây lưng (Trắng kem)",
+    "category": "tops",
+    "type": "corset",
+    "price": 1450000,
+    "color": "Trắng",
+    "colorFamily": "white",
+    "colorHex": "#FAF8F5",
+    "image": "/products/top-corset-satin-white.jpg",
+    "style": [
+      "corset",
+      "romantic",
+      "nữ tính"
+    ],
+    "occasion": [
+      "đi tiệc",
+      "hẹn hò",
+      "chụp ảnh"
+    ],
+    "material": "Ren hoa cao cấp phối satin gọng kim loại mềm",
+    "fit": "Structured lace-up corset",
+    "silhouette": "fitted",
+    "lengthClass": "cropped",
+    "neckline": "sweetheart",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "neutral"
   },
   {
-    sku: "V26061717", name: "Jone Dress", subtitle: "Đầm midi hai dây cổ vuông ôm dáng phối nơ vai",
-    category: "dress", type: "midi-dress", price: 2832500, color: "Trắng", colorFamily: "white",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-mso63w0riollcb.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/mo-ban-lsoul-dam-midi-hai-day-co-vuong-om-dang-phoi-no-vai-quyen-ru-sang-trong-jone-dress-v26061717-269491027.54112124462/",
-    style: ["minimal", "elegant", "nữ tính"], occasion: ["hẹn hò", "đi tiệc"], material: "Vải co giãn",
-    fit: "Slim midi", silhouette: "column", lengthClass: "midi", neckline: "square", sleeveLength: "sleeveless", tryOn: true
+    "sku": "TP-GOTHIC-LACE-RED",
+    "groupCode": "TP-GOTHIC-LACE",
+    "name": "Gothic Lace-Up Boned Corset",
+    "subtitle": "Áo corset ren hoa thêu gọng định hình thắt dây lưng (Đỏ rượu)",
+    "category": "tops",
+    "type": "corset",
+    "price": 1450000,
+    "color": "Đỏ",
+    "colorFamily": "red",
+    "colorHex": "#881337",
+    "image": "/products/top-corset-satin-red.jpg",
+    "style": [
+      "corset",
+      "sexy",
+      "statement"
+    ],
+    "occasion": [
+      "đi tiệc",
+      "hẹn hò",
+      "sự kiện"
+    ],
+    "material": "Ren hoa cao cấp phối satin gọng kim loại mềm",
+    "fit": "Structured lace-up corset",
+    "silhouette": "fitted",
+    "lengthClass": "cropped",
+    "neckline": "sweetheart",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "warm"
   },
   {
-    sku: "V26041713", name: "Tya Dress", subtitle: "Đầm maxi cổ thuyền ôm dáng xếp ly vai",
-    category: "dress", type: "maxi-dress", price: 4950000, color: "Xanh sage", colorFamily: "green",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-msp4dsvkx3ih3b.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-dam-maxi-co-thuyen-om-dang-xep-ly-vai-thanh-lich-sang-trong-di-tiec-tya-dress-v26041713-269491027.49760176441/",
-    style: ["elegant", "minimal", "formal"], occasion: ["đi tiệc", "sự kiện"], material: "Satin mềm",
-    fit: "Draped slim maxi", silhouette: "column", lengthClass: "maxi", neckline: "boat", sleeveLength: "sleeveless", colorTemperature: "cool", tryOn: true
-  },
-
-  {
-    sku: "CV24120705", name: "Laby Skirt", subtitle: "Chân váy lông cạp trễ ôm body",
-    category: "bottoms", type: "skirt", price: 1540000, color: "Trắng", colorFamily: "white",
-    image: "https://dosi-in.com/img/600/vn-11134207-7ras8-m47cn2ym7snj1b.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-chan-vay-long-cap-tre-ca-tinh-star-om-body-laby-skirt-cv24120705-cv24120706-269491027.26771728750/",
-    style: ["Y2K", "gothic", "statement"], occasion: ["đi chơi", "concert"], material: "Vải lông / sequin",
-    fit: "Low-rise mini fitted", silhouette: "mini-straight", lengthClass: "mini", waistRise: "low", tryOn: true
-  },
-  {
-    sku: "CV26010749", name: "Rene Skirt", subtitle: "Chân váy vàng pastel cạp trễ viền ren nơ satin",
-    category: "bottoms", type: "skirt", price: 1595000, color: "Vàng pastel", colorFamily: "beige",
-    image: "https://dosi-in.com/img/600/vn-11134207-820l4-mj6uq2qmnpqe47.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-chan-vay-vang-pastel-cap-tre-phoi-vien-ren-dinh-no-satin-rene-skirt-cv26010749-269491027.46954604091/",
-    style: ["romantic", "Y2K", "nữ tính"], occasion: ["hẹn hò", "đi chơi"], material: "Vải mềm phối ren",
-    fit: "Low-rise micro mini", silhouette: "mini-straight", lengthClass: "mini", waistRise: "low", colorTemperature: "warm", tryOn: true
-  },
-  {
-    sku: "CV25110739", name: "Salyn Skirt", subtitle: "Chân váy lụa mini phối nơ cạp trễ",
-    category: "bottoms", type: "skirt", price: 1540000, color: "Đen / xám / xanh", colorFamily: "black",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-mso87pbsiayq63.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-chan-vay-lua-miniskirt-phoi-no-form-vay-cap-tre-sexy-ca-tinh-salyn-skirt-cv25110739-269491027.46611171760/",
-    style: ["romantic", "Y2K", "glam"], occasion: ["hẹn hò", "đi tiệc"], material: "Lụa bóng",
-    fit: "Low-rise slim mini", silhouette: "mini-straight", lengthClass: "mini", waistRise: "low"
+    "sku": "TP-ATHENA-TUBE-BLK",
+    "groupCode": "TP-ATHENA-TUBE",
+    "name": "Athena Sweetheart Satin Tube Top",
+    "subtitle": "Áo quây cúp ngực lụa satin viền silicon chống tuột (Đen)",
+    "category": "tops",
+    "type": "crop-top",
+    "price": 1150000,
+    "color": "Đen",
+    "colorFamily": "black",
+    "colorHex": "#151515",
+    "image": "/products/top-corset-satin-black.jpg",
+    "style": [
+      "minimal",
+      "sexy",
+      "Y2K"
+    ],
+    "occasion": [
+      "đi chơi",
+      "hẹn hò",
+      "đi tiệc"
+    ],
+    "material": "Satin lụa dày dặn lót đúp",
+    "fit": "Fitted strapless tube",
+    "silhouette": "fitted",
+    "lengthClass": "cropped",
+    "neckline": "sweetheart",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "neutral"
   },
   {
-    sku: "J26030828", name: "Nie Pants", subtitle: "Quần jeans nữ ống suông basic phong cách streetwear Y2K",
-    category: "bottoms", type: "jeans", price: 3190000, color: "Đen denim", colorFamily: "black",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-mop39g5zygp940.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-quan-jeans-nu-ong-suong-basic-phong-cach-streetwear-y2k-nie-pants-j26030828-269491027.52511142682/",
-    style: ["streetwear", "Y2K", "denim"], occasion: ["đi chơi", "đi cafe"], material: "100% Cotton denim",
-    fit: "Wide straight-leg", silhouette: "wide-leg", lengthClass: "full", waistRise: "mid", tryOn: true
+    "sku": "TP-ATHENA-TUBE-WHT",
+    "groupCode": "TP-ATHENA-TUBE",
+    "name": "Athena Sweetheart Satin Tube Top",
+    "subtitle": "Áo quây cúp ngực lụa satin viền silicon chống tuột (Trắng tinh)",
+    "category": "tops",
+    "type": "crop-top",
+    "price": 1150000,
+    "color": "Trắng",
+    "colorFamily": "white",
+    "colorHex": "#FFFFFF",
+    "image": "/products/top-corset-satin-white.jpg",
+    "style": [
+      "minimal",
+      "nữ tính",
+      "Y2K"
+    ],
+    "occasion": [
+      "đi chơi",
+      "hẹn hò",
+      "cafe"
+    ],
+    "material": "Satin lụa dày dặn lót đúp",
+    "fit": "Fitted strapless tube",
+    "silhouette": "fitted",
+    "lengthClass": "cropped",
+    "neckline": "sweetheart",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "neutral"
   },
   {
-    sku: "CV26060760", name: "Haley Skirt", subtitle: "Chân váy chữ A dáng ngắn phối viền ren",
-    category: "bottoms", type: "skirt", price: 2605900, color: "Trắng / hồng / đen", colorFamily: "white",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-mso8afk3kvlx38.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/mo-ban-lsoul-chan-vay-chu-a-dang-ngan-phoi-vien-ren-gau-sang-trong-quyen-ru-di-tiec-haley-skirt-cv26060760-269491027.57412702002/",
-    style: ["romantic", "elegant"], occasion: ["hẹn hò", "đi tiệc"], material: "Vải dệt phối ren",
-    fit: "A-line mini", silhouette: "a-line", lengthClass: "mini", waistRise: "mid"
+    "sku": "TP-ATHENA-TUBE-RED",
+    "groupCode": "TP-ATHENA-TUBE",
+    "name": "Athena Sweetheart Satin Tube Top",
+    "subtitle": "Áo quây cúp ngực lụa satin nổi bật gợi cảm (Đỏ scarlet)",
+    "category": "tops",
+    "type": "crop-top",
+    "price": 1150000,
+    "color": "Đỏ",
+    "colorFamily": "red",
+    "colorHex": "#B91C1C",
+    "image": "/products/top-corset-satin-red.jpg",
+    "style": [
+      "statement",
+      "sexy",
+      "glam"
+    ],
+    "occasion": [
+      "đi tiệc",
+      "hẹn hò",
+      "bar"
+    ],
+    "material": "Satin lụa dày dặn lót đúp",
+    "fit": "Fitted strapless tube",
+    "silhouette": "fitted",
+    "lengthClass": "cropped",
+    "neckline": "sweetheart",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "warm"
   },
   {
-    sku: "CV25110741", name: "Lincoln Skirt", subtitle: "Chân váy dạ tweed cạp trễ phối nơ",
-    category: "bottoms", type: "skirt", price: 1540000, color: "Kem", colorFamily: "beige",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-mop5nesqs9ak58.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-chan-vay-da-tweed-cap-tre-phoi-no-style-thanh-lich-nu-tinh-lincoln-skirt-cv25110741-269491027.53211155325/",
-    style: ["preppy", "nữ tính", "elegant"], occasion: ["đi chơi", "hẹn hò"], material: "Dạ tweed",
-    fit: "Low-rise mini", silhouette: "mini-straight", lengthClass: "mini", waistRise: "low", colorTemperature: "warm", tryOn: true
+    "sku": "TP-HALO-KNIT-GRY",
+    "groupCode": "TP-HALO-KNIT",
+    "name": "Halo High-Neck Knit Tank",
+    "subtitle": "Áo len dệt kim cổ cao sát nách phom ôm tôn dáng (Xám khói)",
+    "category": "tops",
+    "type": "knit-top",
+    "price": 890000,
+    "color": "Xám",
+    "colorFamily": "gray",
+    "colorHex": "#6B7280",
+    "image": "/products/top-knit-tank-grey.jpeg",
+    "style": [
+      "minimal",
+      "công sở",
+      "chic"
+    ],
+    "occasion": [
+      "đi làm",
+      "cafe",
+      "đi chơi"
+    ],
+    "material": "Len dệt kim mỏng nhẹ co giãn",
+    "fit": "Fitted high-neck",
+    "silhouette": "fitted",
+    "lengthClass": "regular",
+    "neckline": "high",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "cool"
   },
   {
-    sku: "CV24110703", name: "Polina Skirt", subtitle: "Chân váy nỉ xòe phối ren",
-    category: "bottoms", type: "skirt", price: 1078000, color: "Xám", colorFamily: "gray",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-moowyglit43k75.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-chan-vay-ni-phoi-ren-phong-cach-ca-tinh-polina-skirt-cv24110703-269491027.51911133844/",
-    style: ["preppy", "Y2K", "casual"], occasion: ["đi chơi", "đi cafe"], material: "Nỉ phối ren",
-    fit: "Flared mini", silhouette: "flare", lengthClass: "mini", waistRise: "mid", tryOn: true
+    "sku": "TP-HALO-KNIT-BLK",
+    "groupCode": "TP-HALO-KNIT",
+    "name": "Halo High-Neck Knit Tank",
+    "subtitle": "Áo len dệt kim cổ cao sát nách phom ôm tối giản (Đen)",
+    "category": "tops",
+    "type": "knit-top",
+    "price": 890000,
+    "color": "Đen",
+    "colorFamily": "black",
+    "colorHex": "#111111",
+    "image": "/products/top-basic-black.jpg",
+    "style": [
+      "minimal",
+      "chic"
+    ],
+    "occasion": [
+      "đi làm",
+      "cafe",
+      "hẹn hò"
+    ],
+    "material": "Len dệt kim mỏng nhẹ co giãn",
+    "fit": "Fitted high-neck",
+    "silhouette": "fitted",
+    "lengthClass": "regular",
+    "neckline": "high",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "neutral"
   },
   {
-    sku: "M25110602", name: "Echo Short", subtitle: "Quần short len cạp cao bo gân ôm body",
-    category: "bottoms", type: "shorts", price: 1430000, color: "Kem", colorFamily: "beige",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-mop53mw4upduef.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-quan-short-len-cap-cao-bo-gan-om-body-sexy-chic-phong-cach-y2k-echo-short-m25110602-269491027.57761143883/",
-    style: ["Y2K", "cozy", "casual"], occasion: ["đi chơi", "đi cafe"], material: "Len dệt kim",
-    fit: "High-rise fitted short", silhouette: "fitted-short", lengthClass: "short", waistRise: "high", colorTemperature: "warm", tryOn: true
+    "sku": "TP-HALO-KNIT-WHT",
+    "groupCode": "TP-HALO-KNIT",
+    "name": "Halo High-Neck Knit Tank",
+    "subtitle": "Áo len dệt kim cổ cao sát nách phom ôm thanh lịch (Trắng)",
+    "category": "tops",
+    "type": "knit-top",
+    "price": 890000,
+    "color": "Trắng",
+    "colorFamily": "white",
+    "colorHex": "#F9FAFB",
+    "image": "/products/top-crop-tank-white.png",
+    "style": [
+      "minimal",
+      "chic",
+      "nữ tính"
+    ],
+    "occasion": [
+      "đi làm",
+      "cafe",
+      "dạo phố"
+    ],
+    "material": "Len dệt kim mỏng nhẹ co giãn",
+    "fit": "Fitted high-neck",
+    "silhouette": "fitted",
+    "lengthClass": "regular",
+    "neckline": "high",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "neutral"
   },
   {
-    sku: "J25110824", name: "Dirr Pants", subtitle: "Quần jeans ống rộng wash loang vintage",
-    category: "bottoms", type: "jeans", price: 3190000, color: "Xanh denim wash", colorFamily: "blue",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-mop9z2ybsowf8f.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-quan-jeans-nu-ong-rong-wash-loang-vintage-dirr-pants-j25110824-269491027.51161166366/",
-    style: ["streetwear", "vintage", "Y2K"], occasion: ["đi chơi", "concert"], material: "Denim",
-    fit: "Wide-leg", silhouette: "wide-leg", lengthClass: "full", waistRise: "mid", colorTemperature: "cool", tryOn: true
+    "sku": "TP-BABY-TEE-WHT",
+    "groupCode": "TP-BABY-TEE",
+    "name": "Signature Cotton Baby Tee",
+    "subtitle": "Áo thun baby tee cotton 100% cổ tròn ôm dáng chuẩn Y2K (Trắng)",
+    "category": "tops",
+    "type": "crop-top",
+    "price": 650000,
+    "color": "Trắng",
+    "colorFamily": "white",
+    "colorHex": "#FFFFFF",
+    "image": "/products/top-basic-white.jpg",
+    "style": [
+      "Y2K",
+      "casual",
+      "streetwear"
+    ],
+    "occasion": [
+      "đi chơi",
+      "cafe",
+      "dạo phố"
+    ],
+    "material": "100% Cotton Compact 2 chiều",
+    "fit": "Baby tee fitted crop",
+    "silhouette": "fitted",
+    "lengthClass": "cropped",
+    "neckline": "round",
+    "sleeveLength": "short",
+    "colorTemperature": "neutral"
   },
   {
-    sku: "CV26060757", name: "Choo Skirt", subtitle: "Chân váy ngắn cạp trễ dáng ôm thắt nơ to bản",
-    category: "bottoms", type: "skirt", price: 2039400, color: "Đen", colorFamily: "black",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-mso63s2t48aw9b.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/mo-ban-lsoul-chan-vay-ngan-cap-tre-dang-om-that-no-to-ban-ca-tinh-quyen-ru-choo-skirt-cv26060757-269491027.43431947749/",
-    style: ["Y2K", "sexy", "statement"], occasion: ["hẹn hò", "đi tiệc"], material: "Da tổng hợp",
-    fit: "Low-rise fitted mini", silhouette: "mini-straight", lengthClass: "mini", waistRise: "low"
+    "sku": "TP-BABY-TEE-BLK",
+    "groupCode": "TP-BABY-TEE",
+    "name": "Signature Cotton Baby Tee",
+    "subtitle": "Áo thun baby tee cotton 100% cổ tròn ôm dáng chuẩn Y2K (Đen)",
+    "category": "tops",
+    "type": "crop-top",
+    "price": 650000,
+    "color": "Đen",
+    "colorFamily": "black",
+    "colorHex": "#111111",
+    "image": "/products/top-basic-black.jpg",
+    "style": [
+      "Y2K",
+      "casual",
+      "streetwear"
+    ],
+    "occasion": [
+      "đi chơi",
+      "cafe",
+      "dạo phố"
+    ],
+    "material": "100% Cotton Compact 2 chiều",
+    "fit": "Baby tee fitted crop",
+    "silhouette": "fitted",
+    "lengthClass": "cropped",
+    "neckline": "round",
+    "sleeveLength": "short",
+    "colorTemperature": "neutral"
   },
   {
-    sku: "J2604083", name: "Fora Jeans", subtitle: "Quần jean dài ống suông cạp trễ wash streetwear",
-    category: "bottoms", type: "jeans", price: 3285700, color: "Đen denim", colorFamily: "black",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-mqbj8pcducjx85.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/mo-ban-lsoul-quan-jean-dai-ong-suong-cap-tre-wash-phui-bui-ca-tinh-thoi-thuong-streetwear-fora-jeans-j2604083-269491027.55963463048/",
-    style: ["streetwear", "Y2K", "denim"], occasion: ["đi chơi", "concert"], material: "Denim",
-    fit: "Low-rise straight-leg", silhouette: "straight-leg", lengthClass: "full", waistRise: "low", tryOn: true
+    "sku": "TP-MINIMAL-TANK-WHT",
+    "groupCode": "TP-MINIMAL-TANK",
+    "name": "Minimalist Seamless Ribbed Tank",
+    "subtitle": "Áo tank top gân tăm co giãn dáng ôm sát nách (Trắng)",
+    "category": "tops",
+    "type": "crop-top",
+    "price": 620000,
+    "color": "Trắng",
+    "colorFamily": "white",
+    "colorHex": "#F9FAFB",
+    "image": "/products/top-crop-tank-white.png",
+    "style": [
+      "minimal",
+      "casual"
+    ],
+    "occasion": [
+      "đi chơi",
+      "cafe",
+      "ở nhà"
+    ],
+    "material": "Cotton tăm co giãn 4 chiều",
+    "fit": "Seamless fitted tank",
+    "silhouette": "fitted",
+    "lengthClass": "cropped",
+    "neckline": "scoop",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "neutral"
   },
   {
-    sku: "CV24120707", name: "Meli Skirt", subtitle: "Chân váy cạp trễ ánh kim lấp lánh vảy cá",
-    category: "bottoms", type: "skirt", price: 1650000, color: "Trắng ánh kim", colorFamily: "white",
-    image: "https://dosi-in.com/img/600/vn-11134207-7ras8-m44cmy9r9bev7b.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-chan-vay-cap-tre-anh-kim-lap-lanh-vay-ca-ca-tinh-meli-skirt-cv24120707-269491027.26921418007/",
-    style: ["glam", "Y2K", "statement"], occasion: ["đi tiệc", "concert"], material: "Vải sequin/vảy ánh kim",
-    fit: "Low-rise fitted mini", silhouette: "mini-straight", lengthClass: "mini", waistRise: "low", tryOn: true
+    "sku": "TP-MINIMAL-TANK-BLK",
+    "groupCode": "TP-MINIMAL-TANK",
+    "name": "Minimalist Seamless Ribbed Tank",
+    "subtitle": "Áo tank top gân tăm co giãn dáng ôm sát nách (Đen)",
+    "category": "tops",
+    "type": "crop-top",
+    "price": 620000,
+    "color": "Đen",
+    "colorFamily": "black",
+    "colorHex": "#111111",
+    "image": "/products/top-ribbed-crop-black.jpg",
+    "style": [
+      "minimal",
+      "casual",
+      "Y2K"
+    ],
+    "occasion": [
+      "đi chơi",
+      "cafe",
+      "ở nhà"
+    ],
+    "material": "Cotton tăm co giãn 4 chiều",
+    "fit": "Seamless fitted tank",
+    "silhouette": "fitted",
+    "lengthClass": "cropped",
+    "neckline": "scoop",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "neutral"
   },
   {
-    sku: "CV26040753", name: "Suzan Skirt", subtitle: "Chân váy mini ren hồng pastel phong cách Y2K",
-    category: "bottoms", type: "skirt", price: 2090000, color: "Hồng pastel", colorFamily: "pink",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-mnwm7ng6axvq12.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-chan-vay-mini-ren-hong-pastel-style-y2k-nu-tinh-quyen-ru-suzan-skirt-cv26040753-269491027.42631179226/",
-    style: ["romantic", "Y2K", "nữ tính"], occasion: ["hẹn hò", "đi chơi"], material: "Ren",
-    fit: "Low-rise mini", silhouette: "mini-straight", lengthClass: "mini", waistRise: "low", colorTemperature: "cool", tryOn: true
+    "sku": "TP-LUXE-POPLIN-WHT",
+    "groupCode": "TP-LUXE-POPLIN",
+    "name": "Luxe Oversized Crisp Poplin Shirt",
+    "subtitle": "Áo sơ mi poplin phom rộng tay dài vạt bầu thanh lịch (Trắng)",
+    "category": "tops",
+    "type": "shirt",
+    "price": 1250000,
+    "color": "Trắng",
+    "colorFamily": "white",
+    "colorHex": "#FFFFFF",
+    "image": "/products/shirt-poplin-white.jpg",
+    "style": [
+      "công sở",
+      "minimal",
+      "chic"
+    ],
+    "occasion": [
+      "đi làm",
+      "cafe",
+      "hẹn hò"
+    ],
+    "material": "100% Poplin Cotton Nhật",
+    "fit": "Oversized boyfriend fit",
+    "silhouette": "loose",
+    "lengthClass": "regular",
+    "neckline": "collared",
+    "sleeveLength": "long",
+    "colorTemperature": "neutral"
   },
   {
-    sku: "CV25120746", name: "Noah Skirt", subtitle: "Chân váy da mini ôm dáng phong cách Y2K",
-    category: "bottoms", type: "skirt", price: 1969000, color: "Đen", colorFamily: "black",
-    image: "https://dosi-in.com/img/600/vn-11134207-820l4-mifnox8zgmbs59.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-chan-vay-da-mini-om-dang-ca-tinh-y2k-noah-skirt-cv25120746-269491027.56853335160/",
-    style: ["Y2K", "gothic", "streetwear"], occasion: ["đi chơi", "concert"], material: "Da tổng hợp",
-    fit: "Low-rise fitted mini", silhouette: "mini-straight", lengthClass: "mini", waistRise: "low", tryOn: true
+    "sku": "TP-LUXE-POPLIN-BLU",
+    "groupCode": "TP-LUXE-POPLIN",
+    "name": "Luxe Oversized Crisp Poplin Shirt",
+    "subtitle": "Áo sơ mi poplin phom rộng tay dài phong cách Hàn Quốc (Xanh baby blue)",
+    "category": "tops",
+    "type": "shirt",
+    "price": 1250000,
+    "color": "Xanh pastel",
+    "colorFamily": "blue",
+    "colorHex": "#BFDBFE",
+    "image": "/products/shirt-poplin-blue.jpg",
+    "style": [
+      "công sở",
+      "minimal",
+      "chic"
+    ],
+    "occasion": [
+      "đi làm",
+      "cafe",
+      "dạo phố"
+    ],
+    "material": "100% Poplin Cotton Nhật",
+    "fit": "Oversized boyfriend fit",
+    "silhouette": "loose",
+    "lengthClass": "regular",
+    "neckline": "collared",
+    "sleeveLength": "long",
+    "colorTemperature": "cool"
   },
   {
-    sku: "M25120603", name: "Sie Short", subtitle: "Quần short da bóng cạp trễ phong cách Y2K",
-    category: "bottoms", type: "shorts", price: 1759800, color: "Đen", colorFamily: "black",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-mop6lw69r18h32.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-quan-short-da-bong-cap-tre-y2k-sie-short-m25120603-269491027.44381189577/",
-    style: ["Y2K", "streetwear", "sexy"], occasion: ["đi chơi", "concert"], material: "Da bóng",
-    fit: "Low-rise fitted short", silhouette: "fitted-short", lengthClass: "short", waistRise: "low", tryOn: true
-  },
-
-  {
-    sku: "K25100258-1", name: "Tiam Jacket", subtitle: "Áo khoác lông croptop ngắn cá tính",
-    category: "outerwear", type: "jacket", price: 2860000, color: "Vàng kem / xám", colorFamily: "beige",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-mso8aer7cjd11a.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-ao-khoac-long-croptop-ngan-ca-tinh-thoi-trang-nu-tiam-jacket-k25100258-1-269491027.41926687504/",
-    style: ["Y2K", "statement", "luxury"], occasion: ["đi chơi", "đi tiệc"], material: "Lông nhân tạo",
-    fit: "Cropped fur jacket", silhouette: "cropped", lengthClass: "cropped", neckline: "high-neck", sleeveLength: "short", colorTemperature: "warm"
-  },
-  {
-    sku: "A26052906", name: "Agne Cardigan", subtitle: "Cardigan dệt kim tay dài form croptop",
-    category: "outerwear", type: "cardigan", price: 3342350, color: "Hồng pastel", colorFamily: "pink",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-mqbrhjc64cul42.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/mo-ban-lsoul-ao-cardigan-det-kim-tay-dai-form-croptop-mem-mai-agne-cardigan-a26052906-269491027.53112655089/",
-    style: ["romantic", "casual", "nữ tính"], occasion: ["đi chơi", "đi cafe"], material: "Dệt kim",
-    fit: "Cropped cardigan", silhouette: "cropped", lengthClass: "cropped", neckline: "v-neck", sleeveLength: "long", colorTemperature: "cool"
-  },
-  {
-    sku: "A26042903", name: "Medy Cardigan", subtitle: "Áo khoác len cúc bọc dáng croptop tay dài",
-    category: "outerwear", type: "cardigan", price: 3172400, color: "Xanh / đỏ / kem", colorFamily: "green",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-mso8ahbo385h5d.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/mo-ban-lsoul-ao-khoac-len-cuc-boc-dang-croptop-tay-dai-diu-dang-nu-tinh-medy-cardigan-a26042903-269491027.51712713431/",
-    style: ["preppy", "casual", "nữ tính"], occasion: ["đi chơi", "đi cafe"], material: "Len dệt kim",
-    fit: "Cropped fitted cardigan", silhouette: "cropped", lengthClass: "cropped", neckline: "v-neck", sleeveLength: "long", colorTemperature: "warm"
+    "sku": "TP-LUXE-POPLIN-BLK",
+    "groupCode": "TP-LUXE-POPLIN",
+    "name": "Luxe Oversized Crisp Poplin Shirt",
+    "subtitle": "Áo sơ mi poplin phom rộng cá tính thời thượng (Đen tuyền)",
+    "category": "tops",
+    "type": "shirt",
+    "price": 1250000,
+    "color": "Đen",
+    "colorFamily": "black",
+    "colorHex": "#111111",
+    "image": "/products/shirt-poplin-black.jpg",
+    "style": [
+      "chic",
+      "minimal",
+      "statement"
+    ],
+    "occasion": [
+      "đi làm",
+      "đi chơi",
+      "hẹn hò"
+    ],
+    "material": "100% Poplin Cotton Nhật",
+    "fit": "Oversized boyfriend fit",
+    "silhouette": "loose",
+    "lengthClass": "regular",
+    "neckline": "collared",
+    "sleeveLength": "long",
+    "colorTemperature": "neutral"
   },
   {
-    sku: "K25100256-1", name: "Leyla Jacket", subtitle: "Áo khoác lông croptop tay dài đính đinh tán",
-    category: "outerwear", type: "jacket", price: 5280000, color: "Hồng / lilac / nâu", colorFamily: "pink",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-mso8aeqnby11dc.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-ao-khoac-long-croptop-tay-dai-co-day-da-dinh-dinh-tan-ca-tinh-leyla-jacket-k25100256-1-269491027.48251960938/",
-    style: ["Y2K", "statement", "gothic"], occasion: ["đi chơi", "concert"], material: "Lông nhân tạo phối dây da",
-    fit: "Cropped fur jacket", silhouette: "cropped", lengthClass: "cropped", neckline: "high-neck", sleeveLength: "long"
+    "sku": "TP-STRIPED-OXF-BLU",
+    "groupCode": "TP-STRIPED-OXF",
+    "name": "Classic Striped Oxford Shirt",
+    "subtitle": "Áo sơ mi oxford kẻ sọc dọc phom suông cổ điển (Kẻ sọc xanh)",
+    "category": "tops",
+    "type": "shirt",
+    "price": 1320000,
+    "color": "Xanh",
+    "colorFamily": "blue",
+    "colorHex": "#93C5FD",
+    "image": "/products/shirt-oxford-striped.jpeg",
+    "style": [
+      "preppy",
+      "công sở",
+      "chic"
+    ],
+    "occasion": [
+      "đi làm",
+      "đi học",
+      "cafe"
+    ],
+    "material": "Oxford Cotton dệt sọc",
+    "fit": "Relaxed tailored fit",
+    "silhouette": "relaxed",
+    "lengthClass": "regular",
+    "neckline": "collared",
+    "sleeveLength": "long",
+    "colorTemperature": "cool"
   },
   {
-    sku: "K25100264", name: "Kourney Jacket", subtitle: "Áo khoác cổ cao phối thắt lưng bản",
-    category: "outerwear", type: "jacket", price: 6820000, color: "Nâu burgundy", colorFamily: "brown",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-mso8aeqa6kna51.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-ao-khoac-mango-co-ao-tuy-chinh-phoi-that-lung-ban-kourney-kouna-jacket-k25100264-269491027.53901025263/",
-    style: ["luxury", "statement", "structured"], occasion: ["đi chơi", "sự kiện"], material: "Vải phủ bề mặt",
-    fit: "Belted structured jacket", silhouette: "structured", lengthClass: "regular", neckline: "high-neck", sleeveLength: "long", colorTemperature: "warm"
+    "sku": "TP-STRIPED-OXF-WHT",
+    "groupCode": "TP-STRIPED-OXF",
+    "name": "Classic Striped Oxford Shirt",
+    "subtitle": "Áo sơ mi oxford kẻ sọc xám thanh tao hiện đại (Trắng sọc xám)",
+    "category": "tops",
+    "type": "shirt",
+    "price": 1320000,
+    "color": "Trắng",
+    "colorFamily": "white",
+    "colorHex": "#E5E7EB",
+    "image": "/products/shirt-poplin-white.jpg",
+    "style": [
+      "preppy",
+      "công sở",
+      "minimal"
+    ],
+    "occasion": [
+      "đi làm",
+      "đi học",
+      "cafe"
+    ],
+    "material": "Oxford Cotton dệt sọc",
+    "fit": "Relaxed tailored fit",
+    "silhouette": "relaxed",
+    "lengthClass": "regular",
+    "neckline": "collared",
+    "sleeveLength": "long",
+    "colorTemperature": "neutral"
   },
   {
-    sku: "K25110271", name: "Merlot Jacket", subtitle: "Áo khoác da lót lông cổ ấm phối thắt lưng",
-    category: "outerwear", type: "jacket", price: 7590000, color: "Nâu", colorFamily: "brown",
-    image: "https://dosi-in.com/img/600/vn-11134207-820l4-mhn5jzdt4wskfb.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-ao-khoac-da-lot-long-co-am-phoi-that-lung-merlot-jacket-k25110271-269491027.45002338522/",
-    style: ["luxury", "vintage", "statement"], occasion: ["đi chơi", "sự kiện"], material: "Da phối lông",
-    fit: "Relaxed belted jacket", silhouette: "structured", lengthClass: "regular", neckline: "high-neck", sleeveLength: "long", colorTemperature: "warm"
-  },
-
-  {
-    sku: "A25122871", name: "Kai Top", subtitle: "Áo croptop hai dây mảnh basic ôm dáng co giãn",
-    category: "tops", type: "crop-top", price: 934906, color: "Hồng / trắng / đen", colorFamily: "pink",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-msc8efkg3rwo6d.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-ao-thun-croptop-hai-day-manh-basic-om-dang-chat-thun-co-gian-kai-top-a25122871-269491027.41927221179/",
-    style: ["basic", "Y2K", "casual"], occasion: ["đi chơi", "đi cafe"], material: "Thun co giãn",
-    fit: "Slim cropped tank", silhouette: "fitted", lengthClass: "cropped", neckline: "scoop", sleeveLength: "sleeveless", colorTemperature: "cool", tryOn: true
-  },
-  {
-    sku: "A24122794", name: "Cinza Top", subtitle: "Áo corset đan dây thiết kế lông mềm",
-    category: "tops", type: "corset", price: 1320000, color: "Đỏ rượu", colorFamily: "red",
-    image: "https://dosi-in.com/img/600/vn-11134207-820l4-mhd0v9t2172k36.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-cinza-top-ao-corset-dan-day-thiet-ke-long-mem-quyen-ru-a24122794-a24122793-women-269491027.41626678412/",
-    style: ["corset", "gothic", "Y2K"], occasion: ["hẹn hò", "concert"], material: "Vải lông mềm",
-    fit: "Lace-up corset", silhouette: "corset", lengthClass: "cropped", neckline: "halter", sleeveLength: "sleeveless", colorTemperature: "warm"
-  },
-  {
-    sku: "A26052909", name: "Joye Bodysuit", subtitle: "Bodysuit cổ V khoét sâu phối nơ maxi",
-    category: "tops", type: "bodysuit", price: 2096050, color: "Trắng", colorFamily: "white",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-mso6hquc1wqq23.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/mo-ban-lsoul-ao-bodysuit-co-v-khoet-sau-phoi-no-maxi-ca-tinh-joye-bodysuit-a26052909-269491027.54262644337/",
-    style: ["minimal", "statement", "nữ tính"], occasion: ["hẹn hò", "đi tiệc"], material: "Vải co giãn",
-    fit: "Deep-v fitted bodysuit", silhouette: "fitted", lengthClass: "regular", neckline: "deep-v", sleeveLength: "sleeveless"
+    "sku": "SK-SATIN-SLIT-BLK",
+    "groupCode": "SK-SATIN-SLIT",
+    "name": "Satin Bias-Cut Slit Midi Skirt",
+    "subtitle": "Chân váy lụa satin xẻ tà tà lệch dáng midi tôn dáng (Đen bóng)",
+    "category": "bottoms",
+    "type": "skirt",
+    "price": 1350000,
+    "color": "Đen",
+    "colorFamily": "black",
+    "colorHex": "#111111",
+    "image": "/products/skirt-slit-midi-black.jpg",
+    "style": [
+      "sexy",
+      "elegant",
+      "minimal"
+    ],
+    "occasion": [
+      "hẹn hò",
+      "đi tiệc",
+      "cafe"
+    ],
+    "material": "Lụa satin dày mịn cắt xéo sợi (bias cut)",
+    "fit": "Bias-cut fluid drape with slit",
+    "silhouette": "a-line",
+    "lengthClass": "midi",
+    "waistRise": "high",
+    "colorTemperature": "neutral"
   },
   {
-    sku: "A24122790", name: "Trap Top", subtitle: "Áo hai dây loang màu phối dây da bò đinh tán",
-    category: "tops", type: "crop-top", price: 762300, color: "Nâu ánh kim", colorFamily: "brown",
-    image: "https://dosi-in.com/img/600/vn-11134207-7ras8-m5cdiah8i8sj6c.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-ao-hai-day-loang-mau-phoi-day-da-bo-dinh-tan-cao-cap-trap-top-a24122790-269491027.26774330517/",
-    style: ["Y2K", "gothic", "statement"], occasion: ["đi chơi", "concert"], material: "Vải loang phối dây da",
-    fit: "Slim strappy crop", silhouette: "fitted", lengthClass: "cropped", neckline: "square", sleeveLength: "sleeveless", colorTemperature: "warm", tryOn: true
+    "sku": "SK-SATIN-SLIT-BEI",
+    "groupCode": "SK-SATIN-SLIT",
+    "name": "Satin Bias-Cut Slit Midi Skirt",
+    "subtitle": "Chân váy lụa satin xẻ tà tà lệch dáng midi tao nhã (Be champagne)",
+    "category": "bottoms",
+    "type": "skirt",
+    "price": 1350000,
+    "color": "Be",
+    "colorFamily": "beige",
+    "colorHex": "#F3ECE2",
+    "image": "/products/skirt-pleated-mini-white.jpg",
+    "style": [
+      "elegant",
+      "nữ tính",
+      "chic"
+    ],
+    "occasion": [
+      "hẹn hò",
+      "đi tiệc",
+      "cafe"
+    ],
+    "material": "Lụa satin dày mịn cắt xéo sợi (bias cut)",
+    "fit": "Bias-cut fluid drape with slit",
+    "silhouette": "a-line",
+    "lengthClass": "midi",
+    "waistRise": "high",
+    "colorTemperature": "warm"
   },
   {
-    sku: "A25102840", name: "Jio Bodysuit", subtitle: "Bodysuit cotton co giãn phong cách Y2K",
-    category: "tops", type: "bodysuit", price: 979000, color: "Đen / trắng / xám / hồng", colorFamily: "black",
-    image: "https://dosi-in.com/img/600/vn-11134207-820l4-mhaa4n099p1paa.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/lsoul-bodysuit-cotton-co-gian-goi-cam-phong-cach-y2k-jio-bodysuit-a25102840-269491027.49901802775/",
-    style: ["Y2K", "basic", "sexy"], occasion: ["đi chơi", "hẹn hò"], material: "Cotton",
-    fit: "Fitted bodysuit", silhouette: "fitted", lengthClass: "regular", neckline: "scoop", sleeveLength: "sleeveless", tryOn: true
+    "sku": "SK-SATIN-SLIT-RED",
+    "groupCode": "SK-SATIN-SLIT",
+    "name": "Satin Bias-Cut Slit Midi Skirt",
+    "subtitle": "Chân váy lụa satin xẻ tà tà lệch dáng midi kiêu sa (Đỏ mận)",
+    "category": "bottoms",
+    "type": "skirt",
+    "price": 1350000,
+    "color": "Đỏ",
+    "colorFamily": "red",
+    "colorHex": "#881337",
+    "image": "/products/skirt-pleated-mini-black.jpg",
+    "style": [
+      "sexy",
+      "glam",
+      "statement"
+    ],
+    "occasion": [
+      "hẹn hò",
+      "đi tiệc",
+      "sự kiện"
+    ],
+    "material": "Lụa satin dày mịn cắt xéo sợi (bias cut)",
+    "fit": "Bias-cut fluid drape with slit",
+    "silhouette": "a-line",
+    "lengthClass": "midi",
+    "waistRise": "high",
+    "colorTemperature": "warm"
   },
   {
-    sku: "A26072917", name: "Risse Top", subtitle: "Áo corset cúp ngực dáng ôm định hình đính nơ",
-    category: "tops", type: "corset", price: 4068000, color: "Tím lilac", colorFamily: "pink",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-msb0nwru4dmqf8.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/mo-ban-lsoul-ao-kieu-corset-cup-nguc-dang-om-dinh-hinh-dinh-no-nguc-quyen-ru-ca-tinh-risse-top-a26072917-269491027.54862695886/",
-    style: ["corset", "romantic", "statement"], occasion: ["hẹn hò", "đi tiệc"], material: "Vải corset định hình",
-    fit: "Structured corset", silhouette: "corset", lengthClass: "regular", neckline: "strapless", sleeveLength: "sleeveless", colorTemperature: "cool", tryOn: true
+    "sku": "SK-VINTAGE-DENIM-BLU",
+    "groupCode": "SK-VINTAGE-DENIM",
+    "name": "Vintage Washed Denim Mini Skirt",
+    "subtitle": "Chân váy bò denim ngắn cạp cao rách gấu vintage (Xanh denim)",
+    "category": "bottoms",
+    "type": "skirt",
+    "price": 950000,
+    "color": "Xanh",
+    "colorFamily": "blue",
+    "colorHex": "#3B82F6",
+    "image": "/products/skirt-denim-mini-blue.jpg",
+    "style": [
+      "Y2K",
+      "casual",
+      "streetwear"
+    ],
+    "occasion": [
+      "đi chơi",
+      "cafe",
+      "dạo phố"
+    ],
+    "material": "Denim 100% Cotton wash mài",
+    "fit": "A-line raw hem mini",
+    "silhouette": "a-line",
+    "lengthClass": "mini",
+    "waistRise": "high",
+    "colorTemperature": "cool"
   },
   {
-    sku: "A26062912", name: "Therric Top", subtitle: "Áo corset cúp ngực ôm định hình đính nơ",
-    category: "tops", type: "corset", price: 3682250, color: "Nâu caramel", colorFamily: "brown",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-mq8n27eslsle50.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/mo-ban-lsoul-ao-kieu-corset-cup-nguc-om-dinh-hinh-dinh-no-nguc-quyen-ru-ca-tinh-therric-top-a26062912-269491027.44612715204/",
-    style: ["corset", "elegant", "statement"], occasion: ["hẹn hò", "đi tiệc"], material: "Vải corset định hình",
-    fit: "Structured corset", silhouette: "corset", lengthClass: "regular", neckline: "sweetheart", sleeveLength: "sleeveless", colorTemperature: "warm", tryOn: true
+    "sku": "SK-VINTAGE-DENIM-BLK",
+    "groupCode": "SK-VINTAGE-DENIM",
+    "name": "Vintage Washed Denim Mini Skirt",
+    "subtitle": "Chân váy bò denim ngắn cạp cao rách gấu cá tính (Đen washed)",
+    "category": "bottoms",
+    "type": "skirt",
+    "price": 950000,
+    "color": "Đen",
+    "colorFamily": "black",
+    "colorHex": "#262626",
+    "image": "/products/skirt-pleated-mini-black.jpg",
+    "style": [
+      "Y2K",
+      "streetwear",
+      "statement"
+    ],
+    "occasion": [
+      "đi chơi",
+      "concert",
+      "cafe"
+    ],
+    "material": "Denim 100% Cotton wash mài",
+    "fit": "A-line raw hem mini",
+    "silhouette": "a-line",
+    "lengthClass": "mini",
+    "waistRise": "high",
+    "colorTemperature": "neutral"
   },
   {
-    sku: "A26062913", name: "Kat Top", subtitle: "Áo corset cúp ngực dáng ôm đính nơ",
-    category: "tops", type: "corset", price: 3850000, color: "Hồng lilac", colorFamily: "pink",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-msjfu5rue4g739.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/deal-mo-ban-lsoul-ao-kieu-corset-cup-nguc-dang-om-dinh-hinh-dinh-no-nguc-quyen-ru-ca-tinh-kat-top-a26062913-269491027.56667286928/",
-    style: ["corset", "romantic", "nữ tính"], occasion: ["hẹn hò", "đi tiệc"], material: "Vải corset định hình",
-    fit: "Structured corset", silhouette: "corset", lengthClass: "regular", neckline: "sweetheart", sleeveLength: "sleeveless", colorTemperature: "cool", tryOn: true
+    "sku": "SK-PLEAT-KILT-BLK",
+    "groupCode": "SK-PLEAT-KILT",
+    "name": "Pleated High-Waist Schoolgirl Skirt",
+    "subtitle": "Chân váy xếp ly cạp cao kèm đai da kim loại phong cách nữ sinh (Đen)",
+    "category": "bottoms",
+    "type": "skirt",
+    "price": 920000,
+    "color": "Đen",
+    "colorFamily": "black",
+    "colorHex": "#111111",
+    "image": "/products/skirt-pleated-mini-black.jpg",
+    "style": [
+      "preppy",
+      "Y2K",
+      "nữ tính"
+    ],
+    "occasion": [
+      "đi học",
+      "đi chơi",
+      "cafe"
+    ],
+    "material": "Vải tuyết mưa đứng phom có quần lót trong",
+    "fit": "High-waist pleated kilt",
+    "silhouette": "a-line",
+    "lengthClass": "mini",
+    "waistRise": "high",
+    "colorTemperature": "neutral"
   },
   {
-    sku: "V2609031", name: "Liu Top", subtitle: "Áo bustier crop cổ tim xếp nhún tay bồng",
-    category: "tops", type: "crop-top", price: 4068000, color: "Trắng kem", colorFamily: "white",
-    image: "https://dosi-in.com/img/600/vn-11134207-81ztc-msnxcfimdnuub4.webp",
-    sourceUrl: "https://dosi-in.com/san-pham/mo-ban-lsoul-ao-bustier-crop-co-tim-xep-nhun-tay-bong-om-sat-ton-dang-liu-top-v2609031-269491027.46867306231/",
-    style: ["romantic", "elegant", "nữ tính"], occasion: ["hẹn hò", "đi tiệc"], material: "Vải co giãn xếp nhún",
-    fit: "Fitted bustier crop", silhouette: "fitted", lengthClass: "cropped", neckline: "sweetheart", sleeveLength: "short", tryOn: true
+    "sku": "SK-PLEAT-KILT-WHT",
+    "groupCode": "SK-PLEAT-KILT",
+    "name": "Pleated High-Waist Schoolgirl Skirt",
+    "subtitle": "Chân váy xếp ly cạp cao năng động tươi tắn (Trắng tuyết)",
+    "category": "bottoms",
+    "type": "skirt",
+    "price": 920000,
+    "color": "Trắng",
+    "colorFamily": "white",
+    "colorHex": "#FFFFFF",
+    "image": "/products/skirt-pleated-mini-white.jpg",
+    "style": [
+      "preppy",
+      "nữ tính"
+    ],
+    "occasion": [
+      "đi học",
+      "đi chơi",
+      "cafe"
+    ],
+    "material": "Vải tuyết mưa đứng phom có quần lót trong",
+    "fit": "High-waist pleated kilt",
+    "silhouette": "a-line",
+    "lengthClass": "mini",
+    "waistRise": "high",
+    "colorTemperature": "neutral"
+  },
+  {
+    "sku": "SK-PLEAT-KILT-GRY",
+    "groupCode": "SK-PLEAT-KILT",
+    "name": "Pleated High-Waist Schoolgirl Skirt",
+    "subtitle": "Chân váy xếp ly cạp cao chuẩn phong cách học đường (Xám heather)",
+    "category": "bottoms",
+    "type": "skirt",
+    "price": 920000,
+    "color": "Xám",
+    "colorFamily": "gray",
+    "colorHex": "#6B7280",
+    "image": "/products/skirt-pleated-grey.jpg",
+    "style": [
+      "preppy",
+      "Y2K"
+    ],
+    "occasion": [
+      "đi học",
+      "đi chơi",
+      "cafe"
+    ],
+    "material": "Vải tuyết mưa đứng phom có quần lót trong",
+    "fit": "High-waist pleated kilt",
+    "silhouette": "a-line",
+    "lengthClass": "mini",
+    "waistRise": "high",
+    "colorTemperature": "cool"
+  },
+  {
+    "sku": "PT-TAILORED-BERM-BLK",
+    "groupCode": "PT-TAILORED-BERM",
+    "name": "Tailored Pleated Bermuda Suit Shorts",
+    "subtitle": "Quần short lửng xếp ly bermuda may đo âu phục sang trọng (Đen)",
+    "category": "bottoms",
+    "type": "shorts",
+    "price": 980000,
+    "color": "Đen",
+    "colorFamily": "black",
+    "colorHex": "#111111",
+    "image": "/products/pants-tailored-wide-black.jpg",
+    "style": [
+      "công sở",
+      "chic",
+      "minimal"
+    ],
+    "occasion": [
+      "đi làm",
+      "cafe",
+      "hẹn hò"
+    ],
+    "material": "Vải cashmere pha đứng phom",
+    "fit": "High-waist tailored bermuda",
+    "silhouette": "straight",
+    "lengthClass": "knee-length",
+    "waistRise": "high",
+    "colorTemperature": "neutral"
+  },
+  {
+    "sku": "PT-TAILORED-BERM-BEI",
+    "groupCode": "PT-TAILORED-BERM",
+    "name": "Tailored Pleated Bermuda Suit Shorts",
+    "subtitle": "Quần short lửng xếp ly bermuda may đo âu phục thanh lịch (Be cát)",
+    "category": "bottoms",
+    "type": "shorts",
+    "price": 980000,
+    "color": "Be",
+    "colorFamily": "beige",
+    "colorHex": "#E7E0D3",
+    "image": "/products/pants-chinos-beige.webp",
+    "style": [
+      "công sở",
+      "chic",
+      "minimal"
+    ],
+    "occasion": [
+      "đi làm",
+      "cafe",
+      "hẹn hò"
+    ],
+    "material": "Vải cashmere pha đứng phom",
+    "fit": "High-waist tailored bermuda",
+    "silhouette": "straight",
+    "lengthClass": "knee-length",
+    "waistRise": "high",
+    "colorTemperature": "warm"
+  },
+  {
+    "sku": "PT-TAILORED-BERM-GRY",
+    "groupCode": "PT-TAILORED-BERM",
+    "name": "Tailored Pleated Bermuda Suit Shorts",
+    "subtitle": "Quần short lửng xếp ly bermuda may đo chuẩn form (Xám ghi)",
+    "category": "bottoms",
+    "type": "shorts",
+    "price": 980000,
+    "color": "Xám",
+    "colorFamily": "gray",
+    "colorHex": "#4B5563",
+    "image": "/products/skirt-pleated-grey.jpg",
+    "style": [
+      "công sở",
+      "chic"
+    ],
+    "occasion": [
+      "đi làm",
+      "cafe",
+      "dạo phố"
+    ],
+    "material": "Vải cashmere pha đứng phom",
+    "fit": "High-waist tailored bermuda",
+    "silhouette": "straight",
+    "lengthClass": "knee-length",
+    "waistRise": "high",
+    "colorTemperature": "cool"
+  },
+  {
+    "sku": "SK-TWEED-MINI-WHT",
+    "groupCode": "SK-TWEED-MINI",
+    "name": "Tweed A-Line Mini Skirt with Gold Buttons",
+    "subtitle": "Chân váy chữ A vải dạ tweed đính cúc vàng quý tộc (Trắng kem)",
+    "category": "bottoms",
+    "type": "skirt",
+    "price": 1150000,
+    "color": "Trắng",
+    "colorFamily": "white",
+    "colorHex": "#FAF8F5",
+    "image": "/products/skirt-pleated-mini-white.jpg",
+    "style": [
+      "glam",
+      "nữ tính",
+      "preppy"
+    ],
+    "occasion": [
+      "đi tiệc",
+      "hẹn hò",
+      "cafe"
+    ],
+    "material": "Dạ tweed dệt kim tuyến cao cấp có lót lụa",
+    "fit": "A-line high-rise mini",
+    "silhouette": "a-line",
+    "lengthClass": "mini",
+    "waistRise": "high",
+    "colorTemperature": "neutral"
+  },
+  {
+    "sku": "SK-TWEED-MINI-BLK",
+    "groupCode": "SK-TWEED-MINI",
+    "name": "Tweed A-Line Mini Skirt with Gold Buttons",
+    "subtitle": "Chân váy chữ A vải dạ tweed đính cúc vàng tiểu thư (Đen tuyền)",
+    "category": "bottoms",
+    "type": "skirt",
+    "price": 1150000,
+    "color": "Đen",
+    "colorFamily": "black",
+    "colorHex": "#151515",
+    "image": "/products/skirt-pleated-mini-black.jpg",
+    "style": [
+      "glam",
+      "chic",
+      "statement"
+    ],
+    "occasion": [
+      "đi tiệc",
+      "hẹn hò",
+      "sự kiện"
+    ],
+    "material": "Dạ tweed dệt kim tuyến cao cấp có lót lụa",
+    "fit": "A-line high-rise mini",
+    "silhouette": "a-line",
+    "lengthClass": "mini",
+    "waistRise": "high",
+    "colorTemperature": "neutral"
+  },
+  {
+    "sku": "PT-FLARE-DENIM-BLU",
+    "groupCode": "PT-FLARE-DENIM",
+    "name": "Y2K Mid-Rise Bell-Bottom Flare Jeans",
+    "subtitle": "Quần jeans ống loe cạp vừa tôn chân dài miên man (Xanh denim)",
+    "category": "bottoms",
+    "type": "flare-pants",
+    "price": 1550000,
+    "color": "Xanh",
+    "colorFamily": "blue",
+    "colorHex": "#1E40AF",
+    "image": "/products/pants-flare-denim-blue.jpg",
+    "style": [
+      "Y2K",
+      "casual",
+      "chic"
+    ],
+    "occasion": [
+      "đi chơi",
+      "cafe",
+      "hẹn hò"
+    ],
+    "material": "Denim co giãn nhẹ 98% cotton 2% spandex",
+    "fit": "Mid-rise bell-bottom flare",
+    "silhouette": "flare",
+    "lengthClass": "floor-length",
+    "waistRise": "mid",
+    "colorTemperature": "cool"
+  },
+  {
+    "sku": "PT-FLARE-DENIM-BLK",
+    "groupCode": "PT-FLARE-DENIM",
+    "name": "Y2K Mid-Rise Bell-Bottom Flare Jeans",
+    "subtitle": "Quần jeans ống loe cạp vừa hack dáng cực đỉnh (Đen wash)",
+    "category": "bottoms",
+    "type": "flare-pants",
+    "price": 1550000,
+    "color": "Đen",
+    "colorFamily": "black",
+    "colorHex": "#1F2937",
+    "image": "/products/pants-tailored-wide-black.jpg",
+    "style": [
+      "Y2K",
+      "statement",
+      "chic"
+    ],
+    "occasion": [
+      "đi chơi",
+      "concert",
+      "cafe"
+    ],
+    "material": "Denim co giãn nhẹ 98% cotton 2% spandex",
+    "fit": "Mid-rise bell-bottom flare",
+    "silhouette": "flare",
+    "lengthClass": "floor-length",
+    "waistRise": "mid",
+    "colorTemperature": "neutral"
+  },
+  {
+    "sku": "PT-WIDE-PLEAT-BLK",
+    "groupCode": "PT-WIDE-PLEAT",
+    "name": "High-Waist Deep-Pleat Wide Slacks",
+    "subtitle": "Quần tây ống rộng xếp ly sâu tôn eo thon kéo dài chân (Đen công sở)",
+    "category": "bottoms",
+    "type": "trousers",
+    "price": 1480000,
+    "color": "Đen",
+    "colorFamily": "black",
+    "colorHex": "#111111",
+    "image": "/products/pants-tailored-wide-black.jpg",
+    "style": [
+      "công sở",
+      "minimal",
+      "chic"
+    ],
+    "occasion": [
+      "đi làm",
+      "sự kiện",
+      "cafe"
+    ],
+    "material": "Vải đũi tuyết cao cấp rủ mềm",
+    "fit": "High-waist wide leg",
+    "silhouette": "wide-leg",
+    "lengthClass": "floor-length",
+    "waistRise": "high",
+    "colorTemperature": "neutral"
+  },
+  {
+    "sku": "PT-WIDE-PLEAT-BEI",
+    "groupCode": "PT-WIDE-PLEAT",
+    "name": "High-Waist Deep-Pleat Wide Slacks",
+    "subtitle": "Quần tây ống rộng xếp ly sâu tôn eo thon kéo dài chân (Be kem)",
+    "category": "bottoms",
+    "type": "trousers",
+    "price": 1480000,
+    "color": "Be",
+    "colorFamily": "beige",
+    "colorHex": "#EFECE6",
+    "image": "/products/pants-tailored-wide-beige.jpg",
+    "style": [
+      "công sở",
+      "minimal",
+      "chic"
+    ],
+    "occasion": [
+      "đi làm",
+      "sự kiện",
+      "cafe"
+    ],
+    "material": "Vải đũi tuyết cao cấp rủ mềm",
+    "fit": "High-waist wide leg",
+    "silhouette": "wide-leg",
+    "lengthClass": "floor-length",
+    "waistRise": "high",
+    "colorTemperature": "warm"
+  },
+  {
+    "sku": "PT-WIDE-PLEAT-BRN",
+    "groupCode": "PT-WIDE-PLEAT",
+    "name": "High-Waist Deep-Pleat Wide Slacks",
+    "subtitle": "Quần tây ống rộng xếp ly sâu tông màu trầm ấm (Nâu mocha)",
+    "category": "bottoms",
+    "type": "trousers",
+    "price": 1480000,
+    "color": "Nâu",
+    "colorFamily": "brown",
+    "colorHex": "#58311E",
+    "image": "/products/pants-trousers-brown.jpg",
+    "style": [
+      "chic",
+      "vintage",
+      "công sở"
+    ],
+    "occasion": [
+      "đi làm",
+      "cafe",
+      "hẹn hò"
+    ],
+    "material": "Vải đũi tuyết cao cấp rủ mềm",
+    "fit": "High-waist wide leg",
+    "silhouette": "wide-leg",
+    "lengthClass": "floor-length",
+    "waistRise": "high",
+    "colorTemperature": "warm"
+  },
+  {
+    "sku": "PT-CHINOS-CASUAL-BEI",
+    "groupCode": "PT-CHINOS-CASUAL",
+    "name": "Tailored Pleated City Chinos",
+    "subtitle": "Quần dài chinos xếp ly phom đứng phong cách Parisian (Be nhạt)",
+    "category": "bottoms",
+    "type": "trousers",
+    "price": 1280000,
+    "color": "Be",
+    "colorFamily": "beige",
+    "colorHex": "#F5F1E8",
+    "image": "/products/pants-chinos-beige.webp",
+    "style": [
+      "minimal",
+      "công sở",
+      "casual"
+    ],
+    "occasion": [
+      "đi làm",
+      "dạo phố",
+      "cafe"
+    ],
+    "material": "Kaki cotton dệt twill cao cấp",
+    "fit": "Pleated straight fit",
+    "silhouette": "straight",
+    "lengthClass": "ankle-length",
+    "waistRise": "mid",
+    "colorTemperature": "warm"
+  },
+  {
+    "sku": "PT-CHINOS-CASUAL-BLK",
+    "groupCode": "PT-CHINOS-CASUAL",
+    "name": "Tailored Pleated City Chinos",
+    "subtitle": "Quần dài chinos xếp ly phom đứng phong cách Parisian (Đen)",
+    "category": "bottoms",
+    "type": "trousers",
+    "price": 1280000,
+    "color": "Đen",
+    "colorFamily": "black",
+    "colorHex": "#111111",
+    "image": "/products/pants-tailored-wide-black.jpg",
+    "style": [
+      "minimal",
+      "công sở",
+      "casual"
+    ],
+    "occasion": [
+      "đi làm",
+      "dạo phố",
+      "cafe"
+    ],
+    "material": "Kaki cotton dệt twill cao cấp",
+    "fit": "Pleated straight fit",
+    "silhouette": "straight",
+    "lengthClass": "ankle-length",
+    "waistRise": "mid",
+    "colorTemperature": "neutral"
+  },
+  {
+    "sku": "PT-SLIM-SLIT-BLK",
+    "groupCode": "PT-SLIM-SLIT",
+    "name": "Front-Slit Slim Flared Trousers",
+    "subtitle": "Quần tây ôm xẻ tà trước ống loe nhẹ hack chiều cao (Đen)",
+    "category": "bottoms",
+    "type": "flare-pants",
+    "price": 1390000,
+    "color": "Đen",
+    "colorFamily": "black",
+    "colorHex": "#111111",
+    "image": "/products/pants-tailored-wide-black.jpg",
+    "style": [
+      "chic",
+      "sexy",
+      "công sở"
+    ],
+    "occasion": [
+      "đi làm",
+      "hẹn hò",
+      "đi tiệc"
+    ],
+    "material": "Vải trượt hàn co giãn nhẹ",
+    "fit": "Slim flare with front slit",
+    "silhouette": "flare",
+    "lengthClass": "floor-length",
+    "waistRise": "high",
+    "colorTemperature": "neutral"
+  },
+  {
+    "sku": "JK-TWEED-CROP-WHT",
+    "groupCode": "JK-TWEED-CROP",
+    "name": "Luxury Cropped Tweed Jacket",
+    "subtitle": "Áo khoác dạ tweed dáng lửng đính cúc kim loại vàng sang trọng (Trắng ngà)",
+    "category": "outerwear",
+    "type": "jacket",
+    "price": 2450000,
+    "color": "Trắng",
+    "colorFamily": "white",
+    "colorHex": "#F8F7F3",
+    "image": "/products/jacket-tweed-crop-white.jpg",
+    "style": [
+      "glam",
+      "nữ tính",
+      "chic"
+    ],
+    "occasion": [
+      "đi tiệc",
+      "hẹn hò",
+      "công sở"
+    ],
+    "material": "Dạ tweed dệt hạt nổi cao cấp có lót lụa",
+    "fit": "Cropped boxy tailored fit",
+    "silhouette": "boxy",
+    "lengthClass": "cropped",
+    "neckline": "round",
+    "sleeveLength": "long",
+    "colorTemperature": "neutral"
+  },
+  {
+    "sku": "JK-TWEED-CROP-BLK",
+    "groupCode": "JK-TWEED-CROP",
+    "name": "Luxury Cropped Tweed Jacket",
+    "subtitle": "Áo khoác dạ tweed dáng lửng đính cúc kim loại vàng quý phái (Đen tuyền)",
+    "category": "outerwear",
+    "type": "jacket",
+    "price": 2450000,
+    "color": "Đen",
+    "colorFamily": "black",
+    "colorHex": "#111111",
+    "image": "/products/blazer-tailored-black.jpg",
+    "style": [
+      "glam",
+      "chic",
+      "statement"
+    ],
+    "occasion": [
+      "đi tiệc",
+      "hẹn hò",
+      "công sở"
+    ],
+    "material": "Dạ tweed dệt hạt nổi cao cấp có lót lụa",
+    "fit": "Cropped boxy tailored fit",
+    "silhouette": "boxy",
+    "lengthClass": "cropped",
+    "neckline": "round",
+    "sleeveLength": "long",
+    "colorTemperature": "neutral"
+  },
+  {
+    "sku": "JK-UTILITY-CROP-OLV",
+    "groupCode": "JK-UTILITY-CROP",
+    "name": "Cropped Utility Cargo Jacket",
+    "subtitle": "Áo khoác kaki túi hộp dáng lửng năng động cá tính (Xanh rêu olive)",
+    "category": "outerwear",
+    "type": "jacket",
+    "price": 1680000,
+    "color": "Xanh lá",
+    "colorFamily": "green",
+    "colorHex": "#4D5638",
+    "image": "/products/jacket-utility-olive.jpeg",
+    "style": [
+      "streetwear",
+      "Y2K",
+      "casual"
+    ],
+    "occasion": [
+      "đi chơi",
+      "dạo phố",
+      "du lịch"
+    ],
+    "material": "Kaki thô wash mềm có túi hộp",
+    "fit": "Relaxed cropped utility",
+    "silhouette": "relaxed",
+    "lengthClass": "cropped",
+    "neckline": "collared",
+    "sleeveLength": "long",
+    "colorTemperature": "warm"
+  },
+  {
+    "sku": "BZ-HOURGLASS-BLK",
+    "groupCode": "BZ-HOURGLASS",
+    "name": "Hourglass Cinched-Waist Structured Blazer",
+    "subtitle": "Áo blazer độn vai chiết eo đồng hồ cát tôn dáng quyền lực (Đen)",
+    "category": "outerwear",
+    "type": "blazer",
+    "price": 2750000,
+    "color": "Đen",
+    "colorFamily": "black",
+    "colorHex": "#111111",
+    "image": "/products/blazer-tailored-black.jpg",
+    "style": [
+      "statement",
+      "công sở",
+      "chic"
+    ],
+    "occasion": [
+      "sự kiện",
+      "đi làm",
+      "đi tiệc"
+    ],
+    "material": "Vải may đo âu phục nhập khẩu có đệm vai",
+    "fit": "Hourglass cinched waist",
+    "silhouette": "hourglass",
+    "lengthClass": "hip-length",
+    "neckline": "lapel",
+    "sleeveLength": "long",
+    "colorTemperature": "neutral"
+  },
+  {
+    "sku": "BZ-HOURGLASS-BEI",
+    "groupCode": "BZ-HOURGLASS",
+    "name": "Hourglass Cinched-Waist Structured Blazer",
+    "subtitle": "Áo blazer độn vai chiết eo đồng hồ cát thanh lịch đẳng cấp (Be kem)",
+    "category": "outerwear",
+    "type": "blazer",
+    "price": 2750000,
+    "color": "Be",
+    "colorFamily": "beige",
+    "colorHex": "#EFEAE1",
+    "image": "/products/blazer-tailored-beige.jpg",
+    "style": [
+      "chic",
+      "công sở",
+      "minimal"
+    ],
+    "occasion": [
+      "sự kiện",
+      "đi làm",
+      "hẹn hò"
+    ],
+    "material": "Vải may đo âu phục nhập khẩu có đệm vai",
+    "fit": "Hourglass cinched waist",
+    "silhouette": "hourglass",
+    "lengthClass": "hip-length",
+    "neckline": "lapel",
+    "sleeveLength": "long",
+    "colorTemperature": "warm"
+  },
+  {
+    "sku": "CT-DUSTER-TRENCH-BEI",
+    "groupCode": "CT-DUSTER-TRENCH",
+    "name": "Belted Flowy Duster Trench Coat",
+    "subtitle": "Áo măng tô trench coat dáng dài có đai thắt lưng phong cách Thu Đông (Be camel)",
+    "category": "outerwear",
+    "type": "jacket",
+    "price": 2950000,
+    "color": "Be",
+    "colorFamily": "beige",
+    "colorHex": "#C8A882",
+    "image": "/products/coat-trench-beige.jpg",
+    "style": [
+      "chic",
+      "elegant",
+      "công sở"
+    ],
+    "occasion": [
+      "du lịch",
+      "đi làm",
+      "dạo phố"
+    ],
+    "material": "Vải gabardine dệt mật độ cao chống gió",
+    "fit": "Oversized belted trench",
+    "silhouette": "relaxed",
+    "lengthClass": "maxi",
+    "neckline": "lapel",
+    "sleeveLength": "long",
+    "colorTemperature": "warm"
   }
 ];
 

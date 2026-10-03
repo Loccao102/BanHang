@@ -10,7 +10,20 @@ export const runtime = "nodejs";
 
 function fallbackReply(message: string, products: Product[], hasOrderContext: boolean, agentNotes: string[]) {
   const text = message.toLowerCase();
-  if (agentNotes.length) return agentNotes[0];
+  // Try-on inquiry
+  if (text.includes("thử") || text.includes("thu do") || text.includes("phòng thử")) {
+    return "Dạ LSOUL đã chuẩn bị trang phục trong phòng thử đồ AI cho bạn rồi nè! Bạn có thể tải ảnh toàn thân hoặc chọn ảnh mẫu để ướm thử đồ lên vóc dáng ngay nhé. ✨";
+  }
+
+  // Outfit coordination
+  if (text.includes("phối") || text.includes("outfit") || text.includes("set") || text.includes("mix")) {
+    if (products.length) {
+      const names = Array.from(new Set(products.map((p) => p.name))).join(" + ");
+      return `Dạ LSOUL đã phối riêng cho bạn set đồ cực kỳ tôn dáng và thời thượng: ${names}. Bạn có thể bấm "Thêm cả set vào giỏ" hoặc bấm "Thử cả set trong phòng thử AI" để xem đồ lên dáng người nhé! ✨`;
+    }
+  }
+
+  if (agentNotes.length && !agentNotes[0].includes("Outfit được chọn")) return agentNotes[0];
   if (hasOrderContext && (text.includes("đơn") || text.includes("order") || text.includes("vận đơn") || text.includes("giao"))) {
     return "LSOUL đã tra cứu thông tin đơn hàng gần nhất của bạn. Bạn có thể bấm vào thẻ đơn hàng bên dưới để xem chi tiết tình trạng vận chuyển nhé.";
   }
@@ -199,6 +212,7 @@ export async function POST(request: Request) {
   const productIdsFromActions = plan.actions.flatMap((action) => {
     if (action.type === "add_to_cart" || action.type === "open_product") return [action.productId];
     if (action.type === "add_bundle") return action.items.map((item) => item.productId);
+    if (action.type === "open_try_on") return action.productIds;
     return [];
   });
 
