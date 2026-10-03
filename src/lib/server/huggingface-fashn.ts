@@ -38,6 +38,30 @@ function clientOptions() {
   return hfToken ? { token: hfToken } : undefined;
 }
 
+function resolveImageSource(source: string, baseUrl?: string) {
+  if (source.startsWith("data:image/") || source.startsWith("https://")) return source;
+
+  // Product images in this project are commonly stored as /products/*.jpg.
+  // Resolve them against the current app origin before uploading the bytes to HF.
+  if (source.startsWith("/") && baseUrl) {
+    return new URL(source, baseUrl).toString();
+  }
+
+  return source;
+}
+
+function isLocalHttpUrl(source: string) {
+  try {
+    const url = new URL(source);
+    return (
+      url.protocol === "http:" &&
+      (url.hostname === "localhost" || url.hostname === "127.0.0.1" || url.hostname === "::1")
+    );
+  } catch {
+    return false;
+  }
+}
+
 async function sourceToBlob(source: string, label: string) {
   if (source.startsWith("data:image/")) {
     const match = source.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
@@ -48,7 +72,7 @@ async function sourceToBlob(source: string, label: string) {
     return new Blob([bytes], { type: match[1] });
   }
 
-  if (!source.startsWith("https://")) {
+  if (!source.startsWith("https://") && !isLocalHttpUrl(source)) {
     throw new Error(`${label} phải là HTTPS hoặc data image.`);
   }
 
@@ -71,10 +95,14 @@ export async function runHuggingFaceFashn(input: {
   garmentImage: string;
   category: HfFashnCategory;
   photoType: HfFashnPhotoType;
+  baseUrl?: string;
 }) {
+  const modelImage = resolveImageSource(input.modelImage, input.baseUrl);
+  const garmentImage = resolveImageSource(input.garmentImage, input.baseUrl);
+
   const [person, garment] = await Promise.all([
-    sourceToBlob(input.modelImage, "ảnh người"),
-    sourceToBlob(input.garmentImage, "ảnh trang phục")
+    sourceToBlob(modelImage, "ảnh người"),
+    sourceToBlob(garmentImage, "ảnh trang phục")
   ]);
 
   const app = await Client.connect(SPACE, clientOptions());
