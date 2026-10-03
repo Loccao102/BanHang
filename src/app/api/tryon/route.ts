@@ -120,6 +120,7 @@ async function runOfficialFashn(input: {
 async function runTryOnProvider(input: {
   modelImage: string;
   product: Product;
+  baseUrl: string;
 }): Promise<{ output: string; provider: TryOnProvider }> {
   const garmentImage = input.product.tryOnImage;
   if (!garmentImage) throw new Error(`${input.product.name} chưa có ảnh chuẩn cho Try-On.`);
@@ -148,7 +149,8 @@ async function runTryOnProvider(input: {
     modelImage: input.modelImage,
     garmentImage,
     category,
-    photoType: photoTypeFor(input.product)
+    photoType: photoTypeFor(input.product),
+    baseUrl: input.baseUrl
   });
 
   return { output, provider: "huggingface-fashn-vton-1.5" };
@@ -177,6 +179,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Ảnh người không hợp lệ." }, { status: 400 });
     }
 
+    const requestOrigin = new URL(request.url).origin;
     const db = getDb();
     const user = await getCurrentUser();
     const selected = await getProducts(productIds);
@@ -244,7 +247,8 @@ export async function POST(request: Request) {
       for (const product of ordered) {
         const result = await runTryOnProvider({
           modelImage: currentImage,
-          product
+          product,
+          baseUrl: requestOrigin
         });
 
         currentImage = result.output;
