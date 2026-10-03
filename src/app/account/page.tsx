@@ -119,7 +119,16 @@ export default function AccountPage() {
 
       <div className="accountTabs">
         {([["overview","Tổng quan"],["profile","Hồ sơ"],["addresses","Địa chỉ"],["orders","Đơn hàng"]] as const).map(([value,label]) => <button className={tab === value ? "active" : ""} onClick={() => setTab(value)} key={value}>{label}</button>)}
-        {user.role === "admin" ? <Link href="/admin">Quản trị <ArrowRight size={13} /></Link> : null}
+        {user.role === "admin" ? (
+          <a
+            href={process.env.NEXT_PUBLIC_ADMIN_URL ? `${process.env.NEXT_PUBLIC_ADMIN_URL}/admin` : "http://localhost:3001/admin"}
+            target="_blank"
+            rel="noreferrer"
+            className="adminPortalLink"
+          >
+            Quản trị (Port 3001) <ArrowRight size={13} />
+          </a>
+        ) : null}
       </div>
 
       {tab === "overview" ? <div className="accountOverview">

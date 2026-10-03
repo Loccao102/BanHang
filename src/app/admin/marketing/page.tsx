@@ -3,18 +3,49 @@
 import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useEffect, useState } from "react";
-import { BadgePercent, Check, EyeOff, Instagram, Pencil, Plus, Trash2, X } from "lucide-react";
+import {
+  ArrowLeftOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  CloseOutlined,
+  DeleteOutlined,
+  EditOutlined,
+  EyeInvisibleOutlined,
+  EyeOutlined,
+  InstagramOutlined,
+  PercentageOutlined,
+  PlusOutlined,
+  SaveOutlined,
+  SyncOutlined,
+  TagsOutlined
+} from "@ant-design/icons";
 import { useStore } from "@/components/store-provider";
 import { formatPrice } from "@/lib/products";
 
 type CouponRow = {
-  code: string; type: "percentage" | "fixed"; value: number; minOrder: number;
-  maxDiscount?: number | null; usageLimit?: number | null; usedCount: number; active: boolean;
-  startsAt?: string | null; endsAt?: string | null;
+  code: string;
+  type: "percentage" | "fixed";
+  value: number;
+  minOrder: number;
+  maxDiscount?: number | null;
+  usageLimit?: number | null;
+  usedCount: number;
+  active: boolean;
+  startsAt?: string | null;
+  endsAt?: string | null;
 };
+
 type SocialRow = {
-  id: string; authorName: string; authorHandle: string; platform: string; caption: string; image: string;
-  status: "pending" | "approved" | "rejected"; likes: number; createdAt: string; products: { id: string; name: string }[];
+  id: string;
+  authorName: string;
+  authorHandle: string;
+  platform: string;
+  caption: string;
+  image: string;
+  status: "pending" | "approved" | "rejected";
+  likes: number;
+  createdAt: string;
+  products: { id: string; name: string }[];
 };
 
 export default function AdminMarketingPage() {
@@ -23,80 +54,384 @@ export default function AdminMarketingPage() {
   const [posts, setPosts] = useState<SocialRow[]>([]);
   const [editing, setEditing] = useState<CouponRow | null>(null);
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function load() {
+    setLoading(true);
     const [couponResponse, socialResponse] = await Promise.all([
       fetch("/api/admin/coupons", { cache: "no-store" }),
       fetch("/api/admin/social", { cache: "no-store" })
     ]);
     if (couponResponse.ok) setCoupons((await couponResponse.json()).coupons);
     if (socialResponse.ok) setPosts((await socialResponse.json()).posts);
+    setLoading(false);
   }
-  useEffect(() => { if (user?.role === "admin") void load(); }, [user]);
+
+  useEffect(() => {
+    if (user?.role === "admin") void load();
+  }, [user]);
 
   async function saveCoupon(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const code = String(data.get("code") ?? "").toUpperCase();
     const payload = {
-      code, type: data.get("type"), value: Number(data.get("value")),
-      minOrder: Number(data.get("minOrder")), maxDiscount: Number(data.get("maxDiscount")) || null,
+      code,
+      type: data.get("type"),
+      value: Number(data.get("value")),
+      minOrder: Number(data.get("minOrder")),
+      maxDiscount: Number(data.get("maxDiscount")) || null,
       usageLimit: Number(data.get("usageLimit")) || null,
-      startsAt: data.get("startsAt") || null, endsAt: data.get("endsAt") || null, active: true
+      startsAt: data.get("startsAt") || null,
+      endsAt: data.get("endsAt") || null,
+      active: true
     };
-    const response = await fetch(editing ? `/api/admin/coupons/${editing.code}` : "/api/admin/coupons", {
-      method: editing ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
-    });
+    const response = await fetch(
+      editing ? `/api/admin/coupons/${editing.code}` : "/api/admin/coupons",
+      {
+        method: editing ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }
+    );
     const result = await response.json();
-    setMessage(response.ok ? "Coupon đã được lưu." : result.error ?? "Không thể lưu coupon.");
-    if (response.ok) { setEditing(null); (event.currentTarget as HTMLFormElement).reset(); await load(); }
+    setMessage(
+      response.ok ? "Coupon đã được lưu thành công." : result.error ?? "Không thể lưu coupon."
+    );
+    if (response.ok) {
+      setEditing(null);
+      (event.currentTarget as HTMLFormElement).reset();
+      await load();
+    }
   }
 
   async function toggleCoupon(coupon: CouponRow) {
-    await fetch(`/api/admin/coupons/${coupon.code}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ active: !coupon.active }) });
+    await fetch(`/api/admin/coupons/${coupon.code}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ active: !coupon.active })
+    });
     await load();
   }
+
   async function removeCoupon(coupon: CouponRow) {
-    if (!window.confirm(`Xóa/tắt mã ${coupon.code}?`)) return;
+    if (!window.confirm(`Xác nhận xóa vĩnh viễn mã ${coupon.code}?`)) return;
     await fetch(`/api/admin/coupons/${coupon.code}`, { method: "DELETE" });
-    if (editing?.code === coupon.code) setEditing(null);
-    await load();
-  }
-  async function moderate(id: string, status: SocialRow["status"]) {
-    await fetch("/api/admin/social", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status }) });
     await load();
   }
 
-  if (accountLoading) return <div className="accountLoading"><div className="skeletonLine title" /><div className="skeletonBlock detailSkeleton" /></div>;
-  if (!user || user.role !== "admin") return <section className="adminAccessDenied"><div><h1>Khu vực quản trị</h1><Link className="btn" href="/login?next=/admin/marketing">Đăng nhập quản trị</Link></div></section>;
+  async function moderate(id: string, status: "approved" | "rejected") {
+    await fetch(`/api/admin/social/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status })
+    });
+    await load();
+  }
 
-  const d = (value?: string | null) => value ? value.slice(0, 10) : "";
+  if (accountLoading) {
+    return (
+      <div className="antLoadingState">
+        <SyncOutlined spin style={{ fontSize: 32, color: "#1677ff" }} />
+        <p>Đang tải dữ liệu Marketing & Social...</p>
+      </div>
+    );
+  }
 
-  return <section className="adminPage adminConsole">
-    <div className="adminHero"><div><p className="eyebrow">MARKETING</p><h1>Social & ưu đãi.</h1></div><div className="adminHeroActions"><Link className="btn ghost small" href="/admin">← Tổng quan</Link><Link className="btn small" href="/social">Xem LSOUL Social</Link></div></div>
-    {message ? <p className="socialMessage">{message}</p> : null}
-    <div className="adminMarketingGrid">
-      <div className="adminPanel">
-        <div className="adminPanelHead"><div><p className="eyebrow">COUPONS</p><h2>{editing ? `Sửa ${editing.code}` : "Mã ưu đãi"}</h2></div><BadgePercent size={19} /></div>
-        <form className="couponAdminForm" onSubmit={saveCoupon} key={editing?.code ?? "new"}>
-          <input name="code" required placeholder="SOCIAL20" defaultValue={editing?.code ?? ""} disabled={Boolean(editing)} />
-          <select name="type" defaultValue={editing?.type ?? "percentage"}><option value="percentage">%</option><option value="fixed">VND</option></select>
-          <input name="value" type="number" min="1" required placeholder="20" defaultValue={editing?.value ?? ""} />
-          <input name="minOrder" type="number" min="0" placeholder="Đơn tối thiểu" defaultValue={editing?.minOrder ?? ""} />
-          <input name="maxDiscount" type="number" min="0" placeholder="Giảm tối đa" defaultValue={editing?.maxDiscount ?? ""} />
-          <input name="usageLimit" type="number" min="0" placeholder="Lượt dùng" defaultValue={editing?.usageLimit ?? ""} />
-          <input name="startsAt" type="date" defaultValue={d(editing?.startsAt)} title="Ngày bắt đầu" />
-          <input name="endsAt" type="date" defaultValue={d(editing?.endsAt)} title="Ngày kết thúc" />
-          <button className="btn small" type="submit"><Plus size={14} /> {editing ? "Cập nhật" : "Lưu coupon"}</button>
-          {editing ? <button className="btn ghost small" type="button" onClick={()=>setEditing(null)}>Hủy sửa</button> : null}
-        </form>
-        <div className="couponAdminList">{coupons.map((coupon)=><div key={coupon.code}><span><strong>{coupon.code}</strong><small>{coupon.type === "percentage" ? `${coupon.value}%` : formatPrice(coupon.value)} · min {formatPrice(coupon.minOrder)} · đã dùng {coupon.usedCount}{coupon.usageLimit ? `/${coupon.usageLimit}` : ""}{coupon.startsAt || coupon.endsAt ? ` · ${d(coupon.startsAt) || "…"} → ${d(coupon.endsAt) || "…"}` : ""}</small></span><div className="rowActions"><button aria-label="Sửa" onClick={()=>setEditing(coupon)}><Pencil size={14}/></button><button className={coupon.active ? "active" : ""} onClick={()=>toggleCoupon(coupon)}>{coupon.active ? "Đang chạy" : "Đã tắt"}</button><button aria-label="Xóa" onClick={()=>removeCoupon(coupon)}><Trash2 size={14}/></button></div></div>)}</div>
+  if (!user || user.role !== "admin") {
+    return (
+      <section className="antAccessDeniedCard">
+        <div className="antAccessDeniedContent">
+          <CloseCircleOutlined style={{ fontSize: 48, color: "#ff4d4f", marginBottom: 16 }} />
+          <h2>Khu vực Quản trị Bị Hạn chế</h2>
+          <p>Yêu cầu tài khoản quản trị để truy cập chiến dịch tiếp thị.</p>
+          <Link className="antBtn antBtnPrimary" href="/login?next=/admin/marketing">
+            Đăng nhập Quản trị
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <div className="antAdminPageContainer">
+      {/* Ant Design Page Header */}
+      <div className="antPageHeader">
+        <div className="antPageHeaderLeft">
+          <div className="antBreadcrumb">
+            <Link href="/admin">Trang chủ</Link>
+            <span className="antBreadcrumbSeparator">/</span>
+            <span>Hệ thống Quản trị</span>
+            <span className="antBreadcrumbSeparator">/</span>
+            <span className="antBreadcrumbCurrent">Marketing & Social UGC</span>
+          </div>
+          <h1 className="antPageTitle">Mã Giảm Giá & Duyệt Bài Social</h1>
+          <p className="antPageSubtitle">
+            Quản lý chiến dịch coupon khuyến mãi và phê duyệt bài đăng phong cách cộng đồng (User Generated Content).
+          </p>
+        </div>
+
+        <div className="antPageHeaderRight">
+          <div className="antHeaderActionGroup">
+            <a
+              href="http://localhost:3000/social"
+              target="_blank"
+              rel="noreferrer"
+              className="antBtn antBtnDefault"
+            >
+              <InstagramOutlined /> Xem trang Social
+            </a>
+          </div>
+        </div>
       </div>
 
-      <div className="adminPanel">
-        <div className="adminPanelHead"><div><p className="eyebrow">UGC MODERATION</p><h2>Bài social</h2></div><Instagram size={19} /></div>
-        <div className="socialModerationList">{posts.map((post)=><article key={post.id}><div className="socialModerationImage"><Image src={post.image} alt={post.caption} fill sizes="72px" /></div><div><strong>{post.authorName} <small>{post.authorHandle}</small></strong><p>{post.caption}</p><small>{post.platform} · {post.products.map((product)=>product.name).join(", ") || "Chưa tag sản phẩm"}</small></div><div className="socialModerationActions"><span className={`moderation-${post.status}`}>{post.status}</span>{post.status !== "approved" ? <button onClick={()=>moderate(post.id,"approved")}><Check size={14}/></button> : null}{post.status !== "rejected" ? <button onClick={()=>moderate(post.id,"rejected")}><X size={14}/></button> : null}{post.status !== "pending" ? <button onClick={()=>moderate(post.id,"pending")}><EyeOff size={14}/></button> : null}</div></article>)}</div>
+      {message && (
+        <div className="antAlertInfo" style={{ marginBottom: 20 }}>
+          <CheckCircleOutlined style={{ color: "#1677ff", marginRight: 8 }} />
+          <span>{message}</span>
+        </div>
+      )}
+
+      {/* 2-Column Grid: Coupons & Social Moderation */}
+      <div className="antTwoColGrid">
+        {/* Panel 1: Mã giảm giá */}
+        <div className="antCard">
+          <div className="antCardHead">
+            <div>
+              <div className="antCardEyebrow">CHIẾN DỊCH KHUYẾN MÃI</div>
+              <h2 className="antCardTitle">
+                {editing ? `Sửa mã: ${editing.code}` : "Tạo mã giảm giá mới"}
+              </h2>
+            </div>
+            <TagsOutlined style={{ fontSize: 20, color: "#1677ff" }} />
+          </div>
+
+          <div className="antCardBody">
+            <form onSubmit={saveCoupon} className="antCouponForm">
+              <div className="antFormGrid" style={{ gridTemplateColumns: "1fr 1fr" }}>
+                <label className="antFormField">
+                  <span className="antFormLabel">Mã voucher *</span>
+                  <input
+                    name="code"
+                    required
+                    defaultValue={editing?.code ?? ""}
+                    disabled={Boolean(editing)}
+                    placeholder="VD: LSOULVIP20"
+                    className="antInput"
+                    style={{ textTransform: "uppercase" }}
+                  />
+                </label>
+
+                <label className="antFormField">
+                  <span className="antFormLabel">Loại giảm</span>
+                  <select
+                    name="type"
+                    defaultValue={editing?.type ?? "percentage"}
+                    className="antInput"
+                  >
+                    <option value="percentage">Phần trăm (%)</option>
+                    <option value="fixed">Số tiền cố định (VNĐ)</option>
+                  </select>
+                </label>
+
+                <label className="antFormField">
+                  <span className="antFormLabel">Giá trị giảm *</span>
+                  <input
+                    name="value"
+                    type="number"
+                    min="1"
+                    required
+                    defaultValue={editing?.value ?? 10}
+                    className="antInput"
+                  />
+                </label>
+
+                <label className="antFormField">
+                  <span className="antFormLabel">Đơn tối thiểu</span>
+                  <input
+                    name="minOrder"
+                    type="number"
+                    min="0"
+                    defaultValue={editing?.minOrder ?? 0}
+                    className="antInput"
+                  />
+                </label>
+
+                <label className="antFormField">
+                  <span className="antFormLabel">Giảm tối đa (nếu có)</span>
+                  <input
+                    name="maxDiscount"
+                    type="number"
+                    min="0"
+                    defaultValue={editing?.maxDiscount ?? ""}
+                    placeholder="Không giới hạn"
+                    className="antInput"
+                  />
+                </label>
+
+                <label className="antFormField">
+                  <span className="antFormLabel">Giới hạn số lượt dùng</span>
+                  <input
+                    name="usageLimit"
+                    type="number"
+                    min="1"
+                    defaultValue={editing?.usageLimit ?? ""}
+                    placeholder="Không giới hạn"
+                    className="antInput"
+                  />
+                </label>
+              </div>
+
+              <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+                <button type="submit" className="antBtn antBtnPrimary">
+                  <SaveOutlined /> {editing ? "Cập nhật coupon" : "Tạo mã coupon"}
+                </button>
+                {editing && (
+                  <button
+                    type="button"
+                    className="antBtn antBtnDefault"
+                    onClick={() => setEditing(null)}
+                  >
+                    Hủy sửa
+                  </button>
+                )}
+              </div>
+            </form>
+
+            <div style={{ marginTop: 24 }}>
+              <div className="antSectionTitle">Danh sách mã khuyến mãi ({coupons.length})</div>
+              <div className="antCouponList">
+                {coupons.map((coupon) => (
+                  <div key={coupon.code} className="antCouponItem">
+                    <div className="antCouponMain">
+                      <div className="antCouponCode">
+                        <TagsOutlined style={{ marginRight: 6, color: "#1677ff" }} />
+                        <strong>{coupon.code}</strong>
+                        <span
+                          className={`antTag ${
+                            coupon.active ? "antTagSuccess" : "antTagDefault"
+                          }`}
+                          style={{ marginLeft: 8 }}
+                        >
+                          {coupon.active ? "Đang áp dụng" : "Đã tạm dừng"}
+                        </span>
+                      </div>
+                      <small className="antCouponMeta">
+                        {coupon.type === "percentage"
+                          ? `Giảm ${coupon.value}% (Đơn từ ${formatPrice(coupon.minOrder)})`
+                          : `Giảm ${formatPrice(coupon.value)} (Đơn từ ${formatPrice(coupon.minOrder)})`}
+                        {" · "}Đã dùng {coupon.usedCount}
+                        {coupon.usageLimit ? `/${coupon.usageLimit}` : ""} lượt
+                      </small>
+                    </div>
+
+                    <div className="antCouponActions">
+                      <button
+                        type="button"
+                        className="antActionBtn"
+                        title={coupon.active ? "Tắt mã" : "Bật mã"}
+                        onClick={() => toggleCoupon(coupon)}
+                      >
+                        {coupon.active ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+                      </button>
+                      <button
+                        type="button"
+                        className="antActionBtn edit"
+                        title="Chỉnh sửa"
+                        onClick={() => setEditing(coupon)}
+                      >
+                        <EditOutlined />
+                      </button>
+                      <button
+                        type="button"
+                        className="antActionBtn delete"
+                        title="Xóa mã"
+                        onClick={() => removeCoupon(coupon)}
+                      >
+                        <DeleteOutlined />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Panel 2: Duyệt bài Social */}
+        <div className="antCard">
+          <div className="antCardHead">
+            <div>
+              <div className="antCardEyebrow">DUYỆT BÀI ĐĂNG CỘNG ĐỒNG</div>
+              <h2 className="antCardTitle">Social Feed Moderation</h2>
+            </div>
+            <InstagramOutlined style={{ fontSize: 20, color: "#c13584" }} />
+          </div>
+
+          <div className="antCardBody">
+            {posts.length ? (
+              <div className="antSocialList">
+                {posts.map((post) => (
+                  <div key={post.id} className="antSocialItem">
+                    <div className="antSocialThumb">
+                      <Image
+                        src={post.image}
+                        alt={post.authorName}
+                        fill
+                        sizes="72px"
+                      />
+                    </div>
+                    <div className="antSocialInfo">
+                      <div className="antSocialAuthor">
+                        <strong>{post.authorName}</strong>
+                        <span className="antSocialHandle">{post.authorHandle}</span>
+                        <span
+                          className={`antTag ${
+                            post.status === "approved"
+                              ? "antTagSuccess"
+                              : post.status === "rejected"
+                              ? "antTagError"
+                              : "antTagWarning"
+                          }`}
+                        >
+                          {post.status}
+                        </span>
+                      </div>
+                      <p className="antSocialCaption">{post.caption}</p>
+                      <small className="antSocialMeta">
+                        {post.likes} lượt thích · {post.products?.length || 0} sản phẩm gắn kèm
+                      </small>
+                    </div>
+                    <div className="antSocialActions">
+                      <button
+                        type="button"
+                        className="antBtn antBtnSuccess antBtnSm"
+                        title="Duyệt hiển thị"
+                        onClick={() => moderate(post.id, "approved")}
+                      >
+                        <CheckCircleOutlined /> Duyệt
+                      </button>
+                      <button
+                        type="button"
+                        className="antBtn antBtnDanger antBtnSm"
+                        title="Từ chối"
+                        onClick={() => moderate(post.id, "rejected")}
+                      >
+                        <CloseCircleOutlined /> Từ chối
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="antEmptyState">
+                <InstagramOutlined style={{ fontSize: 36, color: "#8c8c8c" }} />
+                <p>Chưa có bài đăng cộng đồng cần kiểm duyệt.</p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
-  </section>;
+  );
 }

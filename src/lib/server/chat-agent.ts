@@ -25,6 +25,8 @@ function ordinalIndex(message: string) {
   return wordMap.find(([pattern]) => pattern.test(text))?.[1];
 }
 
+import { coordinateSmartOutfit, OutfitSetType } from "@/lib/stylist-outfit-engine";
+
 function inStockSize(product: Product, requested?: string) {
   if (requested) {
     const variant = product.variants?.find((item) => item.size.toUpperCase() === requested.toUpperCase());
@@ -39,36 +41,37 @@ export function buildOutfit(message: string, catalog: Product[]) {
   const size = extractSize(message);
   const text = normalize(message);
 
-  const topCandidates = retrieveProducts(message + " ao corset top", catalog, 20).filter((item) => item.category === "tops");
-  const bottomCandidates = retrieveProducts(message + " quần chân váy", catalog, 20).filter((item) => item.category === "bottoms");
-  const dressCandidates = retrieveProducts(message + " đầm dress", catalog, 20).filter((item) => item.category === "dress");
-  const outerCandidates = retrieveProducts(message + " blazer ao khoac", catalog, 10).filter((item) => item.category === "outerwear");
-
-  if (text.includes("dam") || text.includes("vay") || text.includes("dress")) {
-    for (const dress of dressCandidates) {
-      if (dress.price > budget) continue;
-      const items = [dress];
-      const outer = outerCandidates.find((item) => dress.price + item.price <= budget);
-      if (outer) items.push(outer);
-      return { products: items, size };
-    }
+  let setType: OutfitSetType = "all";
+  if (text.includes("dam") || text.includes("dress")) {
+    setType = "dress_layer";
+  } else if (text.includes("quan") || text.includes("chan vay") || text.includes("vay") || text.includes("corset") || text.includes("ao")) {
+    setType = "top_bottom";
+  } else if (text.includes("set") || text.includes("dong bo")) {
+    setType = "coord_set";
   }
 
-  for (const top of topCandidates) {
-    for (const bottom of bottomCandidates) {
-      let total = top.price + bottom.price;
-      if (total > budget) continue;
-      const items = [top, bottom];
-      const outer = outerCandidates.find((item) => total + item.price <= budget);
-      if (outer && budget !== Number.POSITIVE_INFINITY) {
-        items.push(outer);
-        total += outer.price;
-      }
-      return { products: items, size };
-    }
-  }
+  let occasion = "all";
+  if (text.includes("hen ho") || text.includes("date")) occasion = "date";
+  else if (text.includes("tiec") || text.includes("party")) occasion = "party";
+  else if (text.includes("di lam") || text.includes("cong so") || text.includes("work")) occasion = "work";
+  else if (text.includes("di choi") || text.includes("cafe") || text.includes("casual")) occasion = "casual";
 
-  return { products: retrieveProducts(message, catalog, 3), size };
+  let style = "all";
+  if (text.includes("y2k")) style = "y2k";
+  else if (text.includes("minimal") || text.includes("toi gian")) style = "minimal";
+  else if (text.includes("bold") || text.includes("ca tinh")) style = "bold";
+  else if (text.includes("nu tinh") || text.includes("feminine")) style = "feminine";
+
+  const coordinated = coordinateSmartOutfit({
+    catalog,
+    setType,
+    occasion,
+    style,
+    budget: Number.isFinite(budget) ? budget : undefined
+  });
+
+  const products = coordinated.items.map((i) => i.product);
+  return { products, size, outfit: coordinated };
 }
 
 type AgentPlanArgs = {
@@ -124,6 +127,18 @@ export function buildAgentPlan(args: AgentPlanArgs) {
             notes.push("Không phải tất cả món trong outfit đều còn size " + requestedSize + "; không được tự thêm vào giỏ.");
           }
         }
+      } else {
+        const bundleItems = outfit.products.map((product) => {
+          const itemSize = inStockSize(product, requestedSize) || product.variants?.find((v) => v.stock > 0)?.size || (Array.isArray(product.sizes) ? product.sizes[0] : "S");
+          return { productId: product.id, size: itemSize, quantity: 1 };
+        });
+        actions.push({
+          id: randomUUID(),
+          type: "add_bundle",
+          label: "🛒 Thêm cả set vào giỏ (" + outfit.products.length + " món)",
+          items: bundleItems,
+          autoExecute: false
+        });
       }
     }
   } else if (explicitAdd && referenced) {

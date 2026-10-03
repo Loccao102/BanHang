@@ -57,7 +57,9 @@ Không commit file `.env` có secret thật lên GitHub.
 
 # Cách 1 – Chạy toàn bộ bằng Docker
 
-Đây là cách đơn giản nhất để demo đồ án.
+Đây là cách đơn giản nhất để demo đồ án với 2 service riêng biệt:
+- **Cửa hàng (Storefront):** `http://localhost:3000`
+- **Quản trị (Admin Console):** `http://localhost:3001/admin`
 
 ```bash
 docker compose up --build
@@ -69,22 +71,23 @@ Hoặc chạy nền:
 npm run docker:up:d
 ```
 
-Mở:
+Mở trình duyệt:
 
 ```text
-http://localhost:3000
+Cửa hàng (Storefront): http://localhost:3000
+Quản trị (Admin Console): http://localhost:3001/admin
 ```
 
-Docker Compose gồm 3 service:
+Docker Compose gồm 4 service:
 
 ```text
-postgres
+postgres (5432)
    ↓ healthcheck
 db-init
    ↓ prisma db push
    ↓ chỉ seed khi database hoàn toàn trống
-web
-   ↓ Next.js production server
+web (Storefront - Cổng 3000)   &   admin (Admin Console - Cổng 3001)
+   ↓ Next.js server (Khách)            ↓ Next.js server (Quản trị)
 ```
 
 ### Quan trọng về dữ liệu
@@ -129,21 +132,27 @@ Phù hợp khi đang code vì Next.js có hot reload.
 npm install
 npm run db:up
 npm run db:setup
-npm run dev
 ```
 
-Mở:
+Khởi chạy dịch vụ:
 
-```text
-http://localhost:3000
-```
+- **Chạy cả 2 service cùng lúc (Khuyên dùng):**
+  ```bash
+  npm run dev:all
+  ```
+  *(Storefront mở tại `http://localhost:3000`, Admin mở tại `http://localhost:3001/admin`)*
+
+- **Hoặc chạy riêng từng service:**
+  - Chỉ chạy Storefront (Cổng 3000): `npm run dev:store` (hoặc `npm run dev`)
+  - Chỉ chạy Admin (Cổng 3001): `npm run dev:admin`
 
 Trong chế độ này:
 
 ```text
-Next.js: localhost:3000
-PostgreSQL: localhost:5432
-DATABASE_URL: postgresql://lsoul:lsoul_dev@localhost:5432/lsoul?schema=public
+Storefront (Khách hàng): http://localhost:3000
+Admin (Quản trị viên):   http://localhost:3001/admin
+PostgreSQL:             localhost:5432
+DATABASE_URL:           postgresql://lsoul:lsoul_dev@localhost:5432/lsoul?schema=public
 ```
 
 Lưu ý: `npm run db:setup` có seed dữ liệu demo và phù hợp khi khởi tạo môi trường phát triển. Không dùng lệnh này trên database có dữ liệu cần giữ.

@@ -1,8 +1,1693 @@
-/* Admin extended commerce operations */
-.adminMarketingGrid{display:grid;grid-template-columns:1fr 1.35fr;gap:14px}.couponAdminForm{display:grid;grid-template-columns:1.3fr .6fr .8fr;gap:7px;margin-bottom:18px}.couponAdminForm input,.couponAdminForm select{height:38px;border:1px solid var(--line);background:white;padding:0 9px}.couponAdminList{display:grid;gap:7px}.couponAdminList>div{display:flex;justify-content:space-between;gap:10px;align-items:center;border-top:1px solid var(--line);padding:11px 0}.couponAdminList strong,.couponAdminList small{display:block}.couponAdminList small{font-size:8px;color:var(--muted);margin-top:3px}.couponAdminList button{border:1px solid var(--line);background:white;padding:7px 8px;font-size:8px;font-weight:800;cursor:pointer}.couponAdminList button.active{background:#edf8f3;color:#176948;border-color:#b6d9ca}
-.socialModerationList{display:grid;gap:8px}.socialModerationList article{display:grid;grid-template-columns:70px 1fr auto;gap:11px;align-items:center;border-top:1px solid var(--line);padding:10px 0}.socialModerationImage{position:relative;width:70px;height:86px;overflow:hidden;background:var(--soft)}.socialModerationImage img{object-fit:cover}.socialModerationList strong,.socialModerationList small{font-size:9px}.socialModerationList p{font-size:9px;color:var(--muted);margin:5px 0;line-height:1.4}.socialModerationActions{display:flex;align-items:center;gap:4px}.socialModerationActions>span{font-size:7px;text-transform:uppercase;padding:5px 6px;background:#eee}.socialModerationActions button{width:29px;height:29px;border:1px solid var(--line);background:white;display:grid;place-items:center;cursor:pointer}.moderation-approved{color:#176948!important;background:#edf8f3!important}.moderation-rejected{color:#9b1c1c!important;background:#f8e7e7!important}
-.customerTable small{display:block;color:var(--muted);font-size:8px;margin-top:4px}.customerTable td{vertical-align:middle}
-.fulfillmentList{display:grid;gap:7px}.fulfillmentList article{display:grid;grid-template-columns:1.2fr repeat(4,1fr) auto;gap:8px;align-items:end;border-top:1px solid var(--line);padding:12px 0}.fulfillmentList article>div:first-child strong,.fulfillmentList article>div:first-child small{display:block}.fulfillmentList article>div:first-child small{font-size:8px;color:var(--muted);margin-top:3px}.fulfillmentList label{display:grid;gap:4px}.fulfillmentList label span{font-size:7px;text-transform:uppercase;color:var(--muted);font-weight:800}.fulfillmentList input,.fulfillmentList select{height:35px;border:1px solid var(--line);background:white;padding:0 7px;font-size:9px}.fulfillmentFlag{display:flex;gap:5px;align-items:center;font-size:8px;padding-bottom:9px}
-.variantStockEditor{display:grid;grid-template-columns:repeat(5,1fr);gap:7px}.variantStockEditor label{display:grid;gap:4px;font-size:8px;color:var(--muted)}.variantStockEditor input{width:100%}
-@media(max-width:1000px){.adminMarketingGrid{grid-template-columns:1fr}.fulfillmentList article{grid-template-columns:1fr 1fr 1fr}.fulfillmentFlag{padding:0}}
-@media(max-width:650px){.couponAdminForm{grid-template-columns:1fr 1fr}.socialModerationList article{grid-template-columns:58px 1fr}.socialModerationActions{grid-column:2}.fulfillmentList article{grid-template-columns:1fr}.variantStockEditor{grid-template-columns:repeat(2,1fr)}}
+/* ==========================================================================
+   LSOUL ENTERPRISE ADMIN — ANT DESIGN DESIGN SYSTEM & STYLESHEET
+   ========================================================================== */
+
+:root {
+  --ant-primary: #1677ff;
+  --ant-primary-hover: #4096ff;
+  --ant-primary-active: #0958d9;
+  --ant-primary-bg: #e6f4ff;
+  --ant-primary-border: #91caff;
+
+  --ant-success: #52c41a;
+  --ant-success-bg: #f6ffed;
+  --ant-success-border: #b7eb8f;
+
+  --ant-warning: #faad14;
+  --ant-warning-bg: #fffbe6;
+  --ant-warning-border: #ffe58f;
+
+  --ant-error: #ff4d4f;
+  --ant-error-bg: #fff2f0;
+  --ant-error-border: #ffccc7;
+
+  --ant-text-primary: #1f1f1f;
+  --ant-text-secondary: #595959;
+  --ant-text-muted: #8c8c8c;
+  --ant-text-disabled: #bfbfbf;
+
+  --ant-border: #f0f0f0;
+  --ant-border-secondary: #d9d9d9;
+  --ant-bg-layout: #f5f7fa;
+  --ant-bg-container: #ffffff;
+
+  --ant-radius: 8px;
+  --ant-radius-lg: 12px;
+  --ant-radius-sm: 6px;
+
+  --ant-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02);
+  --ant-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 4px 12px 0 rgba(0, 0, 0, 0.05);
+  --ant-shadow-lg: 0 6px 16px 0 rgba(0, 0, 0, 0.08), 0 3px 6px -4px rgba(0, 0, 0, 0.12), 0 9px 28px 8px rgba(0, 0, 0, 0.05);
+
+  --ant-font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* --------------------------------------------------------------------------
+   RESET & SCOPED OVERRIDES FOR ADMIN PAGES
+   (Prevents giant 88px serif headings from leaking into admin)
+   -------------------------------------------------------------------------- */
+.antAdminApp,
+.antAdminApp *,
+.antAdminPageContainer,
+.antAdminPageContainer * {
+  box-sizing: border-box;
+  font-family: var(--ant-font-sans) !important;
+}
+
+.antAdminApp {
+  background-color: var(--ant-bg-layout);
+  min-height: 100vh;
+  color: var(--ant-text-primary);
+  display: flex;
+  flex-direction: column;
+}
+
+.antAdminMain {
+  flex: 1;
+  padding-bottom: 60px;
+}
+
+/* Force override any inherited serif / giant text on admin pages */
+.antAdminPageContainer h1,
+.antAdminPageContainer h2,
+.antAdminPageContainer h3,
+.adminHero h1 {
+  font-family: var(--ant-font-sans) !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* --------------------------------------------------------------------------
+   ANT DESIGN HEADER & TOP NAVIGATION
+   -------------------------------------------------------------------------- */
+.antAdminHeaderWrap {
+  background: #ffffff;
+  border-bottom: 1px solid var(--ant-border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.06);
+}
+
+.antAdminTopBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 28px;
+  height: 60px;
+  border-bottom: 1px solid #f5f5f5;
+}
+
+.antAdminBrandArea {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.antAdminLogo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: #001529;
+}
+
+.antLogoName {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #111827;
+}
+
+.antLogoBadge {
+  font-size: 10px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #1677ff 0%, #0958d9 100%);
+  color: #ffffff;
+  padding: 2px 7px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.antDbBadgeWrap {
+  display: flex;
+  align-items: center;
+}
+
+.antAdminTopActions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.antUserPill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 10px 4px 6px;
+  border-radius: 20px;
+  background: #f5f7fa;
+  border: 1px solid var(--ant-border);
+}
+
+.antAvatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #1677ff;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.antAvatar.small {
+  width: 32px;
+  height: 32px;
+  font-size: 13px;
+  background: #e6f4ff;
+  color: #1677ff;
+  border: 1px solid var(--ant-primary-border);
+}
+
+.antUserInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.antUserName {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ant-text-primary);
+  line-height: 1.2;
+}
+
+.antUserRole {
+  font-size: 10px;
+  color: var(--ant-text-muted);
+  line-height: 1.2;
+}
+
+/* Horizontal Nav Menu */
+.antAdminNavMenu {
+  background: #ffffff;
+  padding: 0 28px;
+}
+
+.antAdminNavScroll {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.antAdminNavScroll::-webkit-scrollbar {
+  display: none;
+}
+
+.antAdminNavItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ant-text-secondary);
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1);
+  white-space: nowrap;
+}
+
+.antAdminNavItem:hover {
+  color: var(--ant-primary);
+}
+
+.antAdminNavItemActive {
+  color: var(--ant-primary) !important;
+  font-weight: 600;
+}
+
+.antNavIcon {
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+}
+
+.antNavActiveIndicator {
+  position: absolute;
+  bottom: 0;
+  left: 10px;
+  right: 10px;
+  height: 2px;
+  background: var(--ant-primary);
+  border-radius: 2px 2px 0 0;
+}
+
+/* --------------------------------------------------------------------------
+   PAGE CONTAINER & HEADER
+   -------------------------------------------------------------------------- */
+.antAdminPageContainer {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 24px 28px;
+}
+
+.antPageHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.antBreadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--ant-text-muted);
+  margin-bottom: 8px;
+}
+
+.antBreadcrumb a {
+  color: var(--ant-text-muted);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.antBreadcrumb a:hover {
+  color: var(--ant-primary);
+}
+
+.antBreadcrumbSeparator {
+  color: #bfbfbf;
+}
+
+.antBreadcrumbCurrent {
+  color: var(--ant-text-secondary);
+  font-weight: 500;
+}
+
+.antPageTitle {
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  color: var(--ant-text-primary) !important;
+  margin: 0 0 6px 0 !important;
+  line-height: 1.3 !important;
+}
+
+.antPageSubtitle {
+  font-size: 13px;
+  color: var(--ant-text-muted);
+  margin: 0;
+  max-width: 720px;
+  line-height: 1.5;
+}
+
+.antHeaderActionGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* --------------------------------------------------------------------------
+   SEGMENTED TAB BAR
+   -------------------------------------------------------------------------- */
+.antTabSegmentBar {
+  display: inline-flex;
+  background: #ffffff;
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid var(--ant-border);
+  gap: 4px;
+  margin-bottom: 24px;
+  box-shadow: var(--ant-shadow-sm);
+}
+
+.antTabSegmentBtn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ant-text-secondary);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.antTabSegmentBtn:hover {
+  color: var(--ant-primary);
+  background: #f5f7fa;
+}
+
+.antTabSegmentBtn.active {
+  background: #111827;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.antBadgeCountSmall {
+  background: #ff4d4f;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 10px;
+  margin-left: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   ANT DESIGN STAT CARDS
+   -------------------------------------------------------------------------- */
+.antStatCardsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.antStatCard {
+  background: var(--ant-bg-container);
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-lg);
+  padding: 20px 22px;
+  box-shadow: var(--ant-shadow-sm);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.antStatCard:hover {
+  box-shadow: var(--ant-shadow);
+  transform: translateY(-2px);
+}
+
+.antStatCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.antStatLabel {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ant-text-muted);
+}
+
+.antStatIconWrap {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.antStatIconWrap.blue {
+  background: #e6f4ff;
+  color: #1677ff;
+}
+
+.antStatIconWrap.green {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.antStatIconWrap.cyan {
+  background: #e6fffb;
+  color: #13c2c2;
+}
+
+.antStatIconWrap.purple {
+  background: #f9f0ff;
+  color: #722ed1;
+}
+
+.antStatIconWrap.orange {
+  background: #fff7e6;
+  color: #fa8c16;
+}
+
+.antStatValue {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--ant-text-primary);
+  line-height: 1.2;
+  margin-bottom: 12px;
+  letter-spacing: -0.02em;
+}
+
+.antStatValue.greenText {
+  color: #176948;
+}
+
+.antStatFooter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ant-text-muted);
+  border-top: 1px solid #f8f9fa;
+  padding-top: 10px;
+}
+
+.antStatSubtext {
+  font-size: 11px;
+  color: var(--ant-text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   ANT DESIGN CARDS & GRIDS
+   -------------------------------------------------------------------------- */
+.antTwoColGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.antCard {
+  background: var(--ant-bg-container);
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-lg);
+  box-shadow: var(--ant-shadow-sm);
+  overflow: hidden;
+}
+
+.antDangerCard {
+  border-color: #ffe58f;
+  background: #fffdf5;
+}
+
+.antCardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--ant-border);
+}
+
+.antCardEyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ant-text-muted);
+  margin-bottom: 2px;
+}
+
+.antCardTitle {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: var(--ant-text-primary) !important;
+  margin: 0 !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.antCardSubtitle {
+  font-size: 12px;
+  color: var(--ant-text-muted);
+}
+
+.antCardBody {
+  padding: 20px 22px;
+}
+
+.antCountTag {
+  font-size: 11px;
+  font-weight: 600;
+  background: #f0f2f5;
+  color: #595959;
+  padding: 1px 7px;
+  border-radius: 10px;
+}
+
+/* --------------------------------------------------------------------------
+   TOOLBAR & SEARCH
+   -------------------------------------------------------------------------- */
+.antToolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.antToolbarRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.antSearchInput {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid var(--ant-border-secondary);
+  border-radius: var(--ant-radius-sm);
+  padding: 0 10px;
+  height: 34px;
+  width: 250px;
+  transition: all 0.2s;
+}
+
+.antSearchInput:focus-within {
+  border-color: var(--ant-primary);
+  box-shadow: 0 0 0 2px rgba(5, 145, 255, 0.1);
+}
+
+.antSearchIcon {
+  color: var(--ant-text-muted);
+  margin-right: 6px;
+  font-size: 13px;
+}
+
+.antSearchInput input {
+  border: none;
+  outline: none;
+  background: transparent;
+  width: 100%;
+  font-size: 12px;
+  color: var(--ant-text-primary);
+}
+
+.antSearchClear {
+  background: none;
+  border: none;
+  color: var(--ant-text-muted);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  font-size: 11px;
+}
+
+.antSelect {
+  height: 34px;
+  border: 1px solid var(--ant-border-secondary);
+  border-radius: var(--ant-radius-sm);
+  background: #ffffff;
+  padding: 0 10px;
+  font-size: 12px;
+  color: var(--ant-text-primary);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.antSelect:focus {
+  border-color: var(--ant-primary);
+  box-shadow: 0 0 0 2px rgba(5, 145, 255, 0.1);
+}
+
+/* --------------------------------------------------------------------------
+   ANT DESIGN TABLES
+   -------------------------------------------------------------------------- */
+.antTableContainer {
+  overflow-x: auto;
+}
+
+.antTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+
+.antTable thead tr {
+  background: #fafafa;
+  border-bottom: 1px solid var(--ant-border);
+}
+
+.antTable th {
+  padding: 12px 16px;
+  font-weight: 600;
+  color: var(--ant-text-secondary);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+.antTable tbody tr {
+  border-bottom: 1px solid var(--ant-border);
+  transition: background 0.15s;
+}
+
+.antTable tbody tr:hover {
+  background: #fafcff;
+}
+
+.antTable td {
+  padding: 12px 16px;
+  vertical-align: middle;
+  color: var(--ant-text-primary);
+}
+
+/* Product cell inside table */
+.antProductTableCell {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.antProductTableImg {
+  position: relative;
+  width: 48px;
+  height: 58px;
+  border-radius: var(--ant-radius-sm);
+  overflow: hidden;
+  background: #f5f5f5;
+  border: 1px solid var(--ant-border);
+  flex-shrink: 0;
+}
+
+.antProductTableImg img {
+  object-fit: cover;
+}
+
+.antProductTableText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.antProductTableName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ant-text-primary);
+}
+
+.antProductTableSub {
+  font-size: 11px;
+  color: var(--ant-text-muted);
+}
+
+.antSkuBadge {
+  font-family: monospace !important;
+  font-size: 11px;
+  background: #f0f2f5;
+  color: #333;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.antPrice {
+  font-weight: 600;
+  color: var(--ant-text-primary);
+}
+
+.antPrice.greenText {
+  color: #176948;
+}
+
+.antOldPrice {
+  display: block;
+  font-size: 10px;
+  color: var(--ant-text-muted);
+  text-decoration: line-through;
+}
+
+/* Stepper inside table */
+.antStockStepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--ant-border-secondary);
+  border-radius: var(--ant-radius-sm);
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.antStepBtn {
+  background: #fafafa;
+  border: none;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--ant-text-secondary);
+  font-size: 10px;
+  transition: background 0.15s;
+}
+
+.antStepBtn:hover {
+  background: #e6f4ff;
+  color: var(--ant-primary);
+}
+
+.antStockNumber {
+  min-width: 32px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 4px;
+}
+
+.antStockNumber.danger {
+  color: #ff4d4f;
+  background: #fff2f0;
+}
+
+/* Status toggle button */
+.antStatusToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.antStatusToggle.active {
+  background: var(--ant-success-bg);
+  border-color: var(--ant-success-border);
+  color: var(--ant-success);
+}
+
+.antStatusToggle.inactive {
+  background: #f5f5f5;
+  border-color: #d9d9d9;
+  color: #8c8c8c;
+}
+
+/* Table Row Actions */
+.antActionRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.antActionBtn {
+  background: #ffffff;
+  border: 1px solid var(--ant-border-secondary);
+  border-radius: var(--ant-radius-sm);
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  color: var(--ant-text-secondary);
+  transition: all 0.2s;
+}
+
+.antActionBtn:hover {
+  border-color: var(--ant-primary);
+  color: var(--ant-primary);
+}
+
+.antActionBtn.edit:hover {
+  border-color: #1677ff;
+  color: #1677ff;
+  background: #e6f4ff;
+}
+
+.antActionBtn.delete:hover {
+  border-color: #ff4d4f;
+  color: #ff4d4f;
+  background: #fff2f0;
+}
+
+/* --------------------------------------------------------------------------
+   ANT DESIGN TAGS & BADGES
+   -------------------------------------------------------------------------- */
+.antTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  border: 1px solid transparent;
+}
+
+.antTagSuccess {
+  background: var(--ant-success-bg);
+  border-color: var(--ant-success-border);
+  color: var(--ant-success);
+}
+
+.antTagWarning {
+  background: var(--ant-warning-bg);
+  border-color: var(--ant-warning-border);
+  color: #d48806;
+}
+
+.antTagError {
+  background: var(--ant-error-bg);
+  border-color: var(--ant-error-border);
+  color: var(--ant-error);
+}
+
+.antTagInfo,
+.antTagProcessing {
+  background: var(--ant-primary-bg);
+  border-color: var(--ant-primary-border);
+  color: var(--ant-primary);
+}
+
+.antTagDefault {
+  background: #fafafa;
+  border-color: #d9d9d9;
+  color: var(--ant-text-secondary);
+}
+
+/* --------------------------------------------------------------------------
+   ANT DESIGN BUTTONS
+   -------------------------------------------------------------------------- */
+.antBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 15px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: var(--ant-radius-sm);
+  cursor: pointer;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: all 0.2s cubic-bezier(0.645, 0.045, 0.355, 1);
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.antBtnSm {
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+.antBtnPrimary {
+  background: var(--ant-primary);
+  color: #ffffff;
+  border-color: var(--ant-primary);
+  box-shadow: 0 2px 0 rgba(5, 145, 255, 0.1);
+}
+
+.antBtnPrimary:hover {
+  background: var(--ant-primary-hover);
+  border-color: var(--ant-primary-hover);
+  color: #ffffff;
+}
+
+.antBtnDefault {
+  background: #ffffff;
+  border-color: var(--ant-border-secondary);
+  color: var(--ant-text-primary);
+}
+
+.antBtnDefault:hover {
+  border-color: var(--ant-primary);
+  color: var(--ant-primary);
+}
+
+.antBtnLink {
+  background: none;
+  border: none;
+  color: var(--ant-primary);
+  padding: 0;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.antBtnLink:hover {
+  color: var(--ant-primary-hover);
+  text-decoration: underline;
+}
+
+.antBtnDashed {
+  background: #ffffff;
+  border: 1px dashed var(--ant-border-secondary);
+  color: var(--ant-text-secondary);
+}
+
+.antBtnDashed:hover {
+  border-color: var(--ant-primary);
+  color: var(--ant-primary);
+}
+
+.antBtnSuccess {
+  background: #f6ffed;
+  border-color: #b7eb8f;
+  color: #52c41a;
+}
+.antBtnSuccess:hover {
+  background: #52c41a;
+  color: #ffffff;
+}
+
+.antBtnDanger {
+  background: #fff2f0;
+  border-color: #ffccc7;
+  color: #ff4d4f;
+}
+.antBtnDanger:hover {
+  background: #ff4d4f;
+  color: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   INVENTORY & RECENT ORDERS LISTS
+   -------------------------------------------------------------------------- */
+.antInventoryList,
+.antOrderRecentList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.antInventoryItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f8f9fa;
+}
+
+.antInventoryItem:last-child {
+  border-bottom: none;
+}
+
+.antProductThumb {
+  position: relative;
+  width: 44px;
+  height: 52px;
+  border-radius: var(--ant-radius-sm);
+  overflow: hidden;
+  background: #f5f5f5;
+  border: 1px solid var(--ant-border);
+  flex-shrink: 0;
+}
+
+.antProductThumb img {
+  object-fit: cover;
+}
+
+.antProductInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.antProductName {
+  font-size: 13px;
+  color: var(--ant-text-primary);
+}
+
+.antProductSku {
+  font-size: 11px;
+  color: var(--ant-text-muted);
+}
+
+.antOrderRecentItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #f8f9fa;
+}
+
+.antOrderRecentItem:last-child {
+  border-bottom: none;
+}
+
+.antOrderMain {
+  display: flex;
+  flex-direction: column;
+}
+
+.antOrderId {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ant-primary);
+  text-decoration: none;
+}
+
+.antOrderId:hover {
+  text-decoration: underline;
+}
+
+.antOrderMeta {
+  font-size: 11px;
+  color: var(--ant-text-muted);
+}
+
+.antOrderPricing {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 3px;
+}
+
+.antOrderAmount {
+  font-size: 13px;
+  color: #176948;
+}
+
+.antSubDate {
+  font-size: 11px;
+  color: var(--ant-text-muted);
+  display: block;
+}
+
+.antSubPhone {
+  font-size: 11px;
+  color: var(--ant-text-muted);
+  display: block;
+}
+
+/* --------------------------------------------------------------------------
+   DAILY REVENUE BARS (ANALYTICS)
+   -------------------------------------------------------------------------- */
+.antDailyBarsList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.antDailyBarRow {
+  display: grid;
+  grid-template-columns: 55px 1fr 140px;
+  align-items: center;
+  gap: 14px;
+}
+
+.antDailyDate {
+  font-size: 12px;
+  color: var(--ant-text-secondary);
+  font-weight: 500;
+}
+
+.antDailyTrack {
+  height: 12px;
+  background: #f0f2f5;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.antDailyBarFill {
+  height: 100%;
+  background: linear-gradient(90deg, #1677ff 0%, #4096ff 100%);
+  border-radius: 6px;
+  transition: width 0.3s ease;
+}
+
+.antDailyStat {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.antDailyAmount {
+  font-size: 12px;
+  color: var(--ant-text-muted);
+}
+
+.antDailyAmount.hasRev {
+  color: var(--ant-text-primary);
+  font-weight: 600;
+}
+
+.antDailyOrderCount {
+  font-size: 10px;
+  color: var(--ant-text-muted);
+  background: #f5f5f5;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+/* --------------------------------------------------------------------------
+   TOP PRODUCTS RANK LIST (ANALYTICS)
+   -------------------------------------------------------------------------- */
+.antRankList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.antRankItem {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f8f9fa;
+}
+
+.antRankItem:last-child {
+  border-bottom: none;
+}
+
+.antRankBadge {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.antRankBadge.rank-1 {
+  background: #faad14;
+  color: #ffffff;
+}
+
+.antRankBadge.rank-2 {
+  background: #8c8c8c;
+  color: #ffffff;
+}
+
+.antRankBadge.rank-3 {
+  background: #d48806;
+  color: #ffffff;
+}
+
+.antRankBadge.rank-default {
+  background: #f0f2f5;
+  color: #8c8c8c;
+}
+
+.antRankInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.antRankName {
+  font-size: 13px;
+  color: var(--ant-text-primary);
+}
+
+.antRankRev {
+  font-size: 11px;
+  color: var(--ant-text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   BREAKDOWN STATUS LISTS
+   -------------------------------------------------------------------------- */
+.antBreakdownList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.antBreakdownItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #f8f9fa;
+}
+
+.antBreakdownItem:last-child {
+  border-bottom: none;
+}
+
+.antBreakdownLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ant-text-secondary);
+}
+
+.antStatusDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1677ff;
+}
+
+.antStatusDot.payment {
+  background: #52c41a;
+}
+
+/* --------------------------------------------------------------------------
+   FULFILLMENT OPERATIONS ROW
+   -------------------------------------------------------------------------- */
+.antFulfillmentList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.antFulfillmentRow {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 1fr 1fr auto;
+  gap: 12px;
+  align-items: end;
+  padding: 14px;
+  background: #ffffff;
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius);
+  transition: border-color 0.2s;
+}
+
+.antFulfillmentRow:hover {
+  border-color: var(--ant-primary-border);
+}
+
+.antFulfillColInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.antFulfillColField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.antFulfillLabel {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ant-text-muted);
+}
+
+.antFulfillColAction {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+/* --------------------------------------------------------------------------
+   MARKETING COUPONS & SOCIAL MODERATION
+   -------------------------------------------------------------------------- */
+.antCouponList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.antCouponItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius-sm);
+  background: #ffffff;
+}
+
+.antCouponCode {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  margin-bottom: 3px;
+}
+
+.antCouponMeta {
+  font-size: 11px;
+  color: var(--ant-text-muted);
+}
+
+.antCouponActions {
+  display: flex;
+  gap: 6px;
+}
+
+.antSocialList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.antSocialItem {
+  display: grid;
+  grid-template-columns: 68px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--ant-border);
+  border-radius: var(--ant-radius);
+  background: #ffffff;
+}
+
+.antSocialThumb {
+  position: relative;
+  width: 68px;
+  height: 84px;
+  border-radius: var(--ant-radius-sm);
+  overflow: hidden;
+  background: #f5f5f5;
+}
+
+.antSocialThumb img {
+  object-fit: cover;
+}
+
+.antSocialAuthor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.antSocialHandle {
+  font-size: 11px;
+  color: var(--ant-text-muted);
+}
+
+.antSocialCaption {
+  font-size: 12px;
+  color: var(--ant-text-secondary);
+  margin: 0 0 4px 0;
+  line-height: 1.4;
+}
+
+.antSocialMeta {
+  font-size: 10px;
+  color: var(--ant-text-muted);
+}
+
+.antSocialActions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* --------------------------------------------------------------------------
+   ANT DESIGN MODAL DIALOG
+   -------------------------------------------------------------------------- */
+.antModalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.antModal {
+  background: #ffffff;
+  border-radius: var(--ant-radius-lg);
+  box-shadow: var(--ant-shadow-lg);
+  width: 900px;
+  max-width: 95vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: antModalFadeIn 0.2s cubic-bezier(0.08, 0.82, 0.17, 1);
+}
+
+@keyframes antModalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.antModalHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--ant-border);
+}
+
+.antModalTitle {
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  color: var(--ant-text-primary) !important;
+  margin: 0 !important;
+}
+
+.antModalCloseBtn {
+  background: none;
+  border: none;
+  font-size: 16px;
+  color: var(--ant-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.antModalCloseBtn:hover {
+  background: #f5f5f5;
+  color: var(--ant-text-primary);
+}
+
+.antModalBody {
+  padding: 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.antModalFoot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 24px;
+  border-top: 1px solid var(--ant-border);
+  background: #fafafa;
+}
+
+/* Form Sections inside Modal */
+.antFormSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.antSectionTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ant-text-primary);
+  border-left: 3px solid var(--ant-primary);
+  padding-left: 8px;
+}
+
+.antFormGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.antFormField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.antFormField.full {
+  grid-column: 1 / -1;
+}
+
+.antFormLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ant-text-secondary);
+}
+
+.antInput {
+  height: 36px;
+  border: 1px solid var(--ant-border-secondary);
+  border-radius: var(--ant-radius-sm);
+  background: #ffffff;
+  padding: 0 11px;
+  font-size: 13px;
+  color: var(--ant-text-primary);
+  outline: none;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.antInput:focus {
+  border-color: var(--ant-primary);
+  box-shadow: 0 0 0 2px rgba(5, 145, 255, 0.1);
+}
+
+.antTextarea {
+  height: auto;
+  padding: 8px 11px;
+  resize: vertical;
+}
+
+.antVariantGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.antVariantItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: #f8f9fa;
+  padding: 8px 10px;
+  border-radius: var(--ant-radius-sm);
+  border: 1px solid var(--ant-border);
+}
+
+.antVariantSizeLabel {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ant-text-secondary);
+}
+
+.antCheckGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 14px;
+  background: #fafafa;
+  border-radius: var(--ant-radius-sm);
+  border: 1px solid var(--ant-border);
+}
+
+.antCheckboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ant-text-primary);
+  cursor: pointer;
+}
+
+.antCheckboxLabel input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--ant-primary);
+}
+
+/* --------------------------------------------------------------------------
+   EMPTY & LOADING STATES
+   -------------------------------------------------------------------------- */
+.antLoadingState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  color: var(--ant-text-muted);
+  gap: 16px;
+}
+
+.antEmptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--ant-text-muted);
+  gap: 8px;
+}
+
+.antEmptyState.large {
+  padding: 60px 20px;
+}
+
+.antAccessDeniedCard {
+  max-width: 500px;
+  margin: 80px auto;
+  background: #ffffff;
+  border-radius: var(--ant-radius-lg);
+  padding: 40px;
+  text-align: center;
+  box-shadow: var(--ant-shadow);
+  border: 1px solid var(--ant-border);
+}
+
+/* --------------------------------------------------------------------------
+   RESPONSIVE QUERIES
+   -------------------------------------------------------------------------- */
+@media (max-width: 1100px) {
+  .antStatCardsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .antTwoColGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .antFulfillmentRow {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .antFormGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .antAdminTopBar {
+    padding: 0 16px;
+  }
+
+  .antAdminPageContainer {
+    padding: 16px;
+  }
+
+  .antPageHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .antStatCardsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .antToolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .antToolbarRight {
+    flex-direction: column;
+  }
+
+  .antSearchInput {
+    width: 100%;
+  }
+
+  .antFulfillmentRow {
+    grid-template-columns: 1fr;
+  }
+
+  .antFormGrid {
+    grid-template-columns: 1fr;
+  }
+}

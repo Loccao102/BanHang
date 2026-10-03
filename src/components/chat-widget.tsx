@@ -6,7 +6,7 @@ import {
   Bot, Check, ChevronRight, Clock3, Heart, History, MessageCircle,
   Pencil, Plus, Send, ShoppingBag, Sparkles, Trash2, X
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { CHAT_KEY } from "@/lib/cart";
 import type { ChatAgentAction, ChatConversationSummary, ChatMessageView } from "@/lib/chat";
@@ -20,7 +20,7 @@ const welcome: ChatMessageView = {
 };
 
 function firstAvailableSize(product: Product) {
-  return product.variants?.find((variant) => variant.stock > 0)?.size ?? product.sizes[0];
+  return product.variants?.find((variant) => variant.stock > 0)?.size ?? (Array.isArray(product.sizes) ? product.sizes[0] : "S");
 }
 
 function readGuestHistory() {
@@ -36,6 +36,7 @@ function readGuestHistory() {
 
 export function ChatWidget() {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, catalog, addToCart, addBundleToCart, applyCoupon, wishlist, toggleWishlist } = useStore();
   const [open, setOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -273,6 +274,8 @@ export function ChatWidget() {
     return action.label;
   }
 
+  if (pathname?.startsWith("/admin")) return null;
+
   return (
     <>
       <button className="chatLauncher" onClick={() => setOpen((value) => !value)} aria-label="Mở LSOUL Stylist AI">
@@ -331,10 +334,11 @@ export function ChatWidget() {
 
           <div className="chatSuggestions">
             {[
+              "✨ Phối set Quần/Chân váy + Áo",
+              "✨ Phối set Đầm liền & Áo khoác",
+              "✨ Phối set đồ đồng bộ (Co-ord)",
               "Phối đồ đi hẹn hò dưới 2 triệu",
-              "Thêm corset đen cỡ M vào giỏ",
-              "Áp mã LSOUL10",
-              ...(user ? ["Mở đơn gần nhất của mình"] : ["Tìm corset đen dưới 900k"])
+              "Áp mã LSOUL10"
             ].map((prompt) => <button key={prompt} disabled={loading} onClick={() => void send(prompt)}>{prompt}</button>)}
           </div>
 
@@ -350,7 +354,7 @@ export function ChatWidget() {
                     <div className="chatProducts">
                       {message.products.slice(0, 6).map((product) => {
                         const liked = wishlist.includes(product.id);
-                        const availableSizes = product.variants?.filter((variant) => variant.stock > 0).map((variant) => variant.size).slice(0, 4).join(" · ") || product.sizes.slice(0, 4).join(" · ");
+                        const availableSizes = product.variants?.filter((variant) => variant.stock > 0).map((variant) => variant.size).slice(0, 4).join(" · ") || (Array.isArray(product.sizes) ? product.sizes.slice(0, 4).join(" · ") : "");
                         return (
                           <div className="chatProductCard" key={product.id}>
                             <Link className="chatProductBody" href={`/product/${product.id}`} onClick={() => setOpen(false)}>

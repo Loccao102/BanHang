@@ -3,9 +3,13 @@
   "version": "0.3.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p 3000",
+    "dev:store": "next dev -p 3000",
+    "dev:admin": "next dev -p 3001",
+    "dev:all": "node scripts/run-services.mjs",
     "build": "next build",
-    "start": "next start -H 0.0.0.0",
+    "start": "next start -H 0.0.0.0 -p 3000",
+    "start:admin": "next start -H 0.0.0.0 -p 3001",
     "lint": "tsc --noEmit",
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose stop postgres",
@@ -25,12 +29,13 @@
     "db:catalog": "node scripts/db-catalog-sync.mjs"
   },
   "dependencies": {
+    "@ant-design/icons": "^6.3.4",
+    "@gradio/client": "2.7.0",
     "@prisma/client": "^6.0.0",
     "lucide-react": "^0.468.0",
     "next": "^16.0.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0",
-    "@gradio/client": "2.7.0"
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

@@ -2,72 +2,386 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { RefreshCw, ShoppingBag, Sparkles } from "lucide-react";
-import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { generateOutfit, Outfit } from "@/lib/outfit";
-import { formatPrice, products } from "@/lib/products";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Check,
+  ChevronRight,
+  Heart,
+  Layers,
+  Palette,
+  RefreshCw,
+  ShoppingBag,
+  Sparkles,
+  Tag,
+  Wand2
+} from "lucide-react";
 import { useStore } from "@/components/store-provider";
+import { formatPrice } from "@/lib/products";
+import {
+  coordinateSmartOutfit,
+  CoordinatedOutfit,
+  OutfitSetType
+} from "@/lib/stylist-outfit-engine";
 
 export function OutfitClient() {
   const searchParams = useSearchParams();
   const requiredProductId = searchParams.get("product") ?? undefined;
-  const [style, setStyle] = useState("minimal");
-  const [occasion, setOccasion] = useState("date");
-  const [budget, setBudget] = useState(1500000);
-  const [variant, setVariant] = useState(0);
-  const [look, setLook] = useState<Outfit>(() => generateOutfit({ style: "minimal", occasion: "date", budget: 1500000, requiredProductId, variant: 0 }));
-  const { addToCart } = useStore();
+  const { catalog, addToCart, addBundleToCart, wishlist, toggleWishlist } = useStore();
 
-  const requiredName = useMemo(() => requiredProductId ? products.find((item) => item.id === requiredProductId)?.name : undefined, [requiredProductId]);
-  const total = look.items.reduce((sum, item) => sum + item.price, 0);
+  const [setType, setSetType] = useState<OutfitSetType>("all");
+  const [occasion, setOccasion] = useState<string>("all");
+  const [style, setStyle] = useState<string>("all");
+  const [salt, setSalt] = useState<number>(() => Math.floor(Math.random() * 1000));
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [addedSuccess, setAddedSuccess] = useState(false);
 
-  function regenerate() {
-    const nextVariant = variant + 1;
-    setVariant(nextVariant);
-    setLook((current) => generateOutfit({
-      style,
+  // Generate current outfit
+  const outfit: CoordinatedOutfit = useMemo(() => {
+    return coordinateSmartOutfit({
+      catalog,
+      setType,
       occasion,
-      budget,
+      style,
       requiredProductId,
-      excludeIds: current.items.filter((item) => item.id !== requiredProductId).map((item) => item.id),
-      variant: nextVariant
-    }));
+      variantSalt: salt
+    });
+  }, [catalog, setType, occasion, style, requiredProductId, salt]);
+
+  // Size selections for each item in the current outfit
+  const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const initialSizes: Record<string, string> = {};
+    outfit.items.forEach((item) => {
+      initialSizes[item.product.id] = item.selectedSize;
+    });
+    setSelectedSizes(initialSizes);
+    setAddedSuccess(false);
+  }, [outfit.id]);
+
+  function handleSizeChange(productId: string, size: string) {
+    setSelectedSizes((prev) => ({ ...prev, [productId]: size }));
   }
 
-  function buyLook() {
-    look.items.forEach((item) => addToCart(item, item.sizes[0]));
+  // Generate next coordinated set on click
+  function handleGenerateNext(chosenType?: OutfitSetType) {
+    setIsGenerating(true);
+    if (chosenType && chosenType !== setType) {
+      setSetType(chosenType);
+    }
+    setSalt((prev) => prev + 1 + Math.floor(Math.random() * 7));
+    setTimeout(() => {
+      setIsGenerating(false);
+    }, 280);
   }
+
+  // Add the entire coordinated set to cart in one click
+  function handleAddFullSetToCart() {
+    const bundle = outfit.items.map((item) => ({
+      product: item.product,
+      size: selectedSizes[item.product.id] || item.selectedSize,
+      quantity: 1
+    }));
+    addBundleToCart(bundle);
+    setAddedSuccess(true);
+    setTimeout(() => setAddedSuccess(false), 3000);
+  }
+
+  const requiredProduct = useMemo(
+    () => (requiredProductId ? catalog.find((p) => p.id === requiredProductId) : null),
+    [requiredProductId, catalog]
+  );
 
   return (
-    <section className="builderPage">
-      <div className="builderHero">
-        <div><p className="eyebrow">AI OUTFIT LAB</p><h1>Build a look.</h1></div>
-        <p style={{maxWidth: 500, color: 'var(--muted)', lineHeight: 1.7}}>Hệ thống phối trực tiếp từ tồn kho hiện tại, ưu tiên màu sắc, style, hoàn cảnh và ngân sách. {requiredName ? `Món “${requiredName}” được khóa trong outfit.` : "Bấm liên tục để đổi set mà không lặp ngay các món vừa xem."}</p>
-      </div>
-      <div className="builderControls">
-        <select value={occasion} onChange={(event) => setOccasion(event.target.value)}><option value="date">Hẹn hò</option><option value="work">Đi làm</option><option value="casual">Đi chơi</option><option value="party">Sự kiện</option></select>
-        <select value={style} onChange={(event) => setStyle(event.target.value)}><option value="feminine">Feminine</option><option value="glam">Glam</option><option value="bold">Bold</option><option value="y2k">Y2K</option><option value="power">Power</option></select>
-        <input type="number" min={500000} step={100000} value={budget} onChange={(event) => setBudget(Number(event.target.value))} aria-label="Ngân sách" />
-        <button className="btn" onClick={regenerate}><Sparkles size={17} /> Phối cho tôi</button>
-      </div>
-
-      <div className="lookStage">
-        <div className="lookCanvas">
-          {look.items.map((item) => <Link className="lookTile" key={item.id} href={`/product/${item.id}`}><Image src={item.image} alt={item.name} fill sizes="(max-width: 760px) 45vw, 28vw" /></Link>)}
-        </div>
-        <aside className="lookInfo">
-          <div className="scoreCircle"><strong>{look.score}</strong><small>/ 100</small></div>
-          <h2>LSOUL match</h2>
-          <p>{look.reason}</p>
-          <div className="lookList">{look.items.map((item) => <Link href={`/product/${item.id}`} key={item.id}><span>{item.name}<br /><small style={{color:'#aaa'}}>{item.color}</small></span><strong>{formatPrice(item.price)}</strong></Link>)}</div>
-          <div className="lookTotal">Tổng: <strong>{formatPrice(total)}</strong></div>
-          <div style={{display:'grid', gap: 8}}>
-            <button className="btn block" onClick={buyLook}><ShoppingBag size={17} /> Thêm cả outfit vào giỏ</button>
-            <button className="btn ghost block" onClick={regenerate}><RefreshCw size={16} /> Phối bộ khác</button>
+    <div className="outfitStudioPage">
+      {/* Flagship Header */}
+      <section className="outfitHeroBanner">
+        <div className="outfitHeroContent">
+          <div className="outfitBadge">
+            <Sparkles size={14} className="sparkleIcon" />
+            <span>LSOUL AI STYLIST ENGINE</span>
           </div>
-        </aside>
+          <h1 className="outfitHeroTitle">Phòng Phối Đồ Chuẩn Set</h1>
+          <p className="outfitHeroDesc">
+            AI Stylist tự động phối đồ dựa trên quy chuẩn tỷ lệ hình thể, hài hòa màu sắc và phom dáng thiết kế LSOUL. Mỗi lần bấm là một set phối ăn ý hoàn hảo, sẵn sàng thêm vào giỏ hàng.
+          </p>
+
+          {requiredProduct && (
+            <div className="outfitLockedProduct">
+              <span className="lockTag">ĐANG KHÓA SẢN PHẨM:</span>
+              <strong>{requiredProduct.name}</strong> ({requiredProduct.color})
+              <Link href="/outfit" className="clearLockBtn">
+                Bỏ khóa
+              </Link>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Interactive Controls & Filters */}
+      <div className="outfitStudioContainer">
+        {/* Set Architecture Selector */}
+        <div className="outfitArchitectureTabs">
+          <button
+            type="button"
+            className={`archTabBtn ${setType === "all" ? "active" : ""}`}
+            onClick={() => handleGenerateNext("all")}
+          >
+            <Sparkles size={16} />
+            <span>Tất cả kiểu set</span>
+          </button>
+          <button
+            type="button"
+            className={`archTabBtn ${setType === "top_bottom" ? "active" : ""}`}
+            onClick={() => handleGenerateNext("top_bottom")}
+          >
+            <Layers size={16} />
+            <span>Quần / Chân váy + Áo</span>
+          </button>
+          <button
+            type="button"
+            className={`archTabBtn ${setType === "dress_layer" ? "active" : ""}`}
+            onClick={() => handleGenerateNext("dress_layer")}
+          >
+            <Tag size={16} />
+            <span>Đầm liền & Áo khoác</span>
+          </button>
+          <button
+            type="button"
+            className={`archTabBtn ${setType === "coord_set" ? "active" : ""}`}
+            onClick={() => handleGenerateNext("coord_set")}
+          >
+            <Palette size={16} />
+            <span>Set đồ đồng bộ (Co-ord)</span>
+          </button>
+        </div>
+
+        {/* Occasion & Style Filters */}
+        <div className="outfitFilterBar">
+          <div className="outfitFilterGroup">
+            <span className="filterLabel">Hoàn cảnh:</span>
+            <select
+              value={occasion}
+              onChange={(e) => {
+                setOccasion(e.target.value);
+                setSalt((s) => s + 1);
+              }}
+              className="outfitSelect"
+            >
+              <option value="all">Mọi hoàn cảnh</option>
+              <option value="date">Hẹn hò lãng mạn</option>
+              <option value="party">Tiệc tối & Sự kiện</option>
+              <option value="casual">Dạo phố & Cafe</option>
+              <option value="work">Đi làm thanh lịch</option>
+            </select>
+          </div>
+
+          <div className="outfitFilterGroup">
+            <span className="filterLabel">Gu thời trang:</span>
+            <select
+              value={style}
+              onChange={(e) => {
+                setStyle(e.target.value);
+                setSalt((s) => s + 1);
+              }}
+              className="outfitSelect"
+            >
+              <option value="all">Đa phong cách</option>
+              <option value="minimal">Minimal Sang chảnh</option>
+              <option value="bold">Bold Cá tính</option>
+              <option value="y2k">Y2K Quyến rũ</option>
+              <option value="feminine">Feminine Nữ tính</option>
+              <option value="glam">Glam Quyền lực</option>
+            </select>
+          </div>
+
+          <button
+            type="button"
+            className={`outfitShuffleBtn ${isGenerating ? "spinning" : ""}`}
+            onClick={() => handleGenerateNext()}
+            title="Đổi phối set khác"
+          >
+            <RefreshCw size={16} />
+            <span>Phối Set Khác (Click để đổi)</span>
+          </button>
+        </div>
+
+        {/* Coordinated Outfit Presentation Stage */}
+        <div className="outfitMainStage">
+          {/* Left Canvas: Coordinated Items Showcase */}
+          <div className="outfitCanvasArea">
+            <div className="outfitCanvasHeader">
+              <div className="outfitTypeTag">
+                <span className="dot" />
+                <span>{outfit.setTypeName}</span>
+              </div>
+              <div className="outfitMatchBadge">
+                <Sparkles size={14} />
+                <span>{outfit.matchBadge} ({outfit.score}/100)</span>
+              </div>
+            </div>
+
+            <div className={`outfitItemCardsGrid count-${outfit.items.length}`}>
+              {outfit.items.map((item, idx) => {
+                const inWishlist = wishlist.includes(item.product.id);
+                const currentSize = selectedSizes[item.product.id] || item.selectedSize;
+
+                return (
+                  <div key={item.product.id} className="outfitCardItem">
+                    <div className="outfitCardRoleBadge">
+                      <span>{item.roleName}</span>
+                    </div>
+
+                    <div className="outfitCardImageWrap">
+                      <Image
+                        src={item.product.image}
+                        alt={item.product.name}
+                        fill
+                        sizes="(max-width: 768px) 100vw, 400px"
+                        priority={idx === 0}
+                      />
+                      <button
+                        type="button"
+                        className={`outfitWishlistBtn ${inWishlist ? "active" : ""}`}
+                        onClick={() => toggleWishlist(item.product.id)}
+                        aria-label="Lưu vào danh sách yêu thích"
+                      >
+                        <Heart size={16} fill={inWishlist ? "#e11d48" : "none"} color={inWishlist ? "#e11d48" : "#fff"} />
+                      </button>
+                    </div>
+
+                    <div className="outfitCardDetails">
+                      <Link href={`/product/${item.product.id}`} className="outfitCardName">
+                        {item.product.name}
+                      </Link>
+                      <div className="outfitCardMeta">
+                        <span className="colorTag">{item.product.color}</span>
+                        <span className="fitTag">{item.product.fit}</span>
+                      </div>
+                      <div className="outfitCardPrice">
+                        <strong>{formatPrice(item.product.price)}</strong>
+                        {item.product.oldPrice && (
+                          <small className="oldPrice">{formatPrice(item.product.oldPrice)}</small>
+                        )}
+                      </div>
+
+                      {/* Size Selector for this specific item in the set */}
+                      <div className="outfitSizeSelector">
+                        <span className="sizeLabel">Chọn size:</span>
+                        <div className="sizeOptions">
+                          {item.availableSizes.map((s) => (
+                            <button
+                              key={s}
+                              type="button"
+                              className={`sizeOptionBtn ${currentSize === s ? "active" : ""}`}
+                              onClick={() => handleSizeChange(item.product.id, s)}
+                            >
+                              {s}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Single Add to Cart Button for this piece */}
+                      <button
+                        type="button"
+                        className="singleAddBtn"
+                        onClick={() => addToCart(item.product, currentSize, 1)}
+                      >
+                        <ShoppingBag size={14} /> Thêm lẻ món này
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Right Panel: Stylist AI Analysis & Bundle Action */}
+          <aside className="outfitStylistPanel">
+            <div className="stylistHeader">
+              <div className="stylistAvatar">
+                <Wand2 size={20} />
+              </div>
+              <div>
+                <h3 className="stylistTitle">Gợi ý từ Stylist AI</h3>
+                <span className="stylistSubtitle">Phối hợp thời trang LSOUL</span>
+              </div>
+            </div>
+
+            <div className="stylistOutfitTitle">
+              <h4>{outfit.title}</h4>
+            </div>
+
+            {/* AI Review Explanation */}
+            <div className="stylistExplanationCard">
+              <div className="cardSubtitle">VÌ SAO SET ĐỒ NÀY HỢP NHAU:</div>
+              <p className="explanationText">{outfit.reason}</p>
+            </div>
+
+            {/* Styling Accessories Tip */}
+            <div className="stylistTipCard">
+              <div className="cardSubtitle">MẸO PHỐI PHỤ KIỆN & GIÀY:</div>
+              <p className="tipText">{outfit.stylingTip}</p>
+            </div>
+
+            {/* Outfit Pricing Summary */}
+            <div className="outfitPricingSummary">
+              <div className="priceRow">
+                <span>Số lượng món:</span>
+                <strong>{outfit.items.length} món trong set</strong>
+              </div>
+              {outfit.originalPrice && (
+                <div className="priceRow strikethrough">
+                  <span>Giá gốc tổng cộng:</span>
+                  <span className="oldPriceVal">{formatPrice(outfit.originalPrice)}</span>
+                </div>
+              )}
+              <div className="priceRow total">
+                <span>Tổng giá trọn set:</span>
+                <strong className="finalPrice">{formatPrice(outfit.totalPrice)}</strong>
+              </div>
+            </div>
+
+            {/* Primary Action: Add Full Set to Cart */}
+            <div className="outfitActionGroup">
+              <button
+                type="button"
+                className={`addFullSetBtn ${addedSuccess ? "success" : ""}`}
+                onClick={handleAddFullSetToCart}
+              >
+                {addedSuccess ? (
+                  <>
+                    <Check size={18} /> Đã thêm trọn bộ vào giỏ hàng!
+                  </>
+                ) : (
+                  <>
+                    <ShoppingBag size={18} /> Thêm cả set vào giỏ ({outfit.items.length} món)
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                className="nextOutfitBtn"
+                onClick={() => handleGenerateNext()}
+              >
+                <RefreshCw size={16} /> Gợi ý set khác ngẫu nhiên
+              </button>
+            </div>
+
+            {/* Virtual Try-On Direct Shortcut */}
+            <div className="outfitTryOnShortcut">
+              <Sparkles size={16} className="sparkle" />
+              <span>Muốn xem thử đồ lên dáng người?</span>
+              <Link href={`/try-on?product=${outfit.items[0]?.product.id}`}>
+                Thử đồ AI ngay <ChevronRight size={14} />
+              </Link>
+            </div>
+          </aside>
+        </div>
       </div>
-    </section>
+    </div>
   );
 }

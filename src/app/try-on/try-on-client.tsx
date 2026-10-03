@@ -62,7 +62,7 @@ async function validatePerson(file: File) {
 }
 
 function firstSize(product: Product) {
-  return product.variants?.find((variant) => variant.active && variant.stock > 0)?.size ?? product.sizes[0] ?? "";
+  return product.variants?.find((variant) => variant.active && variant.stock > 0)?.size ?? (Array.isArray(product.sizes) ? product.sizes[0] : "") ?? "";
 }
 
 export function TryOnClient() {

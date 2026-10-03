@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Heart, Menu, Search, ShoppingBag, UserRound, X } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useCallback, useState } from "react";
 import { useStore } from "./store-provider";
 import { SearchOverlay } from "./search-overlay";
@@ -12,6 +13,7 @@ const nav = [
   ["Áo & Corset", "/shop?category=tops"],
   ["Set đồ", "/shop?category=set"],
   ["Áo khoác", "/shop?category=outerwear"],
+  ["Phối đồ AI", "/outfit"],
   ["Thử đồ AI", "/try-on"],
   ["Cộng đồng", "/social"],
   ["Giảm giá", "/shop?sale=1"]
@@ -29,10 +31,13 @@ const megaGroups = [
 ];
 
 export function Header() {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const { cartCount, wishlist, settings, user, openCartDrawer } = useStore();
   const closeSearch = useCallback(() => setSearchOpen(false), []);
+
+  if (pathname?.startsWith("/admin")) return null;
 
   return (
     <>
