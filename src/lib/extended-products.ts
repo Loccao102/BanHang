@@ -161,7 +161,7 @@ const data: Seed[] = [
     "color": "Đỏ rượu",
     "colorFamily": "red",
     "colorHex": "#7A1C2E",
-    "image": "/products/dress-bodycon-maxi-red.jpg",
+    "image": "/products/dress-silk-slip-red.jpg",
     "style": [
       "glam",
       "sexy",
@@ -191,7 +191,7 @@ const data: Seed[] = [
     "color": "Trắng ngà",
     "colorFamily": "white",
     "colorHex": "#F5F4EE",
-    "image": "/products/dress-bodycon-maxi-white.jpg",
+    "image": "/products/dress-satin-slip-white.jpg",
     "style": [
       "minimal",
       "elegant",
@@ -251,7 +251,7 @@ const data: Seed[] = [
     "color": "Đỏ mận",
     "colorFamily": "red",
     "colorHex": "#8B1E3F",
-    "image": "/products/dress-bodycon-maxi-red.jpg",
+    "image": "/products/dress-siren-mini-red.jpg",
     "style": [
       "sexy",
       "glam",
@@ -281,7 +281,7 @@ const data: Seed[] = [
     "color": "Trắng",
     "colorFamily": "white",
     "colorHex": "#FFFFFF",
-    "image": "/products/dress-bodycon-maxi-white.jpg",
+    "image": "/products/dress-siren-mini-white.jpg",
     "style": [
       "sexy",
       "minimal",
@@ -311,7 +311,7 @@ const data: Seed[] = [
     "color": "Đen",
     "colorFamily": "black",
     "colorHex": "#141414",
-    "image": "/products/dress-bodycon-maxi-black.jpg",
+    "image": "/products/dress-celeste-maxi-black.jpg",
     "style": [
       "glam",
       "elegant",
@@ -341,7 +341,7 @@ const data: Seed[] = [
     "color": "Đỏ rượu",
     "colorFamily": "red",
     "colorHex": "#6B1D2F",
-    "image": "/products/dress-bodycon-maxi-red.jpg",
+    "image": "/products/dress-celeste-maxi-red.jpg",
     "style": [
       "glam",
       "elegant",
@@ -371,7 +371,7 @@ const data: Seed[] = [
     "color": "Trắng kem",
     "colorFamily": "white",
     "colorHex": "#F8F7F3",
-    "image": "/products/dress-bodycon-maxi-white.jpg",
+    "image": "/products/dress-celeste-maxi-white.jpg",
     "style": [
       "elegant",
       "nữ tính",
@@ -401,7 +401,7 @@ const data: Seed[] = [
     "color": "Đen",
     "colorFamily": "black",
     "colorHex": "#0D0D0D",
-    "image": "/products/dress-silk-black.jpg",
+    "image": "/products/dress-luna-halter-black.jpg",
     "style": [
       "romantic",
       "sexy",
@@ -431,7 +431,7 @@ const data: Seed[] = [
     "color": "Đỏ ruby",
     "colorFamily": "red",
     "colorHex": "#991B1B",
-    "image": "/products/dress-bodycon-maxi-red.jpg",
+    "image": "/products/dress-luna-halter-red.jpg",
     "style": [
       "romantic",
       "sexy",
@@ -461,7 +461,7 @@ const data: Seed[] = [
     "color": "Trắng tuyết",
     "colorFamily": "white",
     "colorHex": "#FAFAFA",
-    "image": "/products/dress-bodycon-maxi-white.jpg",
+    "image": "/products/dress-luna-halter-white.jpg",
     "style": [
       "romantic",
       "nữ tính",
@@ -491,7 +491,7 @@ const data: Seed[] = [
     "color": "Đen",
     "colorFamily": "black",
     "colorHex": "#111111",
-    "image": "/products/dress-bodycon-maxi-black.jpg",
+    "image": "/products/dress-velvet-body-black.jpg",
     "style": [
       "corset",
       "glam",
@@ -521,7 +521,7 @@ const data: Seed[] = [
     "color": "Đỏ",
     "colorFamily": "red",
     "colorHex": "#7F1D1D",
-    "image": "/products/dress-bodycon-maxi-red.jpg",
+    "image": "/products/dress-velvet-body-red.jpg",
     "style": [
       "corset",
       "glam",
@@ -552,7 +552,7 @@ const data: Seed[] = [
     "color": "Trắng",
     "colorFamily": "white",
     "colorHex": "#F9F9F8",
-    "image": "/products/dress-bodycon-maxi-white.jpg",
+    "image": "/products/dress-velvet-body-white.jpg",
     "style": [
       "corset",
       "glam",
@@ -613,7 +613,7 @@ const data: Seed[] = [
     "color": "Trắng",
     "colorFamily": "white",
     "colorHex": "#FAF8F5",
-    "image": "/products/top-corset-satin-white.jpg",
+    "image": "/products/top-corset-lace-white.jpg",
     "style": [
       "corset",
       "romantic",
@@ -643,7 +643,7 @@ const data: Seed[] = [
     "color": "Đỏ",
     "colorFamily": "red",
     "colorHex": "#881337",
-    "image": "/products/top-corset-satin-red.jpg",
+    "image": "/products/top-corset-lace-red.jpg",
     "style": [
       "corset",
       "sexy",
@@ -673,7 +673,7 @@ const data: Seed[] = [
     "color": "Đen",
     "colorFamily": "black",
     "colorHex": "#151515",
-    "image": "/products/top-corset-satin-black.jpg",
+    "image": "/products/top-tube-satin-black.jpg",
     "style": [
       "minimal",
       "sexy",
@@ -703,7 +703,7 @@ const data: Seed[] = [
     "color": "Trắng",
     "colorFamily": "white",
     "colorHex": "#FFFFFF",
-    "image": "/products/top-corset-satin-white.jpg",
+    "image": "/products/top-tube-satin-white.jpg",
     "style": [
       "minimal",
       "nữ tính",
@@ -733,7 +733,7 @@ const data: Seed[] = [
     "color": "Đỏ",
     "colorFamily": "red",
     "colorHex": "#B91C1C",
-    "image": "/products/top-corset-satin-red.jpg",
+    "image": "/products/top-tube-satin-red.jpg",
     "style": [
       "statement",
       "sexy",
@@ -793,7 +793,7 @@ const data: Seed[] = [
     "color": "Đen",
     "colorFamily": "black",
     "colorHex": "#111111",
-    "image": "/products/top-basic-black.jpg",
+    "image": "/products/top-knit-tank-black.jpg",
     "style": [
       "minimal",
       "chic"
@@ -822,7 +822,7 @@ const data: Seed[] = [
     "color": "Trắng",
     "colorFamily": "white",
     "colorHex": "#F9FAFB",
-    "image": "/products/top-crop-tank-white.png",
+    "image": "/products/top-knit-tank-white.jpg",
     "style": [
       "minimal",
       "chic",
@@ -852,7 +852,7 @@ const data: Seed[] = [
     "color": "Trắng",
     "colorFamily": "white",
     "colorHex": "#FFFFFF",
-    "image": "/products/top-basic-white.jpg",
+    "image": "/products/top-baby-tee-white.jpg",
     "style": [
       "Y2K",
       "casual",
@@ -882,7 +882,7 @@ const data: Seed[] = [
     "color": "Đen",
     "colorFamily": "black",
     "colorHex": "#111111",
-    "image": "/products/top-basic-black.jpg",
+    "image": "/products/top-baby-tee-black.jpg",
     "style": [
       "Y2K",
       "casual",
@@ -941,7 +941,7 @@ const data: Seed[] = [
     "color": "Đen",
     "colorFamily": "black",
     "colorHex": "#111111",
-    "image": "/products/top-ribbed-crop-black.jpg",
+    "image": "/products/top-basic-black.jpg",
     "style": [
       "minimal",
       "casual",
@@ -1091,7 +1091,7 @@ const data: Seed[] = [
     "color": "Trắng",
     "colorFamily": "white",
     "colorHex": "#E5E7EB",
-    "image": "/products/shirt-poplin-white.jpg",
+    "image": "/products/shirt-oxford-striped-white.jpg",
     "style": [
       "preppy",
       "công sở",
@@ -1150,7 +1150,7 @@ const data: Seed[] = [
     "color": "Be",
     "colorFamily": "beige",
     "colorHex": "#F3ECE2",
-    "image": "/products/skirt-pleated-mini-white.jpg",
+    "image": "/products/skirt-slit-midi-beige.jpg",
     "style": [
       "elegant",
       "nữ tính",
@@ -1179,7 +1179,7 @@ const data: Seed[] = [
     "color": "Đỏ",
     "colorFamily": "red",
     "colorHex": "#881337",
-    "image": "/products/skirt-pleated-mini-black.jpg",
+    "image": "/products/skirt-slit-midi-red.jpg",
     "style": [
       "sexy",
       "glam",
@@ -1237,7 +1237,7 @@ const data: Seed[] = [
     "color": "Đen",
     "colorFamily": "black",
     "colorHex": "#262626",
-    "image": "/products/skirt-pleated-mini-black.jpg",
+    "image": "/products/skirt-denim-mini-black.jpg",
     "style": [
       "Y2K",
       "streetwear",
@@ -1351,7 +1351,7 @@ const data: Seed[] = [
     "color": "Đen",
     "colorFamily": "black",
     "colorHex": "#111111",
-    "image": "/products/pants-tailored-wide-black.jpg",
+    "image": "/products/pants-bermuda-shorts-black.jpg",
     "style": [
       "công sở",
       "chic",
@@ -1380,7 +1380,7 @@ const data: Seed[] = [
     "color": "Be",
     "colorFamily": "beige",
     "colorHex": "#E7E0D3",
-    "image": "/products/pants-chinos-beige.webp",
+    "image": "/products/pants-bermuda-shorts-beige.jpg",
     "style": [
       "công sở",
       "chic",
@@ -1409,7 +1409,7 @@ const data: Seed[] = [
     "color": "Xám",
     "colorFamily": "gray",
     "colorHex": "#4B5563",
-    "image": "/products/skirt-pleated-grey.jpg",
+    "image": "/products/pants-bermuda-shorts-grey.jpg",
     "style": [
       "công sở",
       "chic"
@@ -1437,7 +1437,7 @@ const data: Seed[] = [
     "color": "Trắng",
     "colorFamily": "white",
     "colorHex": "#FAF8F5",
-    "image": "/products/skirt-pleated-mini-white.jpg",
+    "image": "/products/skirt-tweed-mini-white.jpg",
     "style": [
       "glam",
       "nữ tính",
@@ -1466,7 +1466,7 @@ const data: Seed[] = [
     "color": "Đen",
     "colorFamily": "black",
     "colorHex": "#151515",
-    "image": "/products/skirt-pleated-mini-black.jpg",
+    "image": "/products/skirt-tweed-mini-black.jpg",
     "style": [
       "glam",
       "chic",
@@ -1524,7 +1524,7 @@ const data: Seed[] = [
     "color": "Đen",
     "colorFamily": "black",
     "colorHex": "#1F2937",
-    "image": "/products/pants-tailored-wide-black.jpg",
+    "image": "/products/pants-flare-denim-black.jpg",
     "style": [
       "Y2K",
       "statement",
@@ -1669,7 +1669,7 @@ const data: Seed[] = [
     "color": "Đen",
     "colorFamily": "black",
     "colorHex": "#111111",
-    "image": "/products/pants-tailored-wide-black.jpg",
+    "image": "/products/pants-chinos-black.jpg",
     "style": [
       "minimal",
       "công sở",
@@ -1698,7 +1698,7 @@ const data: Seed[] = [
     "color": "Đen",
     "colorFamily": "black",
     "colorHex": "#111111",
-    "image": "/products/pants-tailored-wide-black.jpg",
+    "image": "/products/pants-slit-trousers-black.jpg",
     "style": [
       "chic",
       "sexy",
@@ -1757,7 +1757,7 @@ const data: Seed[] = [
     "color": "Đen",
     "colorFamily": "black",
     "colorHex": "#111111",
-    "image": "/products/blazer-tailored-black.jpg",
+    "image": "/products/jacket-tweed-crop-black.jpg",
     "style": [
       "glam",
       "chic",
@@ -1817,7 +1817,7 @@ const data: Seed[] = [
     "color": "Đen",
     "colorFamily": "black",
     "colorHex": "#111111",
-    "image": "/products/blazer-tailored-black.jpg",
+    "image": "/products/blazer-hourglass-black.jpg",
     "style": [
       "statement",
       "công sở",
@@ -1847,7 +1847,7 @@ const data: Seed[] = [
     "color": "Be",
     "colorFamily": "beige",
     "colorHex": "#EFEAE1",
-    "image": "/products/blazer-tailored-beige.jpg",
+    "image": "/products/blazer-hourglass-beige.jpg",
     "style": [
       "chic",
       "công sở",
