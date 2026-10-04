@@ -12,7 +12,6 @@ import {
   CloseOutlined,
   DeleteOutlined,
   DollarCircleOutlined,
-  DownOutlined,
   EditOutlined,
   ExclamationCircleOutlined,
   EyeInvisibleOutlined,
@@ -128,6 +127,8 @@ function AdminContent() {
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
 
+  const [uploadingField, setUploadingField] = useState<string | null>(null);
+
   useEffect(() => {
     if (tabFromQuery && ["overview", "products", "orders", "settings"].includes(tabFromQuery)) {
       setTab(tabFromQuery);
@@ -185,8 +186,6 @@ function AdminContent() {
       </section>
     );
   }
-
-  const [uploadingField, setUploadingField] = useState<string | null>(null);
 
   async function uploadProductImage(file: File): Promise<string> {
     try {
@@ -854,7 +853,6 @@ function AdminContent() {
                                 </option>
                               ))}
                             </select>
-                            <DownOutlined className="antSelectArrow" />
                           </div>
                         </td>
                         <td>

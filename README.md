@@ -61,14 +61,24 @@ Không commit file `.env` có secret thật lên GitHub.
 - **Cửa hàng (Storefront):** `http://localhost:3000`
 - **Quản trị (Admin Console):** `http://localhost:3001/admin`
 
-```bash
-docker compose up --build
-```
+### 🚀 Cách nhanh nhất (1-Click trên Windows):
+- **Lần đầu tiên**: Bấm đúp vào file [`run-first-time.bat`](run-first-time.bat) (hoặc gõ `npm run run:first`).
+  *Tự động kiểm tra Docker, tạo .env, cài dependencies, build container, khởi tạo database và mở trình duyệt.*
+- **Các lần sau**: Bấm đúp vào file [`run.bat`](run.bat) (hoặc gõ `npm run start:app`).
+  *Khởi động nhanh trong 2-3 giây không cần build lại.*
+- **Khi muốn tắt**: Bấm đúp vào file [`stop.bat`](stop.bat) (hoặc gõ `npm run stop:app`).
 
-Hoặc chạy nền:
+### Hoặc chạy qua lệnh Terminal:
 
 ```bash
-npm run docker:up:d
+# Lần đầu:
+npm run run:first
+
+# Các lần sau:
+npm run start:app
+
+# Dừng lại:
+npm run stop:app
 ```
 
 Mở trình duyệt:

@@ -73,7 +73,8 @@ export default function AdminMarketingPage() {
 
   async function saveCoupon(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const data = new FormData(form);
     const code = String(data.get("code") ?? "").toUpperCase();
     const payload = {
       code,
@@ -100,7 +101,7 @@ export default function AdminMarketingPage() {
     );
     if (response.ok) {
       setEditing(null);
-      (event.currentTarget as HTMLFormElement).reset();
+      form.reset();
       await load();
     }
   }

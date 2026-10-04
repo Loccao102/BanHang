@@ -47,7 +47,8 @@ export default function SocialPage() {
 
   async function submitPost(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const data = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const data = new FormData(form);
     const response = await fetch("/api/social/posts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -62,7 +63,7 @@ export default function SocialPage() {
     const result = await response.json();
     setMessage(response.ok ? "Bài của bạn đã được gửi và đang chờ duyệt." : result.error ?? "Không thể gửi bài.");
     if (response.ok) {
-      (event.currentTarget as HTMLFormElement).reset();
+      form.reset();
       setSubmitOpen(false);
     }
   }

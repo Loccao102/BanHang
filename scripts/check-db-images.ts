@@ -21,10 +21,11 @@ async function main() {
       }
     }
 
-    if (!p.images || p.images.length === 0) {
+    const imagesArr = Array.isArray(p.images) ? (p.images as string[]) : [];
+    if (imagesArr.length === 0) {
       missingImagesArray.push({ id: p.id, sku: p.sku });
     } else {
-      for (const img of p.images) {
+      for (const img of imagesArr) {
         if (!fs.existsSync("public" + img)) {
           fileNotFound.push({ id: p.id, sku: p.sku, field: "images[]", image: img });
         }

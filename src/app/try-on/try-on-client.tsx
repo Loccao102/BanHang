@@ -106,6 +106,7 @@ export function TryOnClient() {
   const [resultImage, setResultImage] = useState<string | null>(null);
   const [intermediate, setIntermediate] = useState<Array<{ productId: string; output: string }>>([]);
   const [loading, setLoading] = useState(false);
+  const [engine, setEngine] = useState<"auto" | "idm" | "fashn" | "gemini">("auto");
   const [message, setMessage] = useState("Chọn đồ từ mục yêu thích, tải ảnh toàn thân và bắt đầu thử.");
   const [tryOnSessionId, setTryOnSessionId] = useState<string | null>(null);
   const [assessment, setAssessment] = useState<StylistAssessment | null>(null);
@@ -234,7 +235,11 @@ export function TryOnClient() {
       const response = await fetch("/api/tryon", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ modelImage: personImage, productIds: selectedIds })
+        body: JSON.stringify({
+          modelImage: personImage,
+          productIds: selectedIds,
+          engine
+        })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error ?? "Không thể tạo ảnh thử đồ.");
@@ -329,6 +334,44 @@ export function TryOnClient() {
                   ))}
                 </div>;
               })}
+            </div>
+          </div>
+
+          <div className="fittingEngineSelector">
+            <span className="fittingEngineLabel">Công nghệ AI:</span>
+            <div className="fittingEngineButtons">
+              <button
+                type="button"
+                className={engine === "auto" ? "active" : ""}
+                onClick={() => setEngine("auto")}
+                title="Tự động chọn mô hình tối ưu từng món đồ (Khuyên dùng)"
+              >
+                ⚡ Tự động
+              </button>
+              <button
+                type="button"
+                className={engine === "idm" ? "active" : ""}
+                onClick={() => setEngine("idm")}
+                title="IDM-VTON: Chuẩn form áo & blazer, không bị chèn áo trắng"
+              >
+                👔 IDM-VTON
+              </button>
+              <button
+                type="button"
+                className={engine === "fashn" ? "active" : ""}
+                onClick={() => setEngine("fashn")}
+                title="Fashn VTON: Thử đồ thời trang"
+              >
+                🎯 Fashn
+              </button>
+              <button
+                type="button"
+                className={engine === "gemini" ? "active" : ""}
+                onClick={() => setEngine("gemini")}
+                title="Gemini AI: Thử phối cả bộ outfit"
+              >
+                ✨ Gemini
+              </button>
             </div>
           </div>
 

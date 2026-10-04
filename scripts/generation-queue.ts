@@ -332,5 +332,111 @@ export const generationTasks: GenerationTask[] = [
     color: "black",
     material: "stretch crepe",
     prompt: "High-end e-commerce flat-lay product photograph of elegant black slim flared trousers with distinct front ankle slits, clean flat front waist, tailored stretch crepe fabric with sharp center creases, laid flat neatly on seamless pure crisp white background, professional studio fashion photography, top-down shot, packshot, perfectly centered, no models, no people, no mannequin, clothing only"
+  },
+
+  // Ribbed Crop Tops
+  {
+    imageName: "top_ribbed_crop_white",
+    targetFilename: "top-ribbed-crop-white.jpg",
+    category: "tops",
+    color: "white",
+    material: "rib knit",
+    prompt: "High-end e-commerce flat-lay product photograph of a modern white ribbed square-neck crop top, wide straps, fine vertical rib-knit texture, cropped waistline, laid flat neatly on seamless pure crisp light background, professional studio fashion photography, top-down shot, packshot, perfectly centered, no models, no people, no mannequin, clothing only"
+  },
+  {
+    imageName: "top_ribbed_crop_beige",
+    targetFilename: "top-ribbed-crop-beige.jpg",
+    category: "tops",
+    color: "beige",
+    material: "rib knit",
+    prompt: "High-end e-commerce flat-lay product photograph of a modern warm beige ribbed square-neck crop top, wide straps, fine vertical rib-knit texture, cropped waistline, laid flat neatly on seamless pure crisp light background, professional studio fashion photography, top-down shot, packshot, perfectly centered, no models, no people, no mannequin, clothing only"
+  },
+
+  // Poplin Shirts
+  {
+    imageName: "shirt_poplin_white",
+    targetFilename: "shirt-poplin-white.jpg",
+    category: "tops",
+    color: "white",
+    material: "cotton poplin",
+    prompt: "High-end e-commerce flat-lay product photograph of an oversized crisp white cotton poplin button-down shirt, pointed collar, pearl buttons, chest pocket, cuffed sleeves, structured 100% poplin cotton, laid flat neatly on seamless pure crisp light background, professional studio fashion photography, top-down shot, packshot, perfectly centered, no models, no people, no mannequin, clothing only"
+  },
+  {
+    imageName: "shirt_poplin_blue",
+    targetFilename: "shirt-poplin-blue.jpg",
+    category: "tops",
+    color: "blue",
+    material: "cotton poplin",
+    prompt: "High-end e-commerce flat-lay product photograph of an oversized pastel sky-blue cotton poplin button-down shirt, pointed collar, white buttons, chest pocket, structured 100% poplin cotton, laid flat neatly on seamless pure crisp white background, professional studio fashion photography, top-down shot, packshot, perfectly centered, no models, no people, no mannequin, clothing only"
+  },
+  {
+    imageName: "shirt_poplin_black",
+    targetFilename: "shirt-poplin-black.jpg",
+    category: "tops",
+    color: "black",
+    material: "cotton poplin",
+    prompt: "High-end e-commerce flat-lay product photograph of an oversized jet black cotton poplin button-down shirt, pointed collar, black buttons, chest pocket, structured 100% poplin cotton, laid flat neatly on seamless pure crisp white background, professional studio fashion photography, top-down shot, packshot, perfectly centered, no models, no people, no mannequin, clothing only"
+  },
+  {
+    imageName: "shirt_oxford_striped_white",
+    targetFilename: "shirt-oxford-striped-white.jpg",
+    category: "tops",
+    color: "white",
+    material: "oxford cotton",
+    prompt: "High-end e-commerce flat-lay product photograph of a classic white and light blue thin-striped oxford button-down shirt, button-down collar, chest pocket, crisp structured oxford cotton weave, laid flat neatly on seamless pure crisp light background, professional studio fashion photography, top-down shot, packshot, perfectly centered, no models, no people, no mannequin, clothing only"
+  },
+
+  // Knit Tanks & Basics
+  {
+    imageName: "top_knit_tank_black",
+    targetFilename: "top-knit-tank-black.jpg",
+    category: "tops",
+    color: "black",
+    material: "knit",
+    prompt: "High-end e-commerce flat-lay product photograph of a chic black high-neck sleeveless knit tank top, mock neck, fine ribbed knit texture, clean fitted silhouette, laid flat neatly on seamless pure crisp white background, professional studio fashion photography, top-down shot, packshot, perfectly centered, no models, no people, no mannequin, clothing only"
+  },
+  {
+    imageName: "top_knit_tank_white",
+    targetFilename: "top-knit-tank-white.jpg",
+    category: "tops",
+    color: "white",
+    material: "knit",
+    prompt: "High-end e-commerce flat-lay product photograph of a chic ivory white high-neck sleeveless knit tank top, mock neck, fine ribbed knit texture, clean fitted silhouette, laid flat neatly on seamless pure crisp light background, professional studio fashion photography, top-down shot, packshot, perfectly centered, no models, no people, no mannequin, clothing only"
+  },
+  {
+    imageName: "top_basic_black",
+    targetFilename: "top-basic-black.jpg",
+    category: "tops",
+    color: "black",
+    material: "cotton jersey",
+    prompt: "High-end e-commerce flat-lay product photograph of a minimalist black scoop-neck seamless ribbed tank top, wide scoop neckline, smooth ribbed stretch cotton, laid flat neatly on seamless pure crisp white background, professional studio fashion photography, top-down shot, packshot, perfectly centered, no models, no people, no mannequin, clothing only"
+  },
+
+  // Chinos Pants
+  {
+    imageName: "pants_chinos_beige",
+    targetFilename: "pants-chinos-beige.webp",
+    category: "bottoms",
+    color: "beige",
+    material: "cotton gabardine",
+    prompt: "High-end e-commerce flat-lay product photograph of luxury tailored pleated beige city chinos trousers, relaxed straight leg, sharp front pleats, slant pockets, refined cotton gabardine, laid flat neatly on seamless pure crisp white background, professional studio fashion photography, top-down shot, packshot, perfectly centered, no models, no people, no mannequin, clothing only"
+  },
+  {
+    imageName: "pants_chinos_black",
+    targetFilename: "pants-chinos-black.jpg",
+    category: "bottoms",
+    color: "black",
+    material: "cotton gabardine",
+    prompt: "High-end e-commerce flat-lay product photograph of luxury tailored pleated black city chinos trousers, relaxed straight leg, sharp front pleats, slant pockets, refined black cotton gabardine, laid flat neatly on seamless pure crisp white background, professional studio fashion photography, top-down shot, packshot, perfectly centered, no models, no people, no mannequin, clothing only"
+  },
+
+  // Silk Slip Dress White
+  {
+    imageName: "dress_satin_slip_white",
+    targetFilename: "dress-satin-slip-white.jpg",
+    category: "dress",
+    color: "white",
+    material: "satin silk",
+    prompt: "High-end e-commerce flat-lay product photograph of an elegant pure white silk satin slip midi dress, delicate cowl neckline, thin spaghetti straps, fluid bias-cut drape, glossy silk sheen, laid flat neatly on seamless pure crisp light background, professional studio fashion photography, top-down shot, packshot, perfectly centered, no models, no people, no mannequin, clothing only"
   }
 ];

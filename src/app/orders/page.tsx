@@ -1,19 +1,90 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
-import { PackageSearch, UserRound } from "lucide-react";
+import { ArrowLeft, PackageSearch, RefreshCw, ShoppingBag, UserRound } from "lucide-react";
+import { useState } from "react";
 import { useStore } from "@/components/store-provider";
-import { formatPrice } from "@/lib/products";
-
-const statusLabel = { processing: "Đang xử lý", confirmed: "Đã xác nhận", shipping: "Đang giao", completed: "Hoàn tất", cancelled: "Đã hủy" } as const;
+import { OrderTracker } from "@/components/order-tracker";
 
 export default function OrdersPage() {
-  const { orders, user, accountLoading } = useStore();
+  const { orders, user, accountLoading, refreshAccount } = useStore();
+  const [refreshing, setRefreshing] = useState(false);
 
-  if (accountLoading) return <div className="accountLoading"><div className="skeletonLine title" /><div className="skeletonBlock detailSkeleton" /></div>;
-  if (!user) return <div className="emptyState"><div><UserRound size={36} /><h2>Đăng nhập để xem đơn hàng</h2><p>Lịch sử mua sắm và trạng thái giao hàng được lưu theo tài khoản của bạn.</p><Link className="btn" href="/login?next=/orders">Đăng nhập</Link></div></div>;
-  if (!orders.length) return <div className="emptyState"><div><PackageSearch size={36} /><h2>Chưa có đơn hàng</h2><p>Đơn hàng của bạn sẽ xuất hiện tại đây sau khi checkout.</p><Link className="btn" href="/shop">Mua sắm ngay</Link></div></div>;
+  async function handleRefresh() {
+    setRefreshing(true);
+    await refreshAccount(false);
+    setRefreshing(false);
+  }
 
-  return <section className="ordersPage"><div className="ordersHeader"><p className="eyebrow">ORDER HISTORY</p><h1>Đơn hàng của bạn</h1><p style={{color:"var(--muted)"}}>Theo dõi trạng thái xử lý, phương thức thanh toán và thông tin từng đơn hàng.</p></div><div className="orderList">{orders.map((order) => <article className="orderCard" id={"order-" + order.id} key={order.id}><div className="orderHead"><div><strong>#{order.id}</strong><small>{new Intl.DateTimeFormat("vi-VN", {dateStyle:"medium", timeStyle:"short"}).format(new Date(order.createdAt))}</small></div><span className={"orderStatus status-" + order.status}>{statusLabel[order.status]}</span></div><div className="orderBody"><div className="orderItems">{order.items.map((line) => <div className="orderItem" key={line.product.id + "-" + (line.size ?? "")}><div className="orderItemImage"><Image src={line.product.image} alt={line.product.name} fill sizes="48px" /></div><div><strong>{line.product.name}</strong><div style={{color:"var(--muted)"}}>Size {line.size ?? "-"} · SL {line.quantity}</div></div></div>)}</div><div className="orderTotal"><small style={{color:"var(--muted)"}}>Tổng thanh toán</small><strong>{formatPrice(order.total)}</strong><small style={{color:"var(--muted)"}}>{order.payment === "qr" ? "QR chuyển khoản" : "COD"} · {order.paymentStatus === "paid" ? "Đã thanh toán" : order.paymentStatus === "cod_pending" ? "Chờ thu COD" : order.paymentStatus === "refunded" ? "Đã hoàn tiền" : "Chờ xác nhận"}</small>{order.trackingCode ? <small style={{color:"var(--muted)"}}>{order.shippingCarrier ?? "Vận chuyển"} · {order.trackingCode}</small> : null}</div></div></article>)}</div></section>;
+  if (accountLoading) {
+    return (
+      <div className="accountLoading" style={{ padding: "80px 4vw" }}>
+        <div className="skeletonLine title" />
+        <div className="skeletonBlock detailSkeleton" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="emptyState">
+        <div>
+          <UserRound size={40} />
+          <h2>Đăng nhập để theo dõi đơn hàng</h2>
+          <p>Tiến độ đóng gói, vận chuyển và lịch sử mua sắm được đồng bộ theo tài khoản của bạn.</p>
+          <Link className="btn" href="/login?next=/orders">Đăng nhập</Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!orders.length) {
+    return (
+      <div className="emptyState">
+        <div>
+          <PackageSearch size={40} />
+          <h2>Chưa có đơn hàng nào</h2>
+          <p>Các đơn hàng sau khi đặt mua sẽ hiển thị lộ trình và tiến độ xử lý chi tiết tại đây.</p>
+          <Link className="btn" href="/shop">
+            <ShoppingBag size={15} /> Khám phá sản phẩm
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <section className="ordersPage">
+      <div className="ordersHeader" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 16 }}>
+        <div>
+          <p className="eyebrow">ORDER PROGRESS & TRACKING</p>
+          <h1>Tiến độ đơn hàng</h1>
+          <p style={{ color: "var(--muted)", margin: "8px 0 0", fontSize: 14 }}>
+            Theo dõi hành trình xử lý, thanh toán VietQR và trạng thái giao vận theo thời gian thực.
+          </p>
+        </div>
+        <div style={{ display: "flex", gap: 10 }}>
+          <button
+            type="button"
+            className="btn ghost small"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6 }}
+          >
+            <RefreshCw size={13} className={refreshing ? "spin" : ""} />
+            <span>{refreshing ? "Đang cập nhật..." : "Làm mới trạng thái"}</span>
+          </button>
+          <Link className="btn secondary small" href="/shop">
+            Mua thêm
+          </Link>
+        </div>
+      </div>
+
+      <div className="orderList">
+        {orders.map((order) => (
+          <OrderTracker key={order.id} order={order} showItems={true} />
+        ))}
+      </div>
+    </section>
+  );
 }

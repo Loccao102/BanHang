@@ -11,6 +11,7 @@ import "./chat-assistant.css";
 import "./luxury-motion.css";
 import "./flagship-motion.css";
 import "./fitting-room.css";
+import "./order-tracker.css";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { StoreProvider } from "@/components/store-provider";

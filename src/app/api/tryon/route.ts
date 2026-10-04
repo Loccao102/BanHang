@@ -5,13 +5,15 @@ import { getDb } from "@/lib/server/db";
 import { getCurrentUser } from "@/lib/server/auth";
 import { recordBehaviorEvent, rebuildUserStyleProfile } from "@/lib/server/style-learning";
 import { fromProductRow } from "@/lib/server/product-db";
-import { runHuggingFaceFashn } from "@/lib/server/huggingface-fashn";
+import { runHuggingFaceFashn, imageSourceToDataUri, tryReadLocalFile } from "@/lib/server/huggingface-fashn";
+import { runIdmVton } from "@/lib/server/idm-vton";
+import { runGeminiTryOn } from "@/lib/server/gemini-tryon";
 import { isValidOutfit, sortOutfitProducts } from "@/lib/wardrobe";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-type TryOnProvider = "fashn-api-v1.6" | "huggingface-fashn-vton-1.5";
+type TryOnProvider = "fashn-api-v1.6" | "huggingface-fashn-vton-1.5" | "idm-vton" | "gemini-tryon" | "hybrid-fallback";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -121,11 +123,35 @@ async function runTryOnProvider(input: {
   modelImage: string;
   product: Product;
   baseUrl: string;
+  engine?: "auto" | "gemini" | "fashn" | "idm";
+  isOuterwearLayer?: boolean;
 }): Promise<{ output: string; provider: TryOnProvider }> {
   const garmentImage = input.product.tryOnImage;
   if (!garmentImage) throw new Error(`${input.product.name} chưa có ảnh chuẩn cho Try-On.`);
 
+  // If garmentImage is a local file, convert to base64 data URI so remote APIs have direct access
+  const dataUri = imageSourceToDataUri(garmentImage);
+  const resolvedGarment = dataUri ?? garmentImage;
+
   const category = categoryFor(input.product);
+  const isUpperOrOuter = input.product.category === "outerwear" || input.product.category === "tops" || category === "tops";
+
+  // Priority 1 for Tops & Outerwear: IDM-VTON provides superior fitting, preserving natural neckline and layering without hallucinated shirts
+  if (input.engine !== "fashn" && isUpperOrOuter) {
+    try {
+      const output = await runIdmVton({
+        modelImage: input.modelImage,
+        garmentImage: resolvedGarment,
+        product: input.product,
+        baseUrl: input.baseUrl,
+        isOuterwearLayer: input.isOuterwearLayer
+      });
+      return { output, provider: "idm-vton" };
+    } catch (idmError) {
+      console.warn("IDM-VTON failed; falling back to FASHN:", idmError instanceof Error ? idmError.message : idmError);
+    }
+  }
+
   const apiKey = process.env.FASHN_API_KEY?.trim();
 
   if (apiKey) {
@@ -133,7 +159,7 @@ async function runTryOnProvider(input: {
       const output = await runOfficialFashn({
         apiKey,
         modelImage: input.modelImage,
-        garmentImage,
+        garmentImage: resolvedGarment,
         category
       });
       return { output, provider: "fashn-api-v1.6" };
@@ -147,20 +173,24 @@ async function runTryOnProvider(input: {
 
   const output = await runHuggingFaceFashn({
     modelImage: input.modelImage,
-    garmentImage,
+    garmentImage: resolvedGarment,
     category,
     photoType: photoTypeFor(input.product),
-    baseUrl: input.baseUrl
+    baseUrl: input.baseUrl,
+    segmentationFree: false
   });
 
   return { output, provider: "huggingface-fashn-vton-1.5" };
 }
 
 export async function POST(request: Request) {
+  const db = getDb();
+  let session: { id: string } | null = null;
   try {
     const body = await request.json() as {
       modelImage?: string;
       productIds?: string[];
+      engine?: "auto" | "gemini" | "fashn" | "idm";
     };
 
     const modelImage = String(body.modelImage ?? "");
@@ -175,12 +205,17 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!modelImage.startsWith("data:image/") && !modelImage.startsWith("https://")) {
+    const isValidModelImage =
+      modelImage.startsWith("data:image/") ||
+      modelImage.startsWith("https://") ||
+      modelImage.startsWith("http://") ||
+      Boolean(tryReadLocalFile(modelImage));
+
+    if (!isValidModelImage) {
       return NextResponse.json({ error: "Ảnh người không hợp lệ." }, { status: 400 });
     }
 
     const requestOrigin = new URL(request.url).origin;
-    const db = getDb();
     const user = await getCurrentUser();
     const selected = await getProducts(productIds);
 
@@ -205,7 +240,7 @@ export async function POST(request: Request) {
     const categorySequence = ordered.map(categoryFor);
     const personImageHash = createHash("sha256").update(modelImage).digest("hex");
 
-    const session = db
+    session = db
       ? await db.tryOnSession.create({
           data: {
             userId: user?.id ?? null,
@@ -243,21 +278,68 @@ export async function POST(request: Request) {
       provider: TryOnProvider;
     }> = [];
 
-    try {
-      for (const product of ordered) {
-        const result = await runTryOnProvider({
-          modelImage: currentImage,
-          product,
-          baseUrl: requestOrigin
-        });
+    // Check if user explicitly selected Gemini
+    const preferGemini = body.engine === "gemini" && Boolean(process.env.GEMINI_API_KEY);
 
-        currentImage = result.output;
-        steps.push({
-          productId: product.id,
-          output: currentImage,
-          provider: result.provider
+    if (preferGemini) {
+      try {
+        const geminiOutput = await runGeminiTryOn({
+          modelImage,
+          products: ordered
         });
+        currentImage = geminiOutput;
+        steps.push({
+          productId: ordered.map((p) => p.id).join("+"),
+          output: currentImage,
+          provider: "gemini-tryon"
+        });
+      } catch (geminiError) {
+        console.warn("Gemini outfit try-on failed, falling back to sequential VTON:", geminiError);
       }
+    }
+
+    if (!steps.length) {
+      try {
+        const hasInnerTop = ordered.some((p) => p.category === "tops");
+        for (const product of ordered) {
+          const isOuterwearLayer = product.category === "outerwear" && hasInnerTop;
+          const result = await runTryOnProvider({
+            modelImage: currentImage,
+            product,
+            baseUrl: requestOrigin,
+            engine: body.engine,
+            isOuterwearLayer
+          });
+
+          currentImage = result.output;
+          steps.push({
+            productId: product.id,
+            output: currentImage,
+            provider: result.provider
+          });
+        }
+      } catch (vtonError) {
+        if (process.env.GEMINI_API_KEY && body.engine !== "fashn") {
+          try {
+            console.warn("VTON failed; attempting Gemini Try-On fallback:", vtonError);
+            const geminiOutput = await runGeminiTryOn({
+              modelImage,
+              products: ordered
+            });
+            currentImage = geminiOutput;
+            steps.push({
+              productId: ordered.map((p) => p.id).join("+"),
+              output: currentImage,
+              provider: "gemini-tryon"
+            });
+          } catch {
+            throw vtonError;
+          }
+        } else {
+          throw vtonError;
+        }
+      }
+    }
 
       const providers = Array.from(new Set(steps.map((step) => step.provider)));
       const provider =
@@ -310,16 +392,13 @@ export async function POST(request: Request) {
           .catch(() => undefined);
       }
 
-      throw error;
+      const message =
+        error instanceof Error ? error.message : "Không thể thử đồ.";
+
+      const normalized = /quota|zerogpu|gpu|queue|too many|exceeded|rate|space metadata|connect|timeout|getaddrinfo|econnrefused/i.test(message)
+        ? "AI Try-On tạm thời bị nghẽn kết nối hoặc chạm giới hạn GPU miễn phí trong ngày của Hugging Face ZeroGPU. Bạn có thể đợi vài phút rồi thử lại, hoặc thêm token Hugging Face mới trong .env."
+        : message;
+
+      return NextResponse.json({ error: normalized }, { status: 502 });
     }
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Không thể thử đồ.";
-
-    const normalized = /quota|zerogpu|gpu|queue|too many|exceeded|rate/i.test(message)
-      ? "Hugging Face ZeroGPU đang quá tải hoặc hết quota. Có thể thêm HF_TOKEN miễn phí, cấu hình FASHN_API_KEY, hoặc thử lại sau."
-      : message;
-
-    return NextResponse.json({ error: normalized }, { status: 502 });
   }
-}

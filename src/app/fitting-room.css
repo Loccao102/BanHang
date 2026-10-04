@@ -28,3 +28,11 @@
 @media(max-width:600px){.stylistAssessment{padding:14px}.stylistIdentity strong{font-size:19px}.stylistOverall strong{font-size:38px}.stylistVerdict{align-items:flex-start;flex-direction:column}.stylistVerdict small{text-align:left}.stylistScores{grid-template-columns:1fr 1fr}.stylistFeedback>div:last-child{display:grid;width:100%}.stylistFeedback button{justify-content:center}}
 
 .fittingCompositionHint{margin:0;padding:9px 10px;background:#fff3e8;border:1px solid #e7cbb2;color:#7a5131;font-size:8px;line-height:1.5}
+
+.fittingEngineSelector{display:grid;gap:6px;background:#fff;border:1px solid var(--line);padding:10px;margin-bottom:8px}
+.fittingEngineLabel{font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.fittingEngineButtons{display:grid;grid-template-columns:repeat(auto-fit,minmax(70px,1fr));gap:4px}
+.fittingEngineButtons button{border:1px solid var(--line);background:#faf8f5;color:var(--ink);padding:8px 4px;font-size:8px;font-weight:700;cursor:pointer;text-align:center;transition:all .2s ease}
+.fittingEngineButtons button:hover{background:#eee7de}
+.fittingEngineButtons button.active{background:#111;color:#fff;border-color:#111}
+

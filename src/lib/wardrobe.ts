@@ -88,6 +88,6 @@ export function outfitLabel(products: Product[]) {
 }
 
 export function sortOutfitProducts(products: Product[]) {
-  const slotOrder: OutfitSlot[] = ["top", "bottom", "outerwear", "one-piece"];
+  const slotOrder: OutfitSlot[] = ["bottom", "top", "outerwear", "one-piece"];
   return [...products].sort((a, b) => slotOrder.indexOf(outfitSlot(a)) - slotOrder.indexOf(outfitSlot(b)));
 }

@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { useStore } from "@/components/store-provider";
 import type { CustomerAddress } from "@/lib/account";
 import { formatPrice } from "@/lib/products";
+import { OrderTracker } from "@/components/order-tracker";
 
 type Tab = "overview" | "profile" | "addresses" | "orders";
 
@@ -43,7 +44,8 @@ export default function AccountPage() {
   async function changePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPasswordMessage("");
-    const data = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const data = new FormData(form);
     const currentPassword = String(data.get("currentPassword") ?? "");
     const newPassword = String(data.get("newPassword") ?? "");
     const confirmPassword = String(data.get("confirmPassword") ?? "");
@@ -58,7 +60,7 @@ export default function AccountPage() {
     });
     const result = await response.json();
     setPasswordMessage(response.ok ? "Mật khẩu đã được cập nhật." : result.error ?? "Không thể đổi mật khẩu.");
-    if (response.ok) (event.currentTarget as HTMLFormElement).reset();
+    if (response.ok) form.reset();
   }
 
   async function saveAddress(event: FormEvent<HTMLFormElement>) {
@@ -179,12 +181,10 @@ export default function AccountPage() {
       </div> : null}
 
       {tab === "orders" ? <div className="accountPanel">
-        <div className="accountPanelHead"><div><p className="eyebrow">LỊCH SỬ ĐƠN HÀNG</p><h2>Đơn hàng của bạn</h2></div></div>
-        {orders.length ? <div className="accountOrders">{orders.map((order) => <article key={order.id}>
-          <div className="accountOrderHead"><div><strong>#{order.id}</strong><small>{new Intl.DateTimeFormat("vi-VN",{dateStyle:"medium"}).format(new Date(order.createdAt))}</small></div><span>{order.status === "processing" ? "Đang xử lý" : order.status === "confirmed" ? "Đã xác nhận" : order.status === "shipping" ? "Đang giao" : order.status === "completed" ? "Hoàn tất" : "Đã hủy"}</span></div>
-          <div className="accountOrderItems">{order.items.slice(0,4).map((line) => <div key={`${order.id}-${line.product.id}-${line.size}`} className="accountOrderItem"><div><Image src={line.product.image} alt={line.product.name} fill sizes="64px" /></div><span><strong>{line.product.name}</strong><small>Size {line.size ?? "-"} · SL {line.quantity}</small></span></div>)}</div>
-          <div className="accountOrderTracking">{order.trackingCode ? <span>Vận chuyển: <strong>{order.shippingCarrier ?? "Đơn vị vận chuyển"}</strong> · Mã <strong>{order.trackingCode}</strong></span> : <span>Đơn hàng chưa có mã vận đơn.</span>}<span>Thanh toán: <strong>{order.paymentStatus === "paid" ? "Đã thanh toán" : order.paymentStatus === "cod_pending" ? "COD chờ thu" : order.paymentStatus === "refunded" ? "Đã hoàn tiền" : "Chờ xác nhận"}</strong></span></div><div className="accountOrderFooter"><span>{order.items.reduce((sum,line)=>sum+line.quantity,0)} sản phẩm</span><strong>{formatPrice(order.total)}</strong></div>
-        </article>)}</div> : <div className="accountEmpty"><Package size={28} /><h3>Chưa có đơn hàng</h3><Link className="btn secondary" href="/shop">Khám phá bộ sưu tập</Link></div>}
+        <div className="accountPanelHead"><div><p className="eyebrow">TIẾN ĐỘ & LỊCH SỬ</p><h2>Đơn hàng của bạn</h2></div></div>
+        {orders.length ? <div className="accountOrders" style={{ display: "grid", gap: 16 }}>{orders.map((order) => (
+          <OrderTracker key={order.id} order={order} showItems={true} />
+        ))}</div> : <div className="accountEmpty"><Package size={28} /><h3>Chưa có đơn hàng</h3><Link className="btn secondary" href="/shop">Khám phá bộ sưu tập</Link></div>}
       </div> : null}
     </section>
   );
