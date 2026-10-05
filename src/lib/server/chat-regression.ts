@@ -81,6 +81,21 @@ const redCasualTop = product({
   volume: "fitted"
 });
 
+const redPartyCrop = product({
+  id: "red-party-crop",
+  name: "Red Party Crop",
+  category: "tops",
+  type: "crop-top",
+  colorFamily: "red",
+  price: 850_000,
+  style: ["glam"],
+  occasion: ["đi tiệc"],
+  formality: 3,
+  coverage: 2,
+  visualWeight: 3,
+  volume: "fitted"
+});
+
 const blackCorset = product({
   id: "black-corset",
   name: "Black Corset",
@@ -120,6 +135,21 @@ const whiteCasualSkirt = product({
   occasion: ["đi chơi", "cafe"],
   formality: 2,
   lengthClass: "mini",
+  volume: "voluminous"
+});
+
+const whitePartyMini = product({
+  id: "white-party-mini",
+  name: "White Party Mini Skirt",
+  category: "bottoms",
+  type: "skirt",
+  colorFamily: "white",
+  price: 800_000,
+  style: ["glam"],
+  occasion: ["đi tiệc"],
+  formality: 3,
+  lengthClass: "mini",
+  visualWeight: 3,
   volume: "voluminous"
 });
 
@@ -165,9 +195,11 @@ const redDress = product({
 const catalog = [
   redCorset,
   redCasualTop,
+  redPartyCrop,
   blackCorset,
   whitePartySkirt,
   whiteCasualSkirt,
+  whitePartyMini,
   blackSkirt,
   whiteTrousers,
   redDress
@@ -336,6 +368,21 @@ test("party refinement upgrades to party-compatible red top + white skirt", () =
   assert.equal(ids.includes("red-corset"), true);
   assert.equal(ids.includes("white-party-skirt"), true);
   assert.equal(ids.includes("red-dress"), false);
+});
+
+test("party ranking prefers the more formal pair when both pairs match party", () => {
+  const outfit = coordinateSmartOutfit({
+    catalog: [redCorset, redPartyCrop, whitePartySkirt, whitePartyMini],
+    setType: "top_bottom",
+    occasion: "party",
+    style: "glam",
+    preferredTopColor: "red",
+    preferredBottomColor: "white",
+    preferredBottomTypes: ["skirt"]
+  });
+  const ids = outfit.items.map((item) => item.product.id);
+  assert.equal(ids.includes("red-corset"), true);
+  assert.equal(ids.includes("white-party-skirt"), true);
 });
 
 test("length hard constraint selects midi white skirt", () => {
