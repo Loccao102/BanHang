@@ -22,14 +22,20 @@ const outfitColorPatterns: Array<[RegExp, Product["colorFamily"]]> = [
 ];
 
 function colorFromSegment(segment: string) {
-  return outfitColorPatterns.find(([pattern]) => pattern.test(segment))?.[1];
+  let nearest: { index: number; color: Product["colorFamily"] } | undefined;
+  for (const [pattern, color] of outfitColorPatterns) {
+    const match = segment.match(pattern);
+    if (match?.index === undefined) continue;
+    if (!nearest || match.index < nearest.index) nearest = { index: match.index, color };
+  }
+  return nearest?.color;
 }
 
 function extractOutfitColorPreferences(message: string) {
   const text = normalize(message);
-  const topMatch = text.match(/(?:ao|corset|top|bodysuit|croptop)[^,.!?;]{0,40}/);
-  const bottomMatch = text.match(/(?:chan vay|skirt|quan|pants|trousers|jeans|shorts)[^,.!?;]{0,40}/);
-  const dressMatch = text.match(/(?:dam|dress)[^,.!?;]{0,40}/);
+  const topMatch = text.match(/\b(?:ao|corset|top|bodysuit|croptop)\b[^,.!?;]{0,40}/);
+  const bottomMatch = text.match(/(?:\bchan vay\b|\bskirt\b|\bquan\b|\bpants\b|\btrousers\b|\bjeans\b|\bshorts\b)[^,.!?;]{0,40}/);
+  const dressMatch = text.match(/\b(?:dam|dress)\b[^,.!?;]{0,40}/);
 
   return {
     top: topMatch ? colorFromSegment(topMatch[0]) : undefined,
@@ -129,7 +135,16 @@ export function buildAgentPlan(args: AgentPlanArgs) {
 
   const explicitAdd = /(them|add|bo|cho).*(gio|cart)/.test(text) || /(mua).*(cai|mau|mon)/.test(text);
   const explicitBundle = /(them|add|bo|cho).*(ca|nguyen|toan).*(set|outfit|bo).*(gio|cart)/.test(text);
-  const wantsOutfit = /(phoi|outfit|nguyen set|ca set|full look)/.test(text);
+  const mentionsTop = /\b(ao|corset|top|bodysuit|croptop)\b/.test(text);
+  const mentionsBottom =
+    /(?:\bchan vay\b|\bskirt\b|\bquan\b|\bpants\b|\btrousers\b|\bjeans\b|\bshorts\b)/.test(text) ||
+    (mentionsTop && /\bvay\b/.test(text));
+  const contextLooksLikeOutfit = new Set(args.contextProducts.map((item) => item.category)).size >= 2;
+  const isOutfitRefinement = contextLooksLikeOutfit && /(doi|khac|mau|sang|giu|thay)/.test(text);
+  const wantsOutfit =
+    /(phoi|outfit|nguyen set|ca set|full look)/.test(text) ||
+    (mentionsTop && mentionsBottom) ||
+    isOutfitRefinement;
   const wantsOpen = /(mo|xem).*(cai|mau|san pham|mon)/.test(text);
   const wantsTryOn = /(thu|phong thu).*(do|set|outfit|bo|mon|cai)|(?:thu do|thu bo|thu set|vao phong thu|phong thu do|thu len dang)\b/.test(text);
   const requestedSize = extractSize(args.message);
