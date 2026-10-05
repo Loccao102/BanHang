@@ -8,6 +8,7 @@ import { analyzeShoppingIntent } from "@/lib/server/chat-intent";
 import { retrieveProductsHybrid } from "@/lib/server/product-vector-search";
 import { applyShoppingState, buildShoppingState, parseShoppingState } from "@/lib/server/chat-state";
 import { getDb } from "@/lib/server/db";
+import { evaluateRecommendation } from "@/lib/server/chat-evaluation";
 
 export const runtime = "nodejs";
 
@@ -339,6 +340,7 @@ export async function POST(request: Request) {
     : withBundle;
 
   const nextShoppingState = buildShoppingState(intent, responseProducts, shoppingState);
+  const evaluation = evaluateRecommendation(intent, responseProducts);
 
   if (user && db && conversationId) {
     await db.$transaction([
@@ -368,7 +370,7 @@ export async function POST(request: Request) {
             intent
           })),
           productIds: responseProducts.map((product) => product.id),
-          scores: {},
+          scores: JSON.parse(JSON.stringify(evaluation)),
           reason: plan.notes.join("\n").slice(0, 4000),
           model: intent ? "structured-intent+state" : "fallback-rules"
         }
