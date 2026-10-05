@@ -447,8 +447,14 @@ export function buildAgentPlan(args: AgentPlanArgs) {
   }
 
   const couponTokens: string[] = args.message.toUpperCase().match(/\b[A-Z][A-Z0-9_-]{2,23}\b/g) ?? [];
-  const coupon = args.coupons.find((item) => couponTokens.includes(item.code));
-  if (coupon && /(ap|apply|dung|nhap|coupon|ma)/.test(text)) {
+  const requestedCouponCode = structured?.couponCode || couponTokens[0];
+  const coupon = requestedCouponCode
+    ? args.coupons.find((item) => item.code.toUpperCase() === requestedCouponCode.toUpperCase())
+    : undefined;
+  const asksCoupon = structured
+    ? structured.intent === "coupon"
+    : /(ap|apply|dung|nhap|coupon|ma giam|giam gia|voucher|uu dai|khuyen mai)/.test(text);
+  if (coupon && asksCoupon) {
     if (coupon.active) {
       actions.push({
         id: randomUUID(),
@@ -459,7 +465,7 @@ export function buildAgentPlan(args: AgentPlanArgs) {
       });
       notes.push("Coupon " + coupon.code + " tồn tại và đang bật; client vẫn phải validate điều kiện theo giá trị giỏ hàng.");
     }
-  } else if (!coupon && /(ma giam|giam gia|voucher|coupon|uu dai|khuyen mai|khuyen mai)/.test(text)) {
+  } else if (!coupon && asksCoupon) {
     // Khách hỏi xin mã giảm giá (không gõ sẵn mã cụ thể) -> liệt kê mã đang bật + nút áp nhanh.
     // Ưu tiên mã dễ dùng nhất (đơn tối thiểu thấp trước).
     const usableCoupons = args.coupons
@@ -493,14 +499,16 @@ export function buildAgentPlan(args: AgentPlanArgs) {
     }
   }
 
-  const asksOrder = /(mo|xem|dua toi|cho toi xem).*(don|order)|don.*(gan nhat|dang giao|moi nhat)/.test(text);
+  const asksOrder = structured
+    ? structured.intent === "order"
+    : /(mo|xem|dua toi|cho toi xem).*(don|order)|don.*(gan nhat|dang giao|moi nhat)/.test(text);
   if (asksOrder) {
     if (!args.loggedIn) {
       notes.push("Khách muốn mở đơn hàng nhưng chưa đăng nhập. Hãy yêu cầu đăng nhập.");
     } else {
       let order = args.orders[0];
       if (text.includes("dang giao")) order = args.orders.find((item) => item.status === "shipping") ?? order;
-      const explicitId = args.message.toUpperCase().match(/LS\d{6}[A-F0-9]{6}/)?.[0];
+      const explicitId = structured?.orderId || args.message.toUpperCase().match(/LS\d{6}[A-F0-9]{6}/)?.[0];
       if (explicitId) order = args.orders.find((item) => item.id === explicitId) ?? order;
       if (order) {
         actions.push({
@@ -514,7 +522,10 @@ export function buildAgentPlan(args: AgentPlanArgs) {
     }
   }
 
-  if (/(di|mo|tien hanh).*(checkout|thanh toan)|checkout/.test(text)) {
+  const asksCheckout = structured
+    ? structured.intent === "checkout"
+    : /(di|mo|tien hanh).*(checkout|thanh toan)|checkout/.test(text);
+  if (asksCheckout) {
     actions.push({
       id: randomUUID(),
       type: "open_checkout",
