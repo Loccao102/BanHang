@@ -216,6 +216,8 @@ export function ChatWidget() {
       createdAt: new Date().toISOString()
     };
     const historyForRequest = messages.filter((message) => message.id !== "welcome").slice(-10);
+    const latestShoppingState = [...historyForRequest].reverse()
+      .find((message) => message.role === "assistant" && message.shoppingState)?.shoppingState;
     setMessages((current) => [...current, optimistic]);
     setInput("");
     setLoading(true);
@@ -228,7 +230,8 @@ export function ChatWidget() {
         body: JSON.stringify({
           message: clean,
           conversationId: activeConversationId,
-          history: isGuest ? historyForRequest : undefined
+          history: isGuest ? historyForRequest : undefined,
+          shoppingState: isGuest ? latestShoppingState : undefined
         })
       });
       const data = await response.json() as {
@@ -236,6 +239,7 @@ export function ChatWidget() {
         message?: string;
         products?: Product[];
         actions?: ChatAgentAction[];
+        shoppingState?: unknown;
         conversationId?: string | null;
       };
       if (!response.ok) throw new Error(data.error ?? "Không thể gửi tin nhắn.");
@@ -246,6 +250,7 @@ export function ChatWidget() {
         text: data.message ?? "Mình đã xử lý yêu cầu của bạn.",
         products: data.products ?? [],
         actions: data.actions ?? [],
+        shoppingState: data.shoppingState,
         createdAt: new Date().toISOString()
       };
       setMessages((current) => [...current, assistantMessage]);
