@@ -191,6 +191,9 @@ export type GenerateOutfitOptions = {
   occasion?: string;
   style?: string;
   budget?: number;
+  preferredTopColor?: Product["colorFamily"];
+  preferredBottomColor?: Product["colorFamily"];
+  preferredDressColor?: Product["colorFamily"];
   requiredProductId?: string;
   excludeIds?: string[];
   variantSalt?: number;
@@ -266,11 +269,21 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
       return matchOcc && matchSty;
     };
 
-    const preferredTops = tops.filter(filterFn);
-    const candidateTops = preferredTops.length > 0 ? preferredTops : tops;
+    const topsByColor = options?.preferredTopColor
+      ? tops.filter((p) => p.colorFamily === options.preferredTopColor)
+      : tops;
+    const bottomsByColor = options?.preferredBottomColor
+      ? bottoms.filter((p) => p.colorFamily === options.preferredBottomColor)
+      : bottoms;
 
-    const preferredBottoms = bottoms.filter(filterFn);
-    const candidateBottoms = preferredBottoms.length > 0 ? preferredBottoms : bottoms;
+    const topColorPool = topsByColor.length > 0 ? topsByColor : tops;
+    const bottomColorPool = bottomsByColor.length > 0 ? bottomsByColor : bottoms;
+
+    const preferredTops = topColorPool.filter(filterFn);
+    const candidateTops = preferredTops.length > 0 ? preferredTops : topColorPool;
+
+    const preferredBottoms = bottomColorPool.filter(filterFn);
+    const candidateBottoms = preferredBottoms.length > 0 ? preferredBottoms : bottomColorPool;
 
     // Rank all pairs and score them
     const scoredPairs: { top: Product; bottom: Product; score: number }[] = [];
@@ -322,8 +335,12 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
       ? activePool.find((p) => p.id === options.requiredProductId && p.category === "dress")
       : undefined;
 
-    const candidateDresses = requiredProduct ? [requiredProduct] : dresses;
-    const dress = candidateDresses[salt % (candidateDresses.length || 1)] || dresses[0];
+    const dressesByColor = options?.preferredDressColor
+      ? dresses.filter((p) => p.colorFamily === options.preferredDressColor)
+      : dresses;
+    const dressColorPool = dressesByColor.length > 0 ? dressesByColor : dresses;
+    const candidateDresses = requiredProduct ? [requiredProduct] : dressColorPool;
+    const dress = candidateDresses[salt % (candidateDresses.length || 1)] || dressColorPool[0] || dresses[0];
 
     finalItems = [{ product: dress, role: "dress", roleName: "Đầm thiết kế" }];
     finalScore = 93;
