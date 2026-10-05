@@ -12,7 +12,7 @@ jobs:
       DATABASE_URL: postgresql://lsoul:lsoul_ci@localhost:5432/lsoul_test?schema=public
     services:
       postgres:
-        image: postgres:16-alpine
+        image: pgvector/pgvector:pg16
         env:
           POSTGRES_USER: lsoul
           POSTGRES_PASSWORD: lsoul_ci
@@ -30,6 +30,8 @@ jobs:
         with:
           node-version: 20
       - run: npm install
+      - name: Enable pgvector
+        run: PGPASSWORD=lsoul_ci psql -h localhost -U lsoul -d lsoul_test -c 'CREATE EXTENSION IF NOT EXISTS vector;'
       - run: npm run db:setup
       - run: npm run test:chat
       - run: npm run lint
