@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/server/auth";
 import { buildAgentPlan } from "@/lib/server/chat-agent";
 import { askGemini, loadAvailableProducts, retrieveProducts, titleFromMessage } from "@/lib/server/chat-assistant";
 import { analyzeShoppingIntent, retrieveProductsFromIntent } from "@/lib/server/chat-intent";
+import { applyShoppingState, buildShoppingState, parseShoppingState } from "@/lib/server/chat-state";
 import { getDb } from "@/lib/server/db";
 
 export const runtime = "nodejs";
@@ -89,6 +90,7 @@ export async function POST(request: Request) {
     message?: string;
     conversationId?: string;
     history?: ChatMessageView[];
+    shoppingState?: unknown;
   };
   const message = String(body.message ?? "").replace(/\s+/g, " ").trim();
 
@@ -104,6 +106,7 @@ export async function POST(request: Request) {
   let history: { role: "user" | "assistant"; text: string }[] = [];
   let createdConversation = false;
   let orderContext = "";
+  let shoppingState = parseShoppingState(body.shoppingState);
   let contextProductIds: string[] = [];
   let orders: Array<{ id: string; status: "processing" | "confirmed" | "shipping" | "completed" | "cancelled"; createdAt: Date }> = [];
   let coupons: Awaited<ReturnType<NonNullable<typeof db>["coupon"]["findMany"]>> = [];
@@ -120,12 +123,24 @@ export async function POST(request: Request) {
       createdConversation = true;
     }
 
-    const previous = await db.chatMessage.findMany({
-      where: { conversationId },
-      orderBy: { createdAt: "desc" },
-      take: 12,
-      select: { role: true, content: true, productIds: true }
-    });
+    const [previous, latestRecommendation] = await Promise.all([
+      db.chatMessage.findMany({
+        where: { conversationId },
+        orderBy: { createdAt: "desc" },
+        take: 12,
+        select: { role: true, content: true, productIds: true }
+      }),
+      db.aIRecommendation.findFirst({
+        where: { conversationId },
+        orderBy: { createdAt: "desc" },
+        select: { context: true }
+      })
+    ]);
+
+    const persistedContext = latestRecommendation?.context;
+    if (persistedContext && typeof persistedContext === "object" && !Array.isArray(persistedContext)) {
+      shoppingState = parseShoppingState((persistedContext as Record<string, unknown>).shoppingState) ?? shoppingState;
+    }
     const chronological = previous.reverse();
     history = chronological.flatMap((item) =>
       item.role === "user" || item.role === "assistant"
@@ -180,6 +195,10 @@ export async function POST(request: Request) {
     }
   } else {
     const guestHistory = (body.history ?? []).slice(-10);
+    if (!shoppingState) {
+      const lastState = [...guestHistory].reverse().find((item) => item.role === "assistant" && item.shoppingState)?.shoppingState;
+      shoppingState = parseShoppingState(lastState);
+    }
     history = guestHistory.flatMap((item) =>
       item.role === "user" || item.role === "assistant"
         ? [{ role: item.role, text: item.text.slice(0, 1500) }]
@@ -197,6 +216,13 @@ export async function POST(request: Request) {
     }
   }
 
+  if (shoppingState?.outfit?.selectedProductIds?.length) {
+    contextProductIds = Array.from(new Set([
+      ...shoppingState.outfit.selectedProductIds,
+      ...contextProductIds
+    ]));
+  }
+
   const contextProducts = contextProductIds.flatMap((id) => {
     const product = catalogMap.get(id);
     return product ? [product] : [];
@@ -208,11 +234,13 @@ export async function POST(request: Request) {
   }) : [];
   const affinityScores = new Map(affinityRows.map((item) => [item.productId, item.score]));
 
-  const intent = await analyzeShoppingIntent({
+  const parsedIntent = await analyzeShoppingIntent({
     message,
     history,
-    contextProducts
+    contextProducts,
+    shoppingState
   });
+  const intent = parsedIntent ? applyShoppingState(parsedIntent, shoppingState) : null;
 
   // The AI parser owns natural-language/context understanding. The legacy retriever is
   // retained only as a resilience fallback when intent parsing is unavailable.
@@ -301,6 +329,8 @@ export async function POST(request: Request) {
     ? `${withBundle}\n\nMã ưu đãi đang hiệu lực: ${missingCodes.join(", ")}. Bạn bấm nút bên dưới để áp dụng nhé!`
     : withBundle;
 
+  const nextShoppingState = buildShoppingState(intent, responseProducts, shoppingState);
+
   if (user && db && conversationId) {
     await db.$transaction([
       db.chatMessage.create({
@@ -318,6 +348,21 @@ export async function POST(request: Request) {
           updatedAt: new Date(),
           ...(createdConversation ? { title: titleFromMessage(message) } : {})
         }
+      }),
+      db.aIRecommendation.create({
+        data: {
+          userId: user.id,
+          conversationId,
+          requestText: message,
+          context: JSON.parse(JSON.stringify({
+            shoppingState: nextShoppingState,
+            intent
+          })),
+          productIds: responseProducts.map((product) => product.id),
+          scores: {},
+          reason: plan.notes.join("\n").slice(0, 4000),
+          model: intent ? "structured-intent+state" : "fallback-rules"
+        }
       })
     ]);
   }
@@ -326,6 +371,7 @@ export async function POST(request: Request) {
     message: reply,
     products: responseProducts,
     actions: plan.actions satisfies ChatAgentAction[],
+    shoppingState: nextShoppingState,
     conversationId: conversationId ?? null,
     persisted: Boolean(user && db)
   });
