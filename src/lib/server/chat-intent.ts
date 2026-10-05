@@ -4,6 +4,7 @@ import type {
   Product,
   ProductCategory
 } from "@/lib/products";
+import type { ShoppingState } from "@/lib/server/chat-state";
 
 export type ShoppingIntentName =
   | "search_products"
@@ -173,7 +174,11 @@ function roleFromProduct(product: Product): Exclude<OutfitRole, "any"> {
   return "set";
 }
 
-function contextualizeIntent(intent: ShoppingIntent, contextProducts: Product[]): ShoppingIntent {
+function contextualizeIntent(
+  intent: ShoppingIntent,
+  contextProducts: Product[],
+  hasPersistentState = false
+): ShoppingIntent {
   if (!contextProducts.length) return intent;
 
   const contextRoles = new Set(contextProducts.map(roleFromProduct));
@@ -208,6 +213,17 @@ function contextualizeIntent(intent: ShoppingIntent, contextProducts: Product[])
   }
 
   if (resolved.intent !== "modify_outfit") return resolved;
+
+  // When a ShoppingState snapshot exists, do not reconstruct hard constraints from the
+  // last selected SKUs. The state contains the user's actual constraints and will be
+  // merged after parsing. This avoids accidentally freezing inferred product types.
+  if (hasPersistentState) {
+    return {
+      ...resolved,
+      inheritPrevious: true,
+      targetScope: "outfit"
+    };
+  }
 
   const explicitRoles = new Set(
     resolved.items
@@ -249,6 +265,7 @@ export async function analyzeShoppingIntent(args: {
   message: string;
   history: HistoryItem[];
   contextProducts: Product[];
+  shoppingState?: ShoppingState | null;
 }): Promise<ShoppingIntent | null> {
   const rawKey = process.env.GEMINI_API_KEY ?? "";
   const key = rawKey.replace(/^["']|["']$/g, "").trim();
@@ -296,6 +313,14 @@ QUY TẮC HIỂU NGÔN NGỮ:
 17. budgetMax là số VND nguyên nếu khách nêu ngân sách tối đa/khoảng ngân sách.
 18. targetScope="outfit" khi hành động áp dụng cả set; "single" khi một món; "previous" khi khách chỉ nói mơ hồ "cái/set lúc nãy" và context quyết định.
 19. Nếu khách nói "đỏ rượu/burgundy/đỏ đô" thì colorFamily=red; các sắc thái vẫn map về family gần nhất.
+
+TRẠNG THÁI MUA SẮM ĐANG ĐƯỢC BACKEND GIỮ:
+${args.shoppingState?.outfit ? JSON.stringify(args.shoppingState.outfit) : "(chưa có state)"}
+
+LƯU Ý VỀ STATE:
+- State là nguồn chính xác hơn việc đoán lại từ product card. Nếu đang refine outfit, hãy dựa trên state để hiểu các ràng buộc trước đó.
+- Khi khách chỉ thay đổi vibe/dịp/mức formal, không được xóa các hard constraint đang có trong state.
+- Không cần lặp lại constraint cũ chỉ để "nhắc lại"; backend sẽ merge state. Chỉ output constraint nào khách thực sự thay đổi hoặc muốn giữ nguyên chính xác bằng keepPrevious=true.
 
 CONTEXT SẢN PHẨM Ở LƯỢT TRƯỚC:
 ${contextSummary(args.contextProducts)}
@@ -377,7 +402,9 @@ Các field không có thông tin thì bỏ hẳn, riêng items luôn là array v
       if (!output) continue;
 
       const parsed = validateIntent(JSON.parse(output));
-      if (parsed) return contextualizeIntent(parsed, args.contextProducts);
+      if (parsed) {
+        return contextualizeIntent(parsed, args.contextProducts, Boolean(args.shoppingState?.outfit));
+      }
     } catch {
       // Intent parsing is an enhancement. The caller keeps a deterministic fallback.
     } finally {
