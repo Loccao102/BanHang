@@ -57,6 +57,31 @@ PASSWORD_RESET_EXPOSE_LINK=1
 
 Không commit file `.env` có secret thật lên GitHub.
 
+
+## Lưu ảnh sản phẩm: local / Cloudinary
+
+Route `/api/upload` dùng một storage driver chung và chỉ cho tài khoản admin upload.
+
+### Local development
+
+```env
+UPLOAD_DRIVER=local
+```
+
+Ảnh được lưu vào `public/uploads` và trả URL dạng `/api/uploads/<filename>`.
+
+### Production / Vercel với Cloudinary
+
+```env
+UPLOAD_DRIVER=cloudinary
+CLOUDINARY_URL="cloudinary://API_KEY:API_SECRET@CLOUD_NAME"
+CLOUDINARY_FOLDER=lsoul/products
+```
+
+Có thể thay `CLOUDINARY_URL` bằng ba biến `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`.
+
+Sau khi upload, API trả URL HTTPS của Cloudinary; URL này được lưu vào các trường ảnh sản phẩm như hiện tại nên không cần thay đổi Prisma schema.
+
 ---
 
 # Cách 1 – Chạy toàn bộ bằng Docker
