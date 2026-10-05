@@ -89,7 +89,7 @@ export function retrieveProducts(
     .split(/[^a-z0-9]+/)
     .filter((token) => token.length >= 3);
 
-  const scored = catalog
+  const ranked = catalog
     .map((item) => {
       let score = 0;
       if (category && item.category === category) score += 8;
@@ -144,13 +144,33 @@ export function retrieveProducts(
       return { item, score };
     })
     .filter(({ item, score }) => score > 0 || (!category && !requestedTypes.length && !colors.length && !occasionGroups.length && (!budget || item.price <= budget)))
-    .sort((a, b) => b.score - a.score || Number(Boolean(b.item.featured)) - Number(Boolean(a.item.featured)) || a.item.price - b.item.price)
-    .slice(0, limit)
-    .map(({ item }) => item);
+    .sort((a, b) => b.score - a.score || Number(Boolean(b.item.featured)) - Number(Boolean(a.item.featured)) || a.item.price - b.item.price);
 
-  // If query yielded nothing but there are items in catalog, return top featured or in-stock items
+  // Mỗi thiết kế chỉ trả về 1 biến thể màu. groupCode liên kết các màu của cùng một mẫu.
+  // Biến thể có điểm cao nhất (ví dụ đúng màu khách yêu cầu) sẽ được giữ lại.
+  const scored: Product[] = [];
+  const seenGroups = new Set<string>();
+  for (const { item } of ranked) {
+    const groupKey = item.groupCode?.trim() || item.id;
+    if (seenGroups.has(groupKey)) continue;
+    seenGroups.add(groupKey);
+    scored.push(item);
+    if (scored.length >= limit) break;
+  }
+
+  // If query yielded nothing but there are items in catalog, return top featured or in-stock items,
+  // vẫn không lặp nhiều màu của cùng một thiết kế.
   if (scored.length === 0 && catalog.length > 0) {
-    return catalog.filter((item) => item.featured || item.isNew).slice(0, limit);
+    const fallback: Product[] = [];
+    const fallbackGroups = new Set<string>();
+    for (const item of catalog.filter((candidate) => candidate.featured || candidate.isNew)) {
+      const groupKey = item.groupCode?.trim() || item.id;
+      if (fallbackGroups.has(groupKey)) continue;
+      fallbackGroups.add(groupKey);
+      fallback.push(item);
+      if (fallback.length >= limit) break;
+    }
+    return fallback;
   }
   return scored;
 }
@@ -226,8 +246,16 @@ ${history || "(Bắt đầu cuộc trò chuyện)"}
 Thông tin đơn hàng của khách (nếu có):
 ${args.orderContext || "(Khách chưa cung cấp hoặc chưa hỏi đơn hàng)"}
 
+NGỮ CẢNH HỆ THỐNG BẮT BUỘC (nếu có):
+${args.agentContext || "(Không có ràng buộc bổ sung)"}
+
 Sản phẩm liên quan trong hệ thống LSOUL:
 ${catalog}
+
+QUY TẮC ĐỒNG BỘ SẢN PHẨM:
+- Danh sách sản phẩm phía trên và NGỮ CẢNH HỆ THỐNG BẮT BUỘC là nguồn sự thật duy nhất.
+- Chỉ được nhắc tới đúng sản phẩm, đúng màu, đúng giá đang có trong danh sách; tuyệt đối không tự đặt tên hoặc tự đổi màu sản phẩm.
+- Nếu ngữ cảnh hệ thống nói outfit đã được chọn, phải mô tả đúng và đủ outfit đó để nội dung khớp 100% với các thẻ sản phẩm hiển thị bên dưới.
 
 Tin nhắn mới của khách:
 ${args.message}
