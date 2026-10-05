@@ -165,6 +165,86 @@ function contextSummary(products: Product[]) {
   ).join("\n");
 }
 
+function roleFromProduct(product: Product): Exclude<OutfitRole, "any"> {
+  if (product.category === "tops") return "top";
+  if (product.category === "bottoms") return "bottom";
+  if (product.category === "dress") return "dress";
+  if (product.category === "outerwear") return "outerwear";
+  return "set";
+}
+
+function contextualizeIntent(intent: ShoppingIntent, contextProducts: Product[]): ShoppingIntent {
+  if (!contextProducts.length) return intent;
+
+  const contextRoles = new Set(contextProducts.map(roleFromProduct));
+  const isOutfitContext =
+    contextRoles.has("dress") ||
+    contextRoles.has("set") ||
+    (contextRoles.has("top") && contextRoles.has("bottom"));
+
+  const hasSoftRefinement = Boolean(
+    (intent.occasion && intent.occasion !== "all") ||
+    intent.style ||
+    intent.budgetMax
+  );
+
+  let resolved = intent;
+
+  // Semantic guardrail, not phrase matching: if the model sees a current outfit and
+  // emits only a new vibe/occasion/budget, treat it as a refinement of that outfit
+  // rather than a brand-new catalog search.
+  if (
+    isOutfitContext &&
+    hasSoftRefinement &&
+    intent.items.length === 0 &&
+    ["search_products", "recommend_outfit", "general"].includes(intent.intent)
+  ) {
+    resolved = {
+      ...intent,
+      intent: "modify_outfit",
+      inheritPrevious: true,
+      targetScope: "outfit"
+    };
+  }
+
+  if (resolved.intent !== "modify_outfit") return resolved;
+
+  const explicitRoles = new Set(
+    resolved.items
+      .map((item) => {
+        if (item.role !== "any") return item.role;
+        if (item.category === "tops") return "top";
+        if (item.category === "bottoms") return "bottom";
+        if (item.category === "dress") return "dress";
+        if (item.category === "outerwear") return "outerwear";
+        if (item.category === "set") return "set";
+        return undefined;
+      })
+      .filter((role): role is Exclude<OutfitRole, "any"> => Boolean(role))
+  );
+
+  // Missing roles inherit the previous outfit's structural hard constraints. We do
+  // not freeze exact SKUs here; the outfit engine can choose a more suitable design.
+  const inherited: IntentItemConstraint[] = [];
+  for (const product of contextProducts) {
+    const role = roleFromProduct(product);
+    if (explicitRoles.has(role) || inherited.some((item) => item.role === role)) continue;
+    inherited.push({
+      role,
+      category: product.category,
+      types: [product.type],
+      colorFamily: product.colorFamily
+    });
+  }
+
+  return {
+    ...resolved,
+    inheritPrevious: true,
+    targetScope: "outfit",
+    items: [...resolved.items, ...inherited]
+  };
+}
+
 export async function analyzeShoppingIntent(args: {
   message: string;
   history: HistoryItem[];
@@ -297,7 +377,7 @@ Các field không có thông tin thì bỏ hẳn, riêng items luôn là array v
       if (!output) continue;
 
       const parsed = validateIntent(JSON.parse(output));
-      if (parsed) return parsed;
+      if (parsed) return contextualizeIntent(parsed, args.contextProducts);
     } catch {
       // Intent parsing is an enhancement. The caller keeps a deterministic fallback.
     } finally {
