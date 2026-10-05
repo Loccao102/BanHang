@@ -1,0 +1,413 @@
+import type {
+  ClothingType,
+  ColorFamily,
+  Product,
+  ProductCategory
+} from "@/lib/products";
+
+export type ShoppingIntentName =
+  | "search_products"
+  | "recommend_outfit"
+  | "modify_outfit"
+  | "add_to_cart"
+  | "add_outfit_to_cart"
+  | "try_on"
+  | "open_product"
+  | "coupon"
+  | "order"
+  | "checkout"
+  | "size_advice"
+  | "policy"
+  | "general";
+
+export type OutfitRole = "top" | "bottom" | "dress" | "outerwear" | "set" | "any";
+
+export type IntentItemConstraint = {
+  role: OutfitRole;
+  category?: ProductCategory;
+  types?: ClothingType[];
+  colorFamily?: ColorFamily;
+  lengthClass?: "mini" | "midi" | "maxi";
+  keepPrevious?: boolean;
+};
+
+export type ShoppingIntent = {
+  intent: ShoppingIntentName;
+  confidence: number;
+  inheritPrevious: boolean;
+  targetScope: "single" | "outfit" | "previous";
+  referenceIndex?: number;
+  requestedSize?: string;
+  budgetMax?: number;
+  occasion?: "party" | "date" | "work" | "casual" | "concert" | "all";
+  style?: string;
+  includeOuterwear: boolean;
+  items: IntentItemConstraint[];
+  couponCode?: string;
+  orderId?: string;
+};
+
+type HistoryItem = { role: "user" | "assistant"; text: string };
+
+const intentNames = new Set<ShoppingIntentName>([
+  "search_products",
+  "recommend_outfit",
+  "modify_outfit",
+  "add_to_cart",
+  "add_outfit_to_cart",
+  "try_on",
+  "open_product",
+  "coupon",
+  "order",
+  "checkout",
+  "size_advice",
+  "policy",
+  "general"
+]);
+
+const roles = new Set<OutfitRole>(["top", "bottom", "dress", "outerwear", "set", "any"]);
+const categories = new Set<ProductCategory>(["tops", "bottoms", "outerwear", "dress", "set"]);
+const types = new Set<ClothingType>([
+  "corset", "crop-top", "bodysuit", "blouse", "shirt", "knit-top",
+  "blazer", "jacket", "cardigan",
+  "jeans", "trousers", "flare-pants", "shorts", "skirt",
+  "mini-dress", "midi-dress", "maxi-dress", "bodycon-dress",
+  "set"
+]);
+const colors = new Set<ColorFamily>([
+  "black", "white", "navy", "beige", "blue", "brown", "red", "green", "gray", "pink"
+]);
+const occasions = new Set<NonNullable<ShoppingIntent["occasion"]>>([
+  "party", "date", "work", "casual", "concert", "all"
+]);
+
+function clampConfidence(value: unknown) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return 0.5;
+  return Math.max(0, Math.min(1, number));
+}
+
+function cleanString(value: unknown, max = 80) {
+  if (typeof value !== "string") return undefined;
+  const clean = value.trim();
+  return clean ? clean.slice(0, max) : undefined;
+}
+
+function validateItem(value: unknown): IntentItemConstraint | null {
+  if (!value || typeof value !== "object") return null;
+  const raw = value as Record<string, unknown>;
+
+  const role = roles.has(raw.role as OutfitRole) ? raw.role as OutfitRole : "any";
+  const category = categories.has(raw.category as ProductCategory)
+    ? raw.category as ProductCategory
+    : undefined;
+  const requestedTypes = Array.isArray(raw.types)
+    ? raw.types.filter((item): item is ClothingType => types.has(item as ClothingType)).slice(0, 5)
+    : [];
+  const colorFamily = colors.has(raw.colorFamily as ColorFamily)
+    ? raw.colorFamily as ColorFamily
+    : undefined;
+  const lengthClass = ["mini", "midi", "maxi"].includes(String(raw.lengthClass))
+    ? raw.lengthClass as "mini" | "midi" | "maxi"
+    : undefined;
+
+  return {
+    role,
+    ...(category ? { category } : {}),
+    ...(requestedTypes.length ? { types: requestedTypes } : {}),
+    ...(colorFamily ? { colorFamily } : {}),
+    ...(lengthClass ? { lengthClass } : {}),
+    ...(raw.keepPrevious === true ? { keepPrevious: true } : {})
+  };
+}
+
+function validateIntent(value: unknown): ShoppingIntent | null {
+  if (!value || typeof value !== "object") return null;
+  const raw = value as Record<string, unknown>;
+
+  if (!intentNames.has(raw.intent as ShoppingIntentName)) return null;
+  const targetScope = ["single", "outfit", "previous"].includes(String(raw.targetScope))
+    ? raw.targetScope as ShoppingIntent["targetScope"]
+    : "single";
+
+  const parsedItems = Array.isArray(raw.items)
+    ? raw.items.map(validateItem).filter((item): item is IntentItemConstraint => Boolean(item)).slice(0, 5)
+    : [];
+
+  const reference = Number(raw.referenceIndex);
+  const budget = Number(raw.budgetMax);
+  const requestedSize = cleanString(raw.requestedSize, 8)?.toUpperCase();
+  const occasion = occasions.has(raw.occasion as NonNullable<ShoppingIntent["occasion"]>)
+    ? raw.occasion as NonNullable<ShoppingIntent["occasion"]>
+    : undefined;
+
+  return {
+    intent: raw.intent as ShoppingIntentName,
+    confidence: clampConfidence(raw.confidence),
+    inheritPrevious: raw.inheritPrevious === true,
+    targetScope,
+    ...(Number.isInteger(reference) && reference >= 0 && reference <= 9 ? { referenceIndex: reference } : {}),
+    ...(requestedSize ? { requestedSize } : {}),
+    ...(Number.isFinite(budget) && budget > 0 ? { budgetMax: Math.round(budget) } : {}),
+    ...(occasion ? { occasion } : {}),
+    ...(cleanString(raw.style, 40) ? { style: cleanString(raw.style, 40) } : {}),
+    includeOuterwear: raw.includeOuterwear === true,
+    items: parsedItems,
+    ...(cleanString(raw.couponCode, 32) ? { couponCode: cleanString(raw.couponCode, 32)?.toUpperCase() } : {}),
+    ...(cleanString(raw.orderId, 64) ? { orderId: cleanString(raw.orderId, 64) } : {})
+  };
+}
+
+function contextSummary(products: Product[]) {
+  if (!products.length) return "(không có sản phẩm ở lượt trước)";
+  return products.map((product, index) =>
+    `${index}: ${product.name} | id=${product.id} | category=${product.category} | type=${product.type} | color=${product.colorFamily} | length=${product.lengthClass ?? "-"}`
+  ).join("\n");
+}
+
+export async function analyzeShoppingIntent(args: {
+  message: string;
+  history: HistoryItem[];
+  contextProducts: Product[];
+}): Promise<ShoppingIntent | null> {
+  const rawKey = process.env.GEMINI_API_KEY ?? "";
+  const key = rawKey.replace(/^["']|["']$/g, "").trim();
+  if (!key) return null;
+
+  const history = args.history.slice(-8)
+    .map((item) => `${item.role === "user" ? "Khách" : "LSOUL"}: ${item.text.slice(0, 700)}`)
+    .join("\n");
+
+  const prompt = `Bạn là bộ phân tích ý định mua sắm cho chatbot thời trang LSOUL.
+Nhiệm vụ của bạn CHỈ là hiểu ngôn ngữ tự nhiên + context hội thoại và trả về JSON có cấu trúc. Không tư vấn, không chọn product ID mới, không viết câu trả lời cho khách.
+
+Các intent hợp lệ:
+- search_products: tìm/gợi ý một hoặc nhiều sản phẩm, chưa phải phối outfit nhiều role.
+- recommend_outfit: muốn phối/tạo outfit mới.
+- modify_outfit: chỉnh outfit ở lượt trước ("đổi áo", "giữ váy", "cái kia màu trắng"...).
+- add_to_cart: thêm một sản phẩm.
+- add_outfit_to_cart: thêm cả outfit/set.
+- try_on: thử đồ; targetScope cho biết single hay outfit.
+- open_product: mở/xem một sản phẩm cụ thể.
+- coupon: hỏi/áp mã giảm giá.
+- order: hỏi/mở đơn hàng.
+- checkout: đi thanh toán.
+- size_advice: tư vấn size.
+- policy: chính sách.
+- general: các câu khác.
+
+QUY TẮC HIỂU NGÔN NGỮ:
+1. Tự hiểu tiếng Việt tự nhiên, tiếng Anh, từ đồng nghĩa và ngữ cảnh; KHÔNG dựa vào exact keyword.
+2. "áo đỏ + váy đen" nghĩa là role top màu red + role bottom type skirt màu black. Khi có một chiếc áo riêng đi cùng "váy", hiểu "váy" là chân váy/bottom trừ khi ngữ cảnh nói rõ đầm liền.
+3. "đầm/váy liền/dress" là role dress.
+4. "dạ hội", "gala", "tiệc tối", "party", "event sang" map occasion=party.
+5. Chỉ đưa constraint vào items khi khách NÓI RÕ constraint đó hoặc đang giữ lại constraint từ context. Không tự biến suy luận stylist (ví dụ đi tiệc => corset) thành hard constraint.
+6. Với follow-up như "đổi áo sang trắng", "giữ váy", "như set trước nhưng...", dùng intent=modify_outfit và inheritPrevious=true.
+7. Với món cần giữ nguyên từ lượt trước, thêm item role tương ứng và keepPrevious=true. Với món cần đổi, keepPrevious=false/omit và chỉ ghi constraint mới khách yêu cầu.
+8. referenceIndex là index 0-based của sản phẩm trong danh sách context bên dưới khi khách nói "món 1/2/3", "cái thứ hai", v.v.
+9. Màu chuẩn chỉ dùng: black, white, navy, beige, blue, brown, red, green, gray, pink.
+10. Type chuẩn chỉ dùng: corset, crop-top, bodysuit, blouse, shirt, knit-top, blazer, jacket, cardigan, jeans, trousers, flare-pants, shorts, skirt, mini-dress, midi-dress, maxi-dress, bodycon-dress, set.
+11. Category chuẩn: tops, bottoms, outerwear, dress, set.
+12. lengthClass chỉ mini, midi, maxi.
+13. occasion chỉ party, date, work, casual, concert, all.
+14. includeOuterwear=true CHỈ khi khách chủ động muốn blazer/áo khoác/layer.
+15. budgetMax là số VND nguyên nếu khách nêu ngân sách tối đa/khoảng ngân sách.
+16. targetScope="outfit" khi hành động áp dụng cả set; "single" khi một món; "previous" khi khách chỉ nói mơ hồ "cái/set lúc nãy" và context quyết định.
+17. Nếu khách nói "đỏ rượu/burgundy/đỏ đô" thì colorFamily=red; các sắc thái vẫn map về family gần nhất.
+
+CONTEXT SẢN PHẨM Ở LƯỢT TRƯỚC:
+${contextSummary(args.contextProducts)}
+
+LỊCH SỬ GẦN ĐÂY:
+${history || "(bắt đầu cuộc trò chuyện)"}
+
+TIN NHẮN HIỆN TẠI:
+${args.message}
+
+Trả về đúng JSON shape:
+{
+  "intent": "...",
+  "confidence": 0.0,
+  "inheritPrevious": false,
+  "targetScope": "single",
+  "referenceIndex": 0,
+  "requestedSize": "M",
+  "budgetMax": 3000000,
+  "occasion": "party",
+  "style": "glam",
+  "includeOuterwear": false,
+  "items": [
+    {
+      "role": "top",
+      "category": "tops",
+      "types": ["corset"],
+      "colorFamily": "red",
+      "lengthClass": "mini",
+      "keepPrevious": false
+    }
+  ],
+  "couponCode": "CODE",
+  "orderId": "..."
+}
+Các field không có thông tin thì bỏ hẳn, riêng items luôn là array và includeOuterwear luôn là boolean.`;
+
+  const primaryModel = process.env.GEMINI_INTENT_MODEL?.trim()
+    || process.env.GEMINI_MODEL?.trim()
+    || "gemini-flash-lite-latest";
+  const configs = [
+    { model: primaryModel, thinkingBudget: 0 },
+    { model: "gemini-flash-latest", thinkingBudget: 0 },
+    { model: "gemini-2.5-flash", thinkingBudget: undefined }
+  ];
+
+  for (const config of configs) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    try {
+      const generationConfig: Record<string, unknown> = {
+        temperature: 0.1,
+        maxOutputTokens: 900,
+        responseMimeType: "application/json"
+      };
+      if (config.thinkingBudget !== undefined) {
+        generationConfig.thinkingConfig = { thinkingBudget: config.thinkingBudget };
+      }
+
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${config.model}:generateContent?key=${key}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig
+          }),
+          signal: controller.signal
+        }
+      );
+
+      if (!response.ok) continue;
+      const data = await response.json();
+      const output = data?.candidates?.[0]?.content?.parts
+        ?.map((part: { text?: string }) => part.text ?? "")
+        .join("")
+        .trim();
+      if (!output) continue;
+
+      const parsed = validateIntent(JSON.parse(output));
+      if (parsed) return parsed;
+    } catch {
+      // Intent parsing is an enhancement. The caller keeps a deterministic fallback.
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  return null;
+}
+
+function normalized(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d");
+}
+
+function matchesOccasion(product: Product, occasion?: ShoppingIntent["occasion"]) {
+  if (!occasion || occasion === "all") return true;
+  const values = (product.occasion || []).map(normalized);
+  if (occasion === "party") return values.some((value) => /(tiec|su kien|party|bar|club|da hoi|gala|event)/.test(value));
+  if (occasion === "date") return values.some((value) => /(hen ho|date)/.test(value));
+  if (occasion === "work") return values.some((value) => /(di lam|cong so|work|office)/.test(value));
+  if (occasion === "casual") return values.some((value) => /(di choi|cafe|casual|dao pho)/.test(value));
+  if (occasion === "concert") return values.some((value) => /concert/.test(value));
+  return true;
+}
+
+function inferConstraintRole(item: IntentItemConstraint): OutfitRole {
+  if (item.role !== "any") return item.role;
+  if (item.category === "tops") return "top";
+  if (item.category === "bottoms") return "bottom";
+  if (item.category === "dress") return "dress";
+  if (item.category === "outerwear") return "outerwear";
+  if (item.category === "set") return "set";
+
+  const firstType = item.types?.[0];
+  if (firstType && ["corset", "crop-top", "bodysuit", "blouse", "shirt", "knit-top"].includes(firstType)) return "top";
+  if (firstType && ["jeans", "trousers", "flare-pants", "shorts", "skirt"].includes(firstType)) return "bottom";
+  if (firstType && ["mini-dress", "midi-dress", "maxi-dress", "bodycon-dress"].includes(firstType)) return "dress";
+  if (firstType && ["blazer", "jacket", "cardigan"].includes(firstType)) return "outerwear";
+  if (firstType === "set") return "set";
+  return "any";
+}
+
+function productMatchesConstraint(product: Product, item: IntentItemConstraint) {
+  const role = inferConstraintRole(item);
+  if (role === "top" && product.category !== "tops") return false;
+  if (role === "bottom" && product.category !== "bottoms") return false;
+  if (role === "dress" && product.category !== "dress") return false;
+  if (role === "outerwear" && product.category !== "outerwear") return false;
+  if (role === "set" && product.category !== "set") return false;
+
+  if (item.category && product.category !== item.category) return false;
+  if (item.types?.length && !item.types.includes(product.type)) return false;
+  if (item.colorFamily && product.colorFamily !== item.colorFamily) return false;
+  if (item.lengthClass && product.lengthClass !== item.lengthClass) return false;
+  return true;
+}
+
+export function retrieveProductsFromIntent(
+  intent: ShoppingIntent,
+  catalog: Product[],
+  limit = 5,
+  contextProducts: Product[] = [],
+  affinityScores: Map<string, number> = new Map()
+) {
+  if (["add_to_cart", "add_outfit_to_cart", "try_on", "open_product", "modify_outfit"].includes(intent.intent) && contextProducts.length) {
+    return contextProducts.slice(0, limit);
+  }
+
+  const constraints = intent.items.filter((item) => !item.keepPrevious);
+  let candidates = catalog.filter((product) => product.active !== false && product.stock > 0);
+
+  if (constraints.length) {
+    candidates = candidates.filter((product) =>
+      constraints.some((constraint) => productMatchesConstraint(product, constraint))
+    );
+  }
+
+  if (intent.budgetMax) {
+    candidates = candidates.filter((product) => product.price <= intent.budgetMax!);
+  }
+
+  const ranked = candidates.map((product) => {
+    let score = 0;
+    const matchedConstraints = constraints.filter((item) => productMatchesConstraint(product, item)).length;
+    score += matchedConstraints * 40;
+    if (matchesOccasion(product, intent.occasion)) score += 12;
+
+    if (intent.style && intent.style !== "all") {
+      const target = normalized(intent.style);
+      if ((product.style || []).some((value) => normalized(value).includes(target))) score += 10;
+      if ((product.styleKeywords || []).some((value) => normalized(value).includes(target))) score += 6;
+    }
+
+    score += Math.max(-4, Math.min(8, affinityScores.get(product.id) ?? 0));
+    if (product.featured) score += 2;
+    if (product.isNew) score += 1;
+    return { product, score };
+  }).sort((a, b) => b.score - a.score || a.product.price - b.product.price);
+
+  const result: Product[] = [];
+  const seenGroups = new Set<string>();
+  for (const { product } of ranked) {
+    const group = product.groupCode?.trim() || product.id;
+    if (seenGroups.has(group)) continue;
+    seenGroups.add(group);
+    result.push(product);
+    if (result.length >= limit) break;
+  }
+
+  return result;
+}
