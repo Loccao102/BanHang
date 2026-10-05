@@ -137,13 +137,13 @@ export function AdminNav({ currentTab, onTabChange }: AdminNavProps) {
 
         <div className="antAdminTopActions">
           <a
-            href={process.env.NEXT_PUBLIC_STORE_URL || "http://localhost:3000"}
+            href={process.env.NEXT_PUBLIC_STORE_URL || "/"}
             target="_blank"
             rel="noreferrer"
             className="antBtn antBtnDefault antBtnSm"
           >
             <ShopOutlined />
-            <span>Xem Website Khách Hàng (Port 3000)</span>
+            <span>Xem Website Khách Hàng</span>
             <ExportOutlined style={{ fontSize: 11, opacity: 0.7 }} />
           </a>
 
