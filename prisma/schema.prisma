@@ -61,6 +61,8 @@ enum BehaviorEventType {
   recommendation_reject
   order_created
   purchase
+  /// Kept for existing PostgreSQL volumes; product review events are unused.
+  review
 }
 
 enum RecommendationFeedback {

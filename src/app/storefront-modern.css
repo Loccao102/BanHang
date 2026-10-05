@@ -28,7 +28,7 @@
 .drawerEmpty h3 { font-family:var(--font-serif); font-size:30px; font-weight:400; margin:15px 0 4px; }
 .drawerEmpty p { color:var(--muted); font-size:11px; line-height:1.6; max-width:240px; margin:0 0 20px; }
 
-.storeToast { position:fixed; right:24px; bottom:24px; z-index:120; min-width:300px; max-width:min(420px,calc(100vw - 28px)); padding:12px 12px; background:#181715; color:white; display:grid; grid-template-columns:32px 1fr 28px; gap:9px; align-items:center; box-shadow:0 18px 55px rgba(0,0,0,.24); animation:toastIn .28s cubic-bezier(.2,.8,.2,1) both; }
+.storeToast { position:fixed; right:24px; bottom:24px; z-index:2000; min-width:300px; max-width:min(420px,calc(100vw - 28px)); padding:12px 12px; background:#181715; color:white; display:grid; grid-template-columns:32px 1fr 28px; gap:9px; align-items:center; box-shadow:0 18px 55px rgba(0,0,0,.24); animation:toastIn .28s cubic-bezier(.2,.8,.2,1) both; }
 .toastIcon { width:30px; height:30px; border-radius:50%; background:#f4efe8; color:#181715; display:grid; place-items:center; }
 .storeToast strong,.storeToast span { display:block; }
 .storeToast strong { font-size:11px; }
@@ -149,3 +149,7 @@
 @media (prefers-reduced-motion:reduce) {
   *,*::before,*::after { scroll-behavior:auto !important; animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; }
 }
+
+.storeToastError { background:#7f1d1d; }
+.storeToastError .toastIcon { background:#fee2e2; color:#7f1d1d; }
+.storeToastError span { color:#fecaca; }

@@ -11,7 +11,7 @@ import {
 import { products as seedProducts, type Product } from "@/lib/products";
 
 export type StoreSettings = { promoText: string };
-type Notice = { id: number; message: string; detail?: string } | null;
+type Notice = { id: number; message: string; detail?: string; kind?: "success" | "error" } | null;
 export type PersistenceMode = "browser" | "database";
 
 type StoreContextValue = {
@@ -126,10 +126,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [notice, setNotice] = useState<Notice>(null);
   const [hydrated, setHydrated] = useState(false);
 
-  const showNotice = useCallback((message: string, detail?: string) => {
+  const showNotice = useCallback((message: string, detail?: string, kind: "success" | "error" = "success") => {
     const id = Date.now();
-    setNotice({ id, message, detail });
-    window.setTimeout(() => setNotice((current) => current?.id === id ? null : current), 2600);
+    setNotice({ id, message, detail, kind });
+    // Lỗi hiển thị lâu hơn để kịp đọc
+    window.setTimeout(() => setNotice((current) => current?.id === id ? null : current), kind === "error" ? 5000 : 2600);
   }, []);
 
   const refreshCatalog = useCallback(async () => {
@@ -291,14 +292,14 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       });
       if (!response.ok) {
         const body = await response.json().catch(() => ({})) as { error?: string };
-        showNotice("Không thể lưu sản phẩm", body.error ?? "Kiểm tra quyền truy cập và kết nối cơ sở dữ liệu.");
+        showNotice("Không thể lưu sản phẩm", body.error ?? "Kiểm tra quyền truy cập và kết nối cơ sở dữ liệu.", "error");
         await refreshCatalog();
         return false;
       }
       await refreshCatalog();
       return true;
     } catch {
-      showNotice("Không thể lưu sản phẩm", "Mất kết nối tới máy chủ. Vui lòng thử lại.");
+      showNotice("Không thể lưu sản phẩm", "Mất kết nối tới máy chủ. Vui lòng thử lại.", "error");
       await refreshCatalog();
       return false;
     }
@@ -426,8 +427,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setCatalog((current) => current.some((item) => item.id === product.id)
       ? current.map((item) => item.id === product.id ? product : item)
       : [product, ...current]);
-    return persistProduct(product);
-  }, [persistProduct]);
+    return persistProduct(product).then((ok) => {
+      if (ok) showNotice("Đã lưu sản phẩm", product.name);
+      return ok;
+    });
+  }, [persistProduct, showNotice]);
 
   const deleteProduct = useCallback((id: string) => {
     if (user?.role !== "admin") return;
