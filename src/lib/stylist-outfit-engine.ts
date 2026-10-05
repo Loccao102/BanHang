@@ -164,6 +164,43 @@ function matchesStyle(product: Product, requested: string) {
   return semanticTextScore(product, requested) > 0;
 }
 
+function evaluateOccasionPreference(product: Product, requested: string) {
+  if (requested === "all") return 0;
+  if (!matchesOccasion(product, requested)) return -24;
+
+  const formality = product.formality ?? 3;
+  const visualWeight = product.visualWeight ?? 3;
+  const coverage = product.coverage ?? 3;
+
+  if (requested === "party") {
+    // Evening / gala refinements should favor dressier, higher-impact pieces.
+    return 8 + formality * 3 + visualWeight;
+  }
+  if (requested === "date") {
+    return 10 + Math.max(0, 8 - Math.abs(formality - 4) * 2);
+  }
+  if (requested === "work") {
+    return 10 + Math.max(0, 8 - Math.abs(formality - 4) * 3) + Math.max(0, coverage - 2);
+  }
+  if (requested === "casual") {
+    return 10 + Math.max(0, 7 - formality);
+  }
+  if (requested === "concert") {
+    return 9 + visualWeight * 2;
+  }
+  return 8;
+}
+
+function evaluateStylePreference(product: Product, requested: string) {
+  if (requested === "all") return 0;
+  const target = normalizeSearchValue(requested);
+  let score = 0;
+  if ((product.style || []).some((value) => normalizeSearchValue(value).includes(target))) score += 10;
+  if ((product.styleKeywords || []).some((value) => normalizeSearchValue(value).includes(target))) score += 6;
+  score += Math.min(12, semanticTextScore(product, requested) * 2);
+  return score;
+}
+
 // Generate human-like natural Vietnamese stylist commentary
 function generateStylistReview(
   setType: "top_bottom" | "dress_layer" | "coord_set",
@@ -349,7 +386,7 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
     const candidateBottoms = preferredBottoms.length > 0 ? preferredBottoms : bottomHardPool;
 
     // Rank all pairs and score them
-    const scoredPairs: { top: Product; bottom: Product; score: number }[] = [];
+    const scoredPairs: { top: Product; bottom: Product; score: number; rankScore: number }[] = [];
 
     const topList = targetTop ? [targetTop] : candidateTops;
     const bottomList = targetBottom ? [targetBottom] : candidateBottoms;
@@ -362,12 +399,22 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
         const silPts = evaluateSilhouette(t, b);
         const formPts = evaluateFormality(t, b);
         const tagPts = evaluateSharedTags(t, b);
-        const total = Math.min(99, Math.max(70, 30 + colorPts + silPts + formPts + tagPts));
-        scoredPairs.push({ top: t, bottom: b, score: total });
+        const occasionPts =
+          evaluateOccasionPreference(t, occasionChoice) +
+          evaluateOccasionPreference(b, occasionChoice);
+        const stylePts =
+          evaluateStylePreference(t, styleChoice) +
+          evaluateStylePreference(b, styleChoice);
+
+        // Keep an unclamped rankScore so several strong pairs do not collapse into the
+        // same displayed 99 score. The public score remains compact and user-friendly.
+        const rankScore = colorPts + silPts + formPts + tagPts + occasionPts + stylePts;
+        const displayScore = Math.min(99, Math.max(70, 72 + Math.round(rankScore / 5)));
+        scoredPairs.push({ top: t, bottom: b, score: displayScore, rankScore });
       }
     }
 
-    scoredPairs.sort((a, b) => b.score - a.score);
+    scoredPairs.sort((a, b) => b.rankScore - a.rankScore || b.score - a.score);
 
     // Pick from top tier with salt variation
     const topTier = scoredPairs.slice(0, Math.min(8, scoredPairs.length));
@@ -422,7 +469,12 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
       : occasionDresses.length > 0
       ? occasionDresses
       : withinBudget;
-    const dress = candidateDresses[salt % (candidateDresses.length || 1)];
+    const rankedDresses = [...candidateDresses].sort((a, b) => {
+      const aScore = evaluateOccasionPreference(a, occasionChoice) + evaluateStylePreference(a, styleChoice);
+      const bScore = evaluateOccasionPreference(b, occasionChoice) + evaluateStylePreference(b, styleChoice);
+      return bScore - aScore || (b.formality ?? 3) - (a.formality ?? 3);
+    });
+    const dress = rankedDresses[salt % (rankedDresses.length || 1)];
 
     if (dress) {
       finalItems = [{ product: dress, role: "dress", roleName: "Đầm thiết kế" }];
