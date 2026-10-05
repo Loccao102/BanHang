@@ -227,7 +227,17 @@ export type GenerateOutfitOptions = {
   preferredTopColor?: Product["colorFamily"];
   preferredBottomColor?: Product["colorFamily"];
   preferredDressColor?: Product["colorFamily"];
+  preferredTopTypes?: Product["type"][];
   preferredBottomTypes?: Product["type"][];
+  preferredDressTypes?: Product["type"][];
+  preferredTopLength?: string;
+  preferredBottomLength?: string;
+  preferredDressLength?: string;
+  fixedTopProductId?: string;
+  fixedBottomProductId?: string;
+  fixedDressProductId?: string;
+  fixedOuterwearProductId?: string;
+  fixedSetProductId?: string;
   requiredProductId?: string;
   excludeIds?: string[];
   variantSalt?: number;
@@ -272,8 +282,14 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
     chosenType = availableTypes[salt % (availableTypes.length || 1)] || "top_bottom";
   }
 
-  // Required product handling
-  if (options?.requiredProductId) {
+  // Explicit/fixed product handling. Fixed role IDs are used when refining a previous outfit.
+  if (options?.fixedTopProductId || options?.fixedBottomProductId) {
+    chosenType = "top_bottom";
+  } else if (options?.fixedDressProductId) {
+    chosenType = "dress_layer";
+  } else if (options?.fixedSetProductId) {
+    chosenType = "coord_set";
+  } else if (options?.requiredProductId) {
     const req = activePool.find((p) => p.id === options.requiredProductId);
     if (req) {
       if (req.category === "tops" || req.category === "bottoms") chosenType = "top_bottom";
@@ -290,18 +306,28 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
       ? activePool.find((p) => p.id === options.requiredProductId)
       : undefined;
 
-    let targetTop: Product | undefined;
-    let targetBottom: Product | undefined;
+    let targetTop: Product | undefined = options?.fixedTopProductId
+      ? activePool.find((p) => p.id === options.fixedTopProductId && p.category === "tops")
+      : undefined;
+    let targetBottom: Product | undefined = options?.fixedBottomProductId
+      ? activePool.find((p) => p.id === options.fixedBottomProductId && p.category === "bottoms")
+      : undefined;
 
-    if (requiredProduct?.category === "tops") targetTop = requiredProduct;
-    if (requiredProduct?.category === "bottoms") targetBottom = requiredProduct;
+    if (!targetTop && requiredProduct?.category === "tops") targetTop = requiredProduct;
+    if (!targetBottom && requiredProduct?.category === "bottoms") targetBottom = requiredProduct;
 
-    // Filter by occasion / style if specified
+    // Explicit color/type/length constraints are hard. Occasion/style are soft ranking preferences.
     const filterFn = (p: Product) => matchesOccasion(p, occasionChoice) && matchesStyle(p, styleChoice);
 
-    const topsByColor = options?.preferredTopColor
-      ? tops.filter((p) => p.colorFamily === options.preferredTopColor)
+    const topsByType = options?.preferredTopTypes?.length
+      ? tops.filter((p) => options.preferredTopTypes!.includes(p.type))
       : tops;
+    const topsByColor = options?.preferredTopColor
+      ? topsByType.filter((p) => p.colorFamily === options.preferredTopColor)
+      : topsByType;
+    const topHardPool = options?.preferredTopLength
+      ? topsByColor.filter((p) => p.lengthClass === options.preferredTopLength)
+      : topsByColor;
 
     const bottomsByType = options?.preferredBottomTypes?.length
       ? bottoms.filter((p) => options.preferredBottomTypes!.includes(p.type))
@@ -309,17 +335,15 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
     const bottomsByColor = options?.preferredBottomColor
       ? bottomsByType.filter((p) => p.colorFamily === options.preferredBottomColor)
       : bottomsByType;
+    const bottomHardPool = options?.preferredBottomLength
+      ? bottomsByColor.filter((p) => p.lengthClass === options.preferredBottomLength)
+      : bottomsByColor;
 
-    // Màu và loại trang phục là hard constraints: không được tự đổi.
-    // Occasion/style là ranking constraints: nếu thiếu match chính xác thì vẫn giữ đúng màu + loại món.
-    const topColorPool = topsByColor;
-    const bottomColorPool = bottomsByColor;
+    const preferredTops = topHardPool.filter(filterFn);
+    const candidateTops = preferredTops.length > 0 ? preferredTops : topHardPool;
 
-    const preferredTops = topColorPool.filter(filterFn);
-    const candidateTops = preferredTops.length > 0 ? preferredTops : topColorPool;
-
-    const preferredBottoms = bottomColorPool.filter(filterFn);
-    const candidateBottoms = preferredBottoms.length > 0 ? preferredBottoms : bottomColorPool;
+    const preferredBottoms = bottomHardPool.filter(filterFn);
+    const candidateBottoms = preferredBottoms.length > 0 ? preferredBottoms : bottomHardPool;
 
     // Rank all pairs and score them
     const scoredPairs: { top: Product; bottom: Product; score: number }[] = [];
@@ -330,6 +354,7 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
     for (const t of topList) {
       for (const b of bottomList) {
         if (t.id === b.id) continue;
+        if (options?.budget && t.price + b.price > options.budget) continue;
         const colorPts = evaluateColorScore(t, b);
         const silPts = evaluateSilhouette(t, b);
         const formPts = evaluateFormality(t, b);
@@ -352,48 +377,69 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
         { product: selectedPair.bottom, role: "bottom", roleName: "Quần / Chân váy" }
       ];
 
-      // Chỉ thêm áo khoác ngoài khi khách yêu cầu (trước đây dựa vào salt nên tự thêm ngoài ý muốn)
+      // Chỉ thêm áo khoác ngoài khi khách yêu cầu hoặc đang giữ áo khoác của outfit trước.
       if (options?.includeOuterwear && outerwears.length > 0) {
-        const bestOuter = outerwears.find((o) =>
+        const fixedOuter = options.fixedOuterwearProductId
+          ? outerwears.find((o) => o.id === options.fixedOuterwearProductId)
+          : undefined;
+        const bestOuter = fixedOuter || outerwears.find((o) =>
           evaluateColorScore(selectedPair.top, o) >= 25 &&
           evaluateFormality(selectedPair.top, o) >= 15
         );
-        if (bestOuter && !finalItems.some((i) => i.product.id === bestOuter.id)) {
+        const fitsBudget = !options.budget || !bestOuter ||
+          selectedPair.top.price + selectedPair.bottom.price + bestOuter.price <= options.budget;
+        if (bestOuter && fitsBudget && !finalItems.some((i) => i.product.id === bestOuter.id)) {
           finalItems.push({ product: bestOuter, role: "outerwear", roleName: "Áo khoác ngoài (tùy chọn)" });
           finalScore = Math.min(99, finalScore + 2);
         }
       }
     }
   } else if (chosenType === "dress_layer") {
-    const requiredProduct = options?.requiredProductId
+    const requiredProduct = options?.fixedDressProductId
+      ? activePool.find((p) => p.id === options.fixedDressProductId && p.category === "dress")
+      : options?.requiredProductId
       ? activePool.find((p) => p.id === options.requiredProductId && p.category === "dress")
       : undefined;
 
-    const dressesByColor = options?.preferredDressColor
-      ? dresses.filter((p) => p.colorFamily === options.preferredDressColor)
+    const dressesByType = options?.preferredDressTypes?.length
+      ? dresses.filter((p) => options.preferredDressTypes!.includes(p.type))
       : dresses;
-    const dressColorPool = dressesByColor;
-    const occasionDresses = dressColorPool.filter((p) => matchesOccasion(p, occasionChoice) && matchesStyle(p, styleChoice));
+    const dressesByColor = options?.preferredDressColor
+      ? dressesByType.filter((p) => p.colorFamily === options.preferredDressColor)
+      : dressesByType;
+    const dressHardPool = options?.preferredDressLength
+      ? dressesByColor.filter((p) => p.lengthClass === options.preferredDressLength)
+      : dressesByColor;
+    const withinBudget = options?.budget
+      ? dressHardPool.filter((p) => p.price <= options.budget!)
+      : dressHardPool;
+    const occasionDresses = withinBudget.filter((p) => matchesOccasion(p, occasionChoice) && matchesStyle(p, styleChoice));
     const candidateDresses = requiredProduct
-      ? [requiredProduct]
+      ? (!options?.budget || requiredProduct.price <= options.budget ? [requiredProduct] : [])
       : occasionDresses.length > 0
       ? occasionDresses
-      : dressColorPool;
+      : withinBudget;
     const dress = candidateDresses[salt % (candidateDresses.length || 1)];
 
     if (dress) {
       finalItems = [{ product: dress, role: "dress", roleName: "Đầm thiết kế" }];
       finalScore = 93;
 
-      // Áo khoác chỉ được thêm khi khách yêu cầu rõ ràng
+      // Áo khoác chỉ được thêm khi khách yêu cầu hoặc đang giữ áo khoác của outfit trước.
       if (options?.includeOuterwear && outerwears.length > 0) {
+        const fixedOuter = options.fixedOuterwearProductId
+          ? outerwears.find((o) => o.id === options.fixedOuterwearProductId)
+          : undefined;
         const scoredOuters = outerwears.map((o) => ({
           outer: o,
           score: evaluateColorScore(dress, o) + evaluateFormality(dress, o) + evaluateSharedTags(dress, o)
         })).sort((a, b) => b.score - a.score);
 
-        const bestOuter = scoredOuters[0];
-        if (bestOuter && bestOuter.score >= 45) {
+        const bestOuter = fixedOuter
+          ? { outer: fixedOuter, score: 99 }
+          : scoredOuters[0];
+        const fitsBudget = !options.budget || !bestOuter || dress.price + bestOuter.outer.price <= options.budget;
+        if (bestOuter && bestOuter.score >= 45 && fitsBudget) {
           finalItems.push({ product: bestOuter.outer, role: "outerwear", roleName: "Áo khoác blazer / Cardigan (tùy chọn)" });
           finalScore = Math.min(99, 90 + Math.round(bestOuter.score / 6));
         }
@@ -401,16 +447,26 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
     }
   } else {
     // coord_set
-    const candidateSets = sets.length > 0 ? sets : activePool.filter((p) => p.category === "set");
-    const setItem = candidateSets[salt % (candidateSets.length || 1)] || candidateSets[0] || tops[0];
+    const fixedSet = options?.fixedSetProductId
+      ? sets.find((p) => p.id === options.fixedSetProductId)
+      : undefined;
+    const candidateSets = (sets.length > 0 ? sets : activePool.filter((p) => p.category === "set"))
+      .filter((p) => !options?.budget || p.price <= options.budget);
+    const setItem = fixedSet || candidateSets[salt % (candidateSets.length || 1)] || candidateSets[0];
 
-    finalItems = [{ product: setItem, role: "set", roleName: "Set trang phục đồng bộ" }];
-    finalScore = 96;
+    if (setItem && (!options?.budget || setItem.price <= options.budget)) {
+      finalItems = [{ product: setItem, role: "set", roleName: "Set trang phục đồng bộ" }];
+      finalScore = 96;
 
-    if (options?.includeOuterwear && outerwears.length > 0) {
-      const outer = outerwears[salt % outerwears.length];
-      if (evaluateColorScore(setItem, outer) >= 24) {
-        finalItems.push({ product: outer, role: "outerwear", roleName: "Áo khoác ngoài (tùy chọn)" });
+      if (options?.includeOuterwear && outerwears.length > 0) {
+        const fixedOuter = options.fixedOuterwearProductId
+          ? outerwears.find((o) => o.id === options.fixedOuterwearProductId)
+          : undefined;
+        const outer = fixedOuter || outerwears[salt % outerwears.length];
+        const fitsBudget = !options.budget || setItem.price + outer.price <= options.budget;
+        if (fitsBudget && evaluateColorScore(setItem, outer) >= 24) {
+          finalItems.push({ product: outer, role: "outerwear", roleName: "Áo khoác ngoài (tùy chọn)" });
+        }
       }
     }
   }
