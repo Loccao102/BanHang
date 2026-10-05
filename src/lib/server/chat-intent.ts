@@ -5,6 +5,7 @@ import type {
   ProductCategory
 } from "@/lib/products";
 import type { ShoppingState } from "@/lib/server/chat-state";
+import { semanticTextScore } from "@/lib/server/product-semantic-profile";
 
 export type ShoppingIntentName =
   | "search_products"
@@ -519,6 +520,13 @@ export function retrieveProductsFromIntent(
       const target = normalized(intent.style);
       if ((product.style || []).some((value) => normalized(value).includes(target))) score += 10;
       if ((product.styleKeywords || []).some((value) => normalized(value).includes(target))) score += 6;
+    }
+
+    const semanticQuery = [intent.style, intent.occasion && intent.occasion !== "all" ? intent.occasion : undefined]
+      .filter(Boolean)
+      .join(" ");
+    if (semanticQuery) {
+      score += Math.min(12, semanticTextScore(product, semanticQuery) * 2);
     }
 
     score += Math.max(-4, Math.min(8, affinityScores.get(product.id) ?? 0));
