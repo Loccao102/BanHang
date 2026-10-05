@@ -165,7 +165,7 @@ export function semanticTextScore(product: Product, query: string) {
   const q = normalize(query);
   if (!q) return 0;
 
-  const profile = normalize(product.aiSearchText || buildProductSemanticText(product));
+  const profile = normalize([product.aiSearchText, buildProductSemanticText(product)].filter(Boolean).join(" | "));
   const tokens = Array.from(new Set(q.split(" ").filter((token) => token.length >= 3)));
   if (!tokens.length) return 0;
 
