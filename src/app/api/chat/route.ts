@@ -4,6 +4,7 @@ import type { Product } from "@/lib/products";
 import { getCurrentUser } from "@/lib/server/auth";
 import { buildAgentPlan } from "@/lib/server/chat-agent";
 import { askGemini, loadAvailableProducts, retrieveProducts, titleFromMessage } from "@/lib/server/chat-assistant";
+import { analyzeShoppingIntent, retrieveProductsFromIntent } from "@/lib/server/chat-intent";
 import { getDb } from "@/lib/server/db";
 
 export const runtime = "nodejs";
@@ -207,7 +208,40 @@ export async function POST(request: Request) {
   }) : [];
   const affinityScores = new Map(affinityRows.map((item) => [item.productId, item.score]));
 
-  const initiallyFound = retrieveProducts(message, catalog, 5, contextProducts, affinityScores);
+  const intent = await analyzeShoppingIntent({
+    message,
+    history,
+    contextProducts
+  });
+
+  // The AI parser owns natural-language/context understanding. The legacy retriever is
+  // retained only as a resilience fallback when intent parsing is unavailable.
+  const initiallyFound = intent && intent.confidence >= 0.35
+    ? retrieveProductsFromIntent(intent, catalog, 5, contextProducts, affinityScores)
+    : retrieveProducts(message, catalog, 5, contextProducts, affinityScores);
+
+  // Some natural order queries do not contain literal words such as "đơn" or "order".
+  // Once the intent model identifies them, fetch the private order context before composing.
+  if (user && db && intent?.intent === "order" && !orderContext) {
+    const orderDetails = await db.order.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+      select: {
+        id: true,
+        createdAt: true,
+        status: true,
+        paymentStatus: true,
+        total: true,
+        shippingCarrier: true,
+        trackingCode: true
+      }
+    });
+    orderContext = orderDetails.length
+      ? orderDetails.map((order) => `#${order.id} | ${order.status} | payment=${order.paymentStatus} | total=${order.total} VND | carrier=${order.shippingCarrier ?? "-"} | tracking=${order.trackingCode ?? "-"} | ${order.createdAt.toISOString()}`).join("\n")
+      : "Khách chưa có đơn hàng.";
+  }
+
   const plan = buildAgentPlan({
     message,
     found: initiallyFound,
@@ -215,7 +249,8 @@ export async function POST(request: Request) {
     catalog,
     orders,
     coupons,
-    loggedIn: Boolean(user)
+    loggedIn: Boolean(user),
+    intent
   });
 
   const productIdsFromActions = plan.actions.flatMap((action) => {
