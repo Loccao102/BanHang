@@ -4,7 +4,8 @@ import type { Product } from "@/lib/products";
 import { getCurrentUser } from "@/lib/server/auth";
 import { buildAgentPlan } from "@/lib/server/chat-agent";
 import { askGemini, loadAvailableProducts, retrieveProducts, titleFromMessage } from "@/lib/server/chat-assistant";
-import { analyzeShoppingIntent, retrieveProductsFromIntent } from "@/lib/server/chat-intent";
+import { analyzeShoppingIntent } from "@/lib/server/chat-intent";
+import { retrieveProductsHybrid } from "@/lib/server/product-vector-search";
 import { applyShoppingState, buildShoppingState, parseShoppingState } from "@/lib/server/chat-state";
 import { getDb } from "@/lib/server/db";
 
@@ -245,7 +246,15 @@ export async function POST(request: Request) {
   // The AI parser owns natural-language/context understanding. The legacy retriever is
   // retained only as a resilience fallback when intent parsing is unavailable.
   const initiallyFound = intent && intent.confidence >= 0.35
-    ? retrieveProductsFromIntent(intent, catalog, 5, contextProducts, affinityScores)
+    ? await retrieveProductsHybrid({
+        db,
+        message,
+        intent,
+        catalog,
+        contextProducts,
+        affinityScores,
+        limit: 5
+      })
     : retrieveProducts(message, catalog, 5, contextProducts, affinityScores);
 
   // Some natural order queries do not contain literal words such as "đơn" or "order".
