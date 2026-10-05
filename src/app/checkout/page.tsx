@@ -19,10 +19,10 @@ import {
 import { FormEvent, useEffect, useState } from "react";
 import { useStore } from "@/components/store-provider";
 import { OrderTracker } from "@/components/order-tracker";
-import { calculateCouponDiscount, type OrderRecord } from "@/lib/cart";
+import { calculateCouponDiscount, type CouponState, type OrderRecord } from "@/lib/cart";
 import { formatPrice } from "@/lib/products";
 
-type Shipping = { name: string; phone: string; address: string; city: string; note: string };
+type Shipping = { name: string; phone: string; address: string; city: string; note: string };\ntype CouponSuggestion = CouponState & { discount: number };
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -42,7 +42,7 @@ export default function CheckoutPage() {
   // Voucher state in checkout
   const [couponInput, setCouponInput] = useState("");
   const [couponMessage, setCouponMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
-  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponLoading, setCouponLoading] = useState(false);\n  const [suggestedCoupons, setSuggestedCoupons] = useState<CouponSuggestion[]>([]);
 
   useEffect(() => {
     if (!accountLoading && !user) {
@@ -67,6 +67,33 @@ export default function CheckoutPage() {
   const isTestOrder = subtotal <= 10000 || Boolean(coupon?.code?.startsWith("TEST"));
   const shipping = (subtotal >= 699000 || isTestOrder) ? 0 : 30000;
   const total = Math.max(0, subtotal - discount + shipping);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (subtotal <= 0) {
+      setSuggestedCoupons([]);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    void fetch(`/api/coupons/validate?subtotal=${subtotal}`, { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) return { coupons: [] as CouponSuggestion[] };
+        return response.json() as Promise<{ coupons?: CouponSuggestion[] }>;
+      })
+      .then((data) => {
+        if (!cancelled) setSuggestedCoupons(data.coupons ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setSuggestedCoupons([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [subtotal]);
 
   const bankId = process.env.NEXT_PUBLIC_BANK_ID ?? "MB";
   const account = process.env.NEXT_PUBLIC_BANK_ACCOUNT ?? "0123456789";
@@ -555,21 +582,19 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="checkoutPromoChips">
-                  <span className="checkoutPromoChipHint">Mã đang có:</span>
-                  <button
-                    type="button"
-                    className="checkoutPromoChip"
-                    onClick={() => void handleApplyCoupon(undefined, "LSOUL10")}
-                  >
-                    LSOUL10 (-10%)
-                  </button>
-                  <button
-                    type="button"
-                    className="checkoutPromoChip"
-                    onClick={() => void handleApplyCoupon(undefined, "WELCOME15")}
-                  >
-                    WELCOME15 (-15%)
-                  </button>
+                  <span className="checkoutPromoChipHint">
+                    {suggestedCoupons.length ? "Mã áp dụng được:" : "Chưa có mã phù hợp với đơn hiện tại."}
+                  </span>
+                  {suggestedCoupons.map((suggestion) => (
+                    <button
+                      key={suggestion.code}
+                      type="button"
+                      className="checkoutPromoChip"
+                      onClick={() => void handleApplyCoupon(undefined, suggestion.code)}
+                    >
+                      {suggestion.code} (-{formatPrice(suggestion.discount)})
+                    </button>
+                  ))}
                 </div>
               </>
             )}
