@@ -51,10 +51,19 @@ async function waitForDatabase(databaseUrl, maxRetries = 30, delayMs = 1500) {
 
 await waitForDatabase(env.DATABASE_URL);
 
-runLocalBinSteps([
-  ["prisma", ["generate"]],
-  ["prisma", ["db", "push"]]
-], env);
+runLocalBin("prisma", ["generate"], env);
+
+const extensionPrisma = new PrismaClient({
+  datasources: { db: { url: env.DATABASE_URL } }
+});
+
+try {
+  await extensionPrisma.$executeRawUnsafe('CREATE EXTENSION IF NOT EXISTS vector');
+} finally {
+  await extensionPrisma.$disconnect();
+}
+
+runLocalBin("prisma", ["db", "push"], env);
 
 const prisma = new PrismaClient({
   datasources: { db: { url: env.DATABASE_URL } }
