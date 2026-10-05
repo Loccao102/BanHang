@@ -6,3 +6,4 @@ node_modules
 npm-debug.log*
 e2e-results.json
 e2e-results.jsonl
+public/uploads/
