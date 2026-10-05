@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import { runLocalBin, runLocalBinSteps } from "./run-bin.mjs";
+import { runLocalBin } from "./run-bin.mjs";
 
 const env = {
   ...process.env,
