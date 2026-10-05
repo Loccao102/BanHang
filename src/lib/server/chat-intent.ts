@@ -179,7 +179,26 @@ function contextualizeIntent(
   contextProducts: Product[],
   hasPersistentState = false
 ): ShoppingIntent {
-  if (!contextProducts.length) return intent;
+  const parsedRoles = new Set(intent.items.map(inferConstraintRole));
+  const structurallyRequestsOutfit =
+    (parsedRoles.has("top") && parsedRoles.has("bottom")) ||
+    (parsedRoles.has("dress") && parsedRoles.has("outerwear"));
+
+  let normalizedIntent = intent;
+  if (
+    structurallyRequestsOutfit &&
+    ["search_products", "general"].includes(intent.intent)
+  ) {
+    normalizedIntent = {
+      ...intent,
+      intent: "recommend_outfit",
+      targetScope: "outfit"
+    };
+  }
+
+  if (!contextProducts.length) return normalizedIntent;
+
+  intent = normalizedIntent;
 
   const contextRoles = new Set(contextProducts.map(roleFromProduct));
   const isOutfitContext =
