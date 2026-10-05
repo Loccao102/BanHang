@@ -1,4 +1,5 @@
 import { Product, products as seedProducts } from "./products";
+import { semanticTextScore } from "./server/product-semantic-profile";
 
 export type OutfitSetType = "top_bottom" | "dress_layer" | "coord_set" | "all";
 
@@ -158,7 +159,9 @@ function matchesOccasion(product: Product, requested: string) {
 function matchesStyle(product: Product, requested: string) {
   if (requested === "all") return true;
   const target = normalizeSearchValue(requested);
-  return (product.style || []).some((value) => normalizeSearchValue(value).includes(target));
+  if ((product.style || []).some((value) => normalizeSearchValue(value).includes(target))) return true;
+  if ((product.styleKeywords || []).some((value) => normalizeSearchValue(value).includes(target))) return true;
+  return semanticTextScore(product, requested) > 0;
 }
 
 // Generate human-like natural Vietnamese stylist commentary
