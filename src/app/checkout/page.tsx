@@ -22,7 +22,8 @@ import { OrderTracker } from "@/components/order-tracker";
 import { calculateCouponDiscount, type CouponState, type OrderRecord } from "@/lib/cart";
 import { formatPrice } from "@/lib/products";
 
-type Shipping = { name: string; phone: string; address: string; city: string; note: string };\ntype CouponSuggestion = CouponState & { discount: number };
+type Shipping = { name: string; phone: string; address: string; city: string; note: string };
+type CouponSuggestion = CouponState & { discount: number };
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -42,7 +43,8 @@ export default function CheckoutPage() {
   // Voucher state in checkout
   const [couponInput, setCouponInput] = useState("");
   const [couponMessage, setCouponMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
-  const [couponLoading, setCouponLoading] = useState(false);\n  const [suggestedCoupons, setSuggestedCoupons] = useState<CouponSuggestion[]>([]);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [suggestedCoupons, setSuggestedCoupons] = useState<CouponSuggestion[]>([]);
 
   useEffect(() => {
     if (!accountLoading && !user) {
