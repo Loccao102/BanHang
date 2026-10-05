@@ -128,6 +128,39 @@ function getAvailableSizes(product: Product): string[] {
   return Array.isArray(product.sizes) && product.sizes.length > 0 ? product.sizes : ["S", "M", "L"];
 }
 
+function normalizeSearchValue(value: string) {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d");
+}
+
+function matchesOccasion(product: Product, requested: string) {
+  if (requested === "all") return true;
+  const values = (product.occasion || []).map(normalizeSearchValue);
+
+  if (requested === "party") {
+    return values.some((value) => /(tiec|su kien|party|bar|club|clubbing|da hoi|gala|event)/.test(value));
+  }
+  if (requested === "date") {
+    return values.some((value) => /(hen ho|date)/.test(value));
+  }
+  if (requested === "work") {
+    return values.some((value) => /(di lam|cong so|work|office)/.test(value));
+  }
+  if (requested === "casual") {
+    return values.some((value) => /(di choi|cafe|casual|dao pho)/.test(value));
+  }
+  return values.some((value) => value.includes(normalizeSearchValue(requested)));
+}
+
+function matchesStyle(product: Product, requested: string) {
+  if (requested === "all") return true;
+  const target = normalizeSearchValue(requested);
+  return (product.style || []).some((value) => normalizeSearchValue(value).includes(target));
+}
+
 // Generate human-like natural Vietnamese stylist commentary
 function generateStylistReview(
   setType: "top_bottom" | "dress_layer" | "coord_set",
@@ -194,6 +227,7 @@ export type GenerateOutfitOptions = {
   preferredTopColor?: Product["colorFamily"];
   preferredBottomColor?: Product["colorFamily"];
   preferredDressColor?: Product["colorFamily"];
+  preferredBottomTypes?: Product["type"][];
   requiredProductId?: string;
   excludeIds?: string[];
   variantSalt?: number;
@@ -263,21 +297,23 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
     if (requiredProduct?.category === "bottoms") targetBottom = requiredProduct;
 
     // Filter by occasion / style if specified
-    const filterFn = (p: Product) => {
-      const matchOcc = occasionChoice === "all" || (p.occasion || []).includes(occasionChoice);
-      const matchSty = styleChoice === "all" || (p.style || []).includes(styleChoice);
-      return matchOcc && matchSty;
-    };
+    const filterFn = (p: Product) => matchesOccasion(p, occasionChoice) && matchesStyle(p, styleChoice);
 
     const topsByColor = options?.preferredTopColor
       ? tops.filter((p) => p.colorFamily === options.preferredTopColor)
       : tops;
-    const bottomsByColor = options?.preferredBottomColor
-      ? bottoms.filter((p) => p.colorFamily === options.preferredBottomColor)
-      : bottoms;
 
-    const topColorPool = topsByColor.length > 0 ? topsByColor : tops;
-    const bottomColorPool = bottomsByColor.length > 0 ? bottomsByColor : bottoms;
+    const bottomsByType = options?.preferredBottomTypes?.length
+      ? bottoms.filter((p) => options.preferredBottomTypes!.includes(p.type))
+      : bottoms;
+    const bottomsByColor = options?.preferredBottomColor
+      ? bottomsByType.filter((p) => p.colorFamily === options.preferredBottomColor)
+      : bottomsByType;
+
+    // Màu và loại trang phục là hard constraints: không được tự đổi.
+    // Occasion/style là ranking constraints: nếu thiếu match chính xác thì vẫn giữ đúng màu + loại món.
+    const topColorPool = topsByColor;
+    const bottomColorPool = bottomsByColor;
 
     const preferredTops = topColorPool.filter(filterFn);
     const candidateTops = preferredTops.length > 0 ? preferredTops : topColorPool;
@@ -307,27 +343,25 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
 
     // Pick from top tier with salt variation
     const topTier = scoredPairs.slice(0, Math.min(8, scoredPairs.length));
-    const selectedPair = topTier[salt % (topTier.length || 1)] || scoredPairs[0] || {
-      top: tops[0],
-      bottom: bottoms[0],
-      score: 92
-    };
+    const selectedPair = topTier[salt % (topTier.length || 1)] || scoredPairs[0];
 
-    finalScore = selectedPair.score;
-    finalItems = [
-      { product: selectedPair.top, role: "top", roleName: "Áo / Corset" },
-      { product: selectedPair.bottom, role: "bottom", roleName: "Quần / Chân váy" }
-    ];
+    if (selectedPair) {
+      finalScore = selectedPair.score;
+      finalItems = [
+        { product: selectedPair.top, role: "top", roleName: "Áo / Corset" },
+        { product: selectedPair.bottom, role: "bottom", roleName: "Quần / Chân váy" }
+      ];
 
-    // Chỉ thêm áo khoác ngoài khi khách yêu cầu (trước đây dựa vào salt nên tự thêm ngoài ý muốn)
-    if (options?.includeOuterwear && outerwears.length > 0) {
-      const bestOuter = outerwears.find((o) =>
-        evaluateColorScore(selectedPair.top, o) >= 25 &&
-        evaluateFormality(selectedPair.top, o) >= 15
-      );
-      if (bestOuter && !finalItems.some((i) => i.product.id === bestOuter.id)) {
-        finalItems.push({ product: bestOuter, role: "outerwear", roleName: "Áo khoác ngoài (tùy chọn)" });
-        finalScore = Math.min(99, finalScore + 2);
+      // Chỉ thêm áo khoác ngoài khi khách yêu cầu (trước đây dựa vào salt nên tự thêm ngoài ý muốn)
+      if (options?.includeOuterwear && outerwears.length > 0) {
+        const bestOuter = outerwears.find((o) =>
+          evaluateColorScore(selectedPair.top, o) >= 25 &&
+          evaluateFormality(selectedPair.top, o) >= 15
+        );
+        if (bestOuter && !finalItems.some((i) => i.product.id === bestOuter.id)) {
+          finalItems.push({ product: bestOuter, role: "outerwear", roleName: "Áo khoác ngoài (tùy chọn)" });
+          finalScore = Math.min(99, finalScore + 2);
+        }
       }
     }
   } else if (chosenType === "dress_layer") {
@@ -338,24 +372,31 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
     const dressesByColor = options?.preferredDressColor
       ? dresses.filter((p) => p.colorFamily === options.preferredDressColor)
       : dresses;
-    const dressColorPool = dressesByColor.length > 0 ? dressesByColor : dresses;
-    const candidateDresses = requiredProduct ? [requiredProduct] : dressColorPool;
-    const dress = candidateDresses[salt % (candidateDresses.length || 1)] || dressColorPool[0] || dresses[0];
+    const dressColorPool = dressesByColor;
+    const occasionDresses = dressColorPool.filter((p) => matchesOccasion(p, occasionChoice) && matchesStyle(p, styleChoice));
+    const candidateDresses = requiredProduct
+      ? [requiredProduct]
+      : occasionDresses.length > 0
+      ? occasionDresses
+      : dressColorPool;
+    const dress = candidateDresses[salt % (candidateDresses.length || 1)];
 
-    finalItems = [{ product: dress, role: "dress", roleName: "Đầm thiết kế" }];
-    finalScore = 93;
+    if (dress) {
+      finalItems = [{ product: dress, role: "dress", roleName: "Đầm thiết kế" }];
+      finalScore = 93;
 
-    // Áo khoác chỉ được thêm khi khách yêu cầu rõ ràng
-    if (options?.includeOuterwear && outerwears.length > 0) {
-      const scoredOuters = outerwears.map((o) => ({
-        outer: o,
-        score: evaluateColorScore(dress, o) + evaluateFormality(dress, o) + evaluateSharedTags(dress, o)
-      })).sort((a, b) => b.score - a.score);
+      // Áo khoác chỉ được thêm khi khách yêu cầu rõ ràng
+      if (options?.includeOuterwear && outerwears.length > 0) {
+        const scoredOuters = outerwears.map((o) => ({
+          outer: o,
+          score: evaluateColorScore(dress, o) + evaluateFormality(dress, o) + evaluateSharedTags(dress, o)
+        })).sort((a, b) => b.score - a.score);
 
-      const bestOuter = scoredOuters[0];
-      if (bestOuter && bestOuter.score >= 45) {
-        finalItems.push({ product: bestOuter.outer, role: "outerwear", roleName: "Áo khoác blazer / Cardigan (tùy chọn)" });
-        finalScore = Math.min(99, 90 + Math.round(bestOuter.score / 6));
+        const bestOuter = scoredOuters[0];
+        if (bestOuter && bestOuter.score >= 45) {
+          finalItems.push({ product: bestOuter.outer, role: "outerwear", roleName: "Áo khoác blazer / Cardigan (tùy chọn)" });
+          finalScore = Math.min(99, 90 + Math.round(bestOuter.score / 6));
+        }
       }
     }
   } else {
@@ -387,7 +428,13 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
   const originalPrice = itemsWithSizes.reduce((sum, i) => sum + (i.product.oldPrice || i.product.price), 0);
   const savings = originalPrice > totalPrice ? originalPrice - totalPrice : undefined;
 
-  const review = generateStylistReview(chosenType, itemsWithSizes.map((i) => i.product), occasionChoice, styleChoice);
+  const review = itemsWithSizes.length
+    ? generateStylistReview(chosenType, itemsWithSizes.map((i) => i.product), occasionChoice, styleChoice)
+    : {
+        title: "Chưa có set khớp đủ yêu cầu",
+        reason: "Catalog hiện không có đủ sản phẩm đáp ứng đồng thời màu sắc và loại trang phục đã chọn.",
+        stylingTip: "Hãy đổi một ràng buộc màu hoặc loại trang phục để LSOUL phối lại."
+      };
 
   let matchBadge = "Tôn dáng xuất sắc";
   if (finalScore >= 96) matchBadge = "Tuyệt đối hợp gu";
