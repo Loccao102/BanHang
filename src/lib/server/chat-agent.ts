@@ -8,6 +8,36 @@ function normalize(text: string) {
   return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
+const outfitColorPatterns: Array<[RegExp, Product["colorFamily"]]> = [
+  [/\b(?:den|black)\b/, "black"],
+  [/\b(?:trang|white|ivory)\b/, "white"],
+  [/\b(?:do|red|wine|burgundy)\b/, "red"],
+  [/\b(?:be|beige|kem|stone)\b/, "beige"],
+  [/\b(?:navy|xanh dam)\b/, "navy"],
+  [/\b(?:xanh la|green|olive)\b/, "green"],
+  [/\b(?:xanh|blue|denim)\b/, "blue"],
+  [/\b(?:nau|brown)\b/, "brown"],
+  [/\b(?:xam|gray|grey|charcoal)\b/, "gray"],
+  [/\b(?:hong|pink)\b/, "pink"]
+];
+
+function colorFromSegment(segment: string) {
+  return outfitColorPatterns.find(([pattern]) => pattern.test(segment))?.[1];
+}
+
+function extractOutfitColorPreferences(message: string) {
+  const text = normalize(message);
+  const topMatch = text.match(/(?:ao|corset|top|bodysuit|croptop)[^,.!?;]{0,40}/);
+  const bottomMatch = text.match(/(?:chan vay|skirt|quan|pants|trousers|jeans|shorts)[^,.!?;]{0,40}/);
+  const dressMatch = text.match(/(?:dam|dress)[^,.!?;]{0,40}/);
+
+  return {
+    top: topMatch ? colorFromSegment(topMatch[0]) : undefined,
+    bottom: bottomMatch ? colorFromSegment(bottomMatch[0]) : undefined,
+    dress: dressMatch ? colorFromSegment(dressMatch[0]) : undefined
+  };
+}
+
 export function extractSize(message: string) {
   const match = normalize(message).match(/(?:size|co|cỡ)\s*(xs|s|m|l|xl|2xl|24|25|26|27|28|29|30)\b/i);
   return match?.[1]?.toUpperCase();
@@ -62,12 +92,17 @@ export function buildOutfit(message: string, catalog: Product[]) {
   else if (text.includes("bold") || text.includes("ca tinh")) style = "bold";
   else if (text.includes("nu tinh") || text.includes("feminine")) style = "feminine";
 
+  const colorPreferences = extractOutfitColorPreferences(message);
+
   const coordinated = coordinateSmartOutfit({
     catalog,
     setType,
     occasion,
     style,
     budget: Number.isFinite(budget) ? budget : undefined,
+    preferredTopColor: colorPreferences.top,
+    preferredBottomColor: colorPreferences.bottom,
+    preferredDressColor: colorPreferences.dress,
     // Chỉ thêm áo khoác ngoài khi khách yêu cầu rõ ràng.
     includeOuterwear: /(khoac|blazer|jacket|cardigan|layer|layering|ao ngoai|giu am|mua dong|thu dong|lanh)/.test(text)
   });
