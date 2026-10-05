@@ -1,5 +1,6 @@
 import type { Prisma } from "@prisma/client";
 import type { Product, ProductVariant } from "@/lib/products";
+import { buildProductSemanticText } from "@/lib/server/product-semantic-profile";
 
 type VariantRow = {
   id: string;
@@ -88,7 +89,7 @@ export function toProductRow(product: Product) {
     visualWeight: product.visualWeight ?? Math.max(1, Math.min(5, product.formality ?? 3)),
     volume: product.volume ?? (/wide|flare|tiered|babydoll|ruffle|xòe/i.test([product.fit, product.silhouette].filter(Boolean).join(" ")) ? "voluminous" : /slim|bodycon|corset|fitted|ôm/i.test([product.fit, product.silhouette].filter(Boolean).join(" ")) ? "fitted" : "balanced"),
     styleKeywords: product.styleKeywords ?? product.style,
-    aiSearchText: product.aiSearchText ?? [product.name, product.subtitle, product.category, product.type, product.color, ...product.style, ...product.occasion].join(" "),
+    aiSearchText: product.aiSearchText?.trim() || buildProductSemanticText(product),
     analyzerReady: product.analyzerReady ?? false
   };
 }
