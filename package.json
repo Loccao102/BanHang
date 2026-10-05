@@ -32,6 +32,7 @@
     "docker:reset": "docker compose down -v",
     "docker:logs": "docker compose logs -f web postgres",
     "ai:rebuild": "tsx scripts/rebuild-ai-profiles.ts",
+    "ai:eval": "tsx scripts/chat-eval-report.ts",
     "db:catalog": "node scripts/db-catalog-sync.mjs",
     "run:first": "docker compose up -d --build",
     "start:app": "docker compose up -d",
