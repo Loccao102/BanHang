@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Coupon, Order } from "@prisma/client";
 import type { ChatAgentAction } from "@/lib/chat";
 import type { Product } from "@/lib/products";
+import type { IntentItemConstraint, OutfitRole, ShoppingIntent } from "@/lib/server/chat-intent";
 import { parseBudget, retrieveProducts } from "@/lib/server/chat-assistant";
 
 function normalize(text: string) {
@@ -85,6 +86,104 @@ function inStockSize(product: Product, requested?: string) {
   return available.length === 1 ? available[0].size : null;
 }
 
+function productRole(product: Product): Exclude<OutfitRole, "any"> {
+  if (product.category === "tops") return "top";
+  if (product.category === "bottoms") return "bottom";
+  if (product.category === "dress") return "dress";
+  if (product.category === "outerwear") return "outerwear";
+  return "set";
+}
+
+function constraintRole(item: IntentItemConstraint): Exclude<OutfitRole, "any"> | undefined {
+  if (item.role !== "any") return item.role;
+  if (item.category === "tops") return "top";
+  if (item.category === "bottoms") return "bottom";
+  if (item.category === "dress") return "dress";
+  if (item.category === "outerwear") return "outerwear";
+  if (item.category === "set") return "set";
+
+  const type = item.types?.[0];
+  if (type && ["corset", "crop-top", "bodysuit", "blouse", "shirt", "knit-top"].includes(type)) return "top";
+  if (type && ["jeans", "trousers", "flare-pants", "shorts", "skirt"].includes(type)) return "bottom";
+  if (type && ["mini-dress", "midi-dress", "maxi-dress", "bodycon-dress"].includes(type)) return "dress";
+  if (type && ["blazer", "jacket", "cardigan"].includes(type)) return "outerwear";
+  if (type === "set") return "set";
+  return undefined;
+}
+
+type RoleState = {
+  fixedProductId?: string;
+  constraint?: IntentItemConstraint;
+};
+
+function buildOutfitFromIntent(intent: ShoppingIntent, catalog: Product[], contextProducts: Product[]) {
+  const roles: Partial<Record<Exclude<OutfitRole, "any">, RoleState>> = {};
+
+  if (intent.inheritPrevious) {
+    for (const product of contextProducts) {
+      const role = productRole(product);
+      if (!roles[role]) roles[role] = { fixedProductId: product.id };
+    }
+  }
+
+  for (const item of intent.items) {
+    const role = constraintRole(item);
+    if (!role) continue;
+
+    if (item.keepPrevious) {
+      // Keep the concrete product already stored for this role. If there is no previous
+      // item for that role, keep the constraint as a best-effort preference.
+      if (!roles[role]?.fixedProductId) {
+        roles[role] = { constraint: item };
+      }
+      continue;
+    }
+
+    // An explicit change releases the previous product for this role and applies the
+    // newly parsed hard constraints instead.
+    roles[role] = { constraint: item };
+  }
+
+  let setType: OutfitSetType = "all";
+  if (roles.dress) setType = "dress_layer";
+  else if (roles.set) setType = "coord_set";
+  else if (roles.top || roles.bottom) setType = "top_bottom";
+
+  const top = roles.top?.constraint;
+  const bottom = roles.bottom?.constraint;
+  const dress = roles.dress?.constraint;
+  const hasFixedOuterwear = Boolean(roles.outerwear?.fixedProductId);
+
+  const coordinated = coordinateSmartOutfit({
+    catalog,
+    setType,
+    occasion: intent.occasion || "all",
+    style: intent.style || "all",
+    budget: intent.budgetMax,
+    preferredTopColor: top?.colorFamily,
+    preferredBottomColor: bottom?.colorFamily,
+    preferredDressColor: dress?.colorFamily,
+    preferredTopTypes: top?.types,
+    preferredBottomTypes: bottom?.types,
+    preferredDressTypes: dress?.types,
+    preferredTopLength: top?.lengthClass,
+    preferredBottomLength: bottom?.lengthClass,
+    preferredDressLength: dress?.lengthClass,
+    fixedTopProductId: roles.top?.fixedProductId,
+    fixedBottomProductId: roles.bottom?.fixedProductId,
+    fixedDressProductId: roles.dress?.fixedProductId,
+    fixedOuterwearProductId: roles.outerwear?.fixedProductId,
+    fixedSetProductId: roles.set?.fixedProductId,
+    includeOuterwear: intent.includeOuterwear || hasFixedOuterwear
+  });
+
+  return {
+    products: coordinated.items.map((item) => item.product),
+    size: intent.requestedSize,
+    outfit: coordinated
+  };
+}
+
 export function buildOutfit(message: string, catalog: Product[]) {
   const budget = parseBudget(message) ?? Number.POSITIVE_INFINITY;
   const size = extractSize(message);
@@ -159,6 +258,7 @@ type AgentPlanArgs = {
   orders: Pick<Order, "id" | "status" | "createdAt">[];
   coupons: Coupon[];
   loggedIn: boolean;
+  intent?: ShoppingIntent | null;
 };
 
 export function buildAgentPlan(args: AgentPlanArgs) {
@@ -167,28 +267,54 @@ export function buildAgentPlan(args: AgentPlanArgs) {
   const notes: string[] = [];
   let products = args.found;
 
-  const explicitAdd = /(them|add|bo|cho).*(gio|cart)/.test(text) || /(mua).*(cai|mau|mon)/.test(text);
-  const explicitBundle = /(them|add|bo|cho).*(ca|nguyen|toan).*(set|outfit|bo).*(gio|cart)/.test(text);
-  const mentionsTop = /\b(ao|corset|top|bodysuit|croptop)\b/.test(text);
-  const mentionsBottom =
+  // Structured AI intent is the primary planner input. Regexes below are only the
+  // deterministic fallback path when the intent model is unavailable or uncertain.
+  const structured = args.intent && args.intent.confidence >= 0.35 ? args.intent : null;
+
+  const legacyExplicitAdd = /(them|add|bo|cho).*(gio|cart)/.test(text) || /(mua).*(cai|mau|mon)/.test(text);
+  const legacyExplicitBundle = /(them|add|bo|cho).*(ca|nguyen|toan).*(set|outfit|bo).*(gio|cart)/.test(text);
+  const legacyMentionsTop = /\b(ao|corset|top|bodysuit|croptop)\b/.test(text);
+  const legacyMentionsBottom =
     /(?:\bchan vay\b|\bskirt\b|\bquan\b|\bpants\b|\btrousers\b|\bjeans\b|\bshorts\b)/.test(text) ||
-    (mentionsTop && /\bvay\b/.test(text));
-  const contextLooksLikeOutfit = new Set(args.contextProducts.map((item) => item.category)).size >= 2;
-  const isOutfitRefinement = contextLooksLikeOutfit && /(doi|khac|mau|sang|giu|thay)/.test(text);
-  const wantsOutfit =
-    /(phoi|outfit|nguyen set|ca set|full look)/.test(text) ||
-    (mentionsTop && mentionsBottom) ||
-    isOutfitRefinement;
-  const wantsOpen = /(mo|xem).*(cai|mau|san pham|mon)/.test(text);
-  const wantsTryOn = /(thu|phong thu).*(do|set|outfit|bo|mon|cai)|(?:thu do|thu bo|thu set|vao phong thu|phong thu do|thu len dang)\b/.test(text);
-  const requestedSize = extractSize(args.message);
+    (legacyMentionsTop && /\bvay\b/.test(text));
+  const legacyContextLooksLikeOutfit = new Set(args.contextProducts.map((item) => item.category)).size >= 2;
+  const legacyRefinement = legacyContextLooksLikeOutfit && /(doi|khac|mau|sang|giu|thay)/.test(text);
+
+  const explicitBundle = structured
+    ? structured.intent === "add_outfit_to_cart"
+    : legacyExplicitBundle;
+  const explicitAdd = structured
+    ? structured.intent === "add_to_cart" || structured.intent === "add_outfit_to_cart"
+    : legacyExplicitAdd;
+  const wantsOutfit = structured
+    ? ["recommend_outfit", "modify_outfit", "add_outfit_to_cart"].includes(structured.intent)
+    : /(phoi|outfit|nguyen set|ca set|full look)/.test(text) || (legacyMentionsTop && legacyMentionsBottom) || legacyRefinement;
+  const wantsOpen = structured
+    ? structured.intent === "open_product"
+    : /(mo|xem).*(cai|mau|san pham|mon)/.test(text);
+  const wantsTryOn = structured
+    ? structured.intent === "try_on"
+    : /(thu|phong thu).*(do|set|outfit|bo|mon|cai)|(?:thu do|thu bo|thu set|vao phong thu|phong thu do|thu len dang)\b/.test(text);
+  const requestedSize = structured?.requestedSize || extractSize(args.message);
+
+  if (structured) {
+    notes.push(
+      "Intent AI đã phân tích: " + structured.intent +
+      (structured.occasion && structured.occasion !== "all" ? ", dịp=" + structured.occasion : "") +
+      (structured.style ? ", style=" + structured.style : "") +
+      (structured.budgetMax ? ", budget tối đa=" + structured.budgetMax.toLocaleString("vi-VN") + " VND" : "") +
+      ". Các thuộc tính item trong intent là ràng buộc cứng do khách nêu; không được tự đổi."
+    );
+  }
 
   const referencePool = args.contextProducts.length ? args.contextProducts : args.found;
-  const index = ordinalIndex(args.message) ?? 0;
+  const index = structured?.referenceIndex ?? ordinalIndex(args.message) ?? 0;
   const referenced = referencePool[index] ?? args.found[0];
 
   if (wantsOutfit) {
-    const outfit = buildOutfit(args.message, args.catalog);
+    const outfit = structured
+      ? buildOutfitFromIntent(structured, args.catalog, args.contextProducts)
+      : buildOutfit(args.message, args.catalog);
     products = outfit.products;
     if (outfit.products.length) {
       const total = outfit.products.reduce((sum, item) => sum + item.price, 0);
@@ -255,8 +381,21 @@ export function buildAgentPlan(args: AgentPlanArgs) {
       notes.push("Không tìm thấy outfit nào khớp đầy đủ các ràng buộc khách vừa yêu cầu. Không được tự thay màu hoặc đổi loại trang phục; hãy báo rõ món nào chưa có và mời khách đổi đúng ràng buộc đó.");
     }
   } else if (wantsTryOn) {
-    const isFullSet = /(ca|nguyen|toan|bo|set|outfit)/.test(text);
-    const targetProducts = (isFullSet && referencePool.length > 1
+    const structuredNeedsFreshOutfit = Boolean(
+      structured &&
+      structured.targetScope === "outfit" &&
+      structured.items.length > 0 &&
+      args.contextProducts.length === 0
+    );
+    const freshlyCoordinated = structuredNeedsFreshOutfit && structured
+      ? buildOutfitFromIntent(structured, args.catalog, []).products
+      : [];
+    const isFullSet = structured
+      ? structured.targetScope === "outfit" || (structured.targetScope === "previous" && referencePool.length > 1)
+      : /(ca|nguyen|toan|bo|set|outfit)/.test(text);
+    const targetProducts = (freshlyCoordinated.length
+      ? freshlyCoordinated
+      : isFullSet && referencePool.length > 1
       ? referencePool.slice(0, 3)
       : [referenced ?? args.found[0]]).filter(Boolean);
 
