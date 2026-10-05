@@ -61,6 +61,11 @@ export type ChatMessageView = {
   createdAt?: string;
   products?: Product[];
   actions?: ChatAgentAction[];
+  /**
+   * Internal shopping context snapshot used to preserve explicit constraints across
+   * guest-chat turns. Logged-in conversations persist the same state server-side.
+   */
+  shoppingState?: unknown;
 };
 
 export type ChatConversationSummary = {
