@@ -175,7 +175,7 @@ export default function AdminMarketingPage() {
         <div className="antPageHeaderRight">
           <div className="antHeaderActionGroup">
             <a
-              href="http://localhost:3000/social"
+              href="/social"
               target="_blank"
               rel="noreferrer"
               className="antBtn antBtnDefault"
