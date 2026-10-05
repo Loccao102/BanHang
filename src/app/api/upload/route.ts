@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/server/auth";
-import fs from "fs/promises";
-import path from "path";
+import { uploadImage } from "@/lib/server/storage";
 
 export const runtime = "nodejs";
 
@@ -18,7 +17,7 @@ const MAX_SIZE = 10 * 1024 * 1024; // 10MB
 export async function POST(request: Request) {
   try {
     const user = await getCurrentUser();
-    if (user && user.role !== "admin") {
+    if (!user || user.role !== "admin") {
       return NextResponse.json(
         { error: "Chỉ quản trị viên mới có quyền tải ảnh lên hệ thống." },
         { status: 403 }
@@ -58,21 +57,22 @@ export async function POST(request: Request) {
       );
     }
 
-    const extension = mime.split("/")[1]?.replace("jpeg", "jpg") || "jpg";
-    const filename = `prod-${Date.now()}-${crypto.randomUUID().slice(0, 8)}.${extension}`;
+    const uploaded = await uploadImage(file);
 
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    await fs.mkdir(uploadDir, { recursive: true });
-
-    const buffer = Buffer.from(await file.arrayBuffer());
-    await fs.writeFile(path.join(uploadDir, filename), buffer);
-
-    const fileUrl = `/api/uploads/${filename}`;
-    return NextResponse.json({ url: fileUrl, filename });
+    return NextResponse.json({
+      url: uploaded.url,
+      filename: uploaded.key,
+      provider: uploaded.provider
+    });
   } catch (error) {
     console.error("Upload handler error:", error);
     return NextResponse.json(
-      { error: "Không thể lưu ảnh trên máy chủ." },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Không thể tải ảnh lên hệ thống."
+      },
       { status: 500 }
     );
   }
