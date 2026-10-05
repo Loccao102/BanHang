@@ -153,9 +153,22 @@ export function applyShoppingState(intent: ShoppingIntent, previous: ShoppingSta
       continue;
     }
 
-    // Explicit changes win over inherited state. Missing fields are intentionally not
-    // copied from the old role, so "đổi áo sang trắng" can also release an old type.
-    itemsByRole.set(role, item);
+    // Explicit follow-ups patch the previous role instead of replacing it wholesale.
+    // Example: "váy dài hơn" must preserve an earlier white skirt constraint while only
+    // changing length. An explicit field in the new intent always wins.
+    const previousRole = previousOutfit.roles[role];
+    const previousItem = previousRole ? stateItem(previousRole) : undefined;
+    itemsByRole.set(role, {
+      role,
+      ...(previousItem?.category ? { category: previousItem.category } : {}),
+      ...(previousItem?.types?.length ? { types: previousItem.types } : {}),
+      ...(previousItem?.colorFamily ? { colorFamily: previousItem.colorFamily } : {}),
+      ...(previousItem?.lengthClass ? { lengthClass: previousItem.lengthClass } : {}),
+      ...(item.category ? { category: item.category } : {}),
+      ...(item.types?.length ? { types: item.types } : {}),
+      ...(item.colorFamily ? { colorFamily: item.colorFamily } : {}),
+      ...(item.lengthClass ? { lengthClass: item.lengthClass } : {})
+    });
   }
 
   return {
