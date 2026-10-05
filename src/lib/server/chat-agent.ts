@@ -5,7 +5,11 @@ import type { Product } from "@/lib/products";
 import { parseBudget, retrieveProducts } from "@/lib/server/chat-assistant";
 
 function normalize(text: string) {
-  return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d");
 }
 
 const outfitColorPatterns: Array<[RegExp, Product["colorFamily"]]> = [
@@ -33,9 +37,18 @@ function colorFromSegment(segment: string) {
 
 function extractOutfitColorPreferences(message: string) {
   const text = normalize(message);
-  const topMatch = text.match(/\b(?:ao|corset|top|bodysuit|croptop)\b[^,.!?;]{0,40}/);
-  const bottomMatch = text.match(/(?:\bchan vay\b|\bskirt\b|\bquan\b|\bpants\b|\btrousers\b|\bjeans\b|\bshorts\b)[^,.!?;]{0,40}/);
-  const dressMatch = text.match(/\b(?:dam|dress)\b[^,.!?;]{0,40}/);
+  const hasTop = /\b(?:ao|corset|top|bodysuit|croptop|so mi|shirt)\b/.test(text);
+  const topMatch = text.match(/\b(?:ao|corset|top|bodysuit|croptop|so mi|shirt)\b[^,.!?;]{0,40}/);
+  const bottomMatch = text.match(
+    hasTop
+      ? /(?:\bchan vay\b|\bvay\b|\bskirt\b|\bquan\b|\bpants\b|\btrousers\b|\bjeans\b|\bshorts\b)[^,.!?;]{0,40}/
+      : /(?:\bchan vay\b|\bskirt\b|\bquan\b|\bpants\b|\btrousers\b|\bjeans\b|\bshorts\b)[^,.!?;]{0,40}/
+  );
+  const dressMatch = text.match(
+    hasTop
+      ? /\b(?:dam|dress)\b[^,.!?;]{0,40}/
+      : /\b(?:dam|dress|vay)\b[^,.!?;]{0,40}/
+  );
 
   return {
     top: topMatch ? colorFromSegment(topMatch[0]) : undefined,
@@ -77,10 +90,19 @@ export function buildOutfit(message: string, catalog: Product[]) {
   const size = extractSize(message);
   const text = normalize(message);
 
+  const mentionsTop = /\b(?:ao|corset|top|bodysuit|croptop|so mi|shirt)\b/.test(text);
+  const wantsSkirt =
+    /\bchan vay\b|\bskirt\b/.test(text) ||
+    (mentionsTop && /\bvay\b/.test(text));
+  const wantsPants = /\b(?:quan|pants|trousers|jeans|shorts)\b/.test(text);
+  const wantsStandaloneDress =
+    /\b(?:dam|dress)\b/.test(text) ||
+    (!mentionsTop && !wantsPants && /\bvay\b/.test(text));
+
   let setType: OutfitSetType = "all";
-  if (text.includes("dam") || text.includes("dress")) {
+  if (wantsStandaloneDress) {
     setType = "dress_layer";
-  } else if (text.includes("quan") || text.includes("chan vay") || text.includes("vay") || text.includes("corset") || text.includes("ao")) {
+  } else if (mentionsTop || wantsSkirt || wantsPants) {
     setType = "top_bottom";
   } else if (text.includes("set") || text.includes("dong bo")) {
     setType = "coord_set";
@@ -88,7 +110,14 @@ export function buildOutfit(message: string, catalog: Product[]) {
 
   let occasion = "all";
   if (text.includes("hen ho") || text.includes("date")) occasion = "date";
-  else if (text.includes("tiec") || text.includes("party")) occasion = "party";
+  else if (
+    text.includes("tiec") ||
+    text.includes("party") ||
+    text.includes("da hoi") ||
+    text.includes("gala") ||
+    text.includes("su kien") ||
+    text.includes("event")
+  ) occasion = "party";
   else if (text.includes("di lam") || text.includes("cong so") || text.includes("work")) occasion = "work";
   else if (text.includes("di choi") || text.includes("cafe") || text.includes("casual")) occasion = "casual";
 
@@ -109,6 +138,11 @@ export function buildOutfit(message: string, catalog: Product[]) {
     preferredTopColor: colorPreferences.top,
     preferredBottomColor: colorPreferences.bottom,
     preferredDressColor: colorPreferences.dress,
+    preferredBottomTypes: wantsSkirt
+      ? ["skirt"]
+      : wantsPants
+      ? ["trousers", "jeans", "flare-pants", "shorts"]
+      : undefined,
     // Chỉ thêm áo khoác ngoài khi khách yêu cầu rõ ràng.
     includeOuterwear: /(khoac|blazer|jacket|cardigan|layer|layering|ao ngoai|giu am|mua dong|thu dong|lanh)/.test(text)
   });
@@ -155,8 +189,8 @@ export function buildAgentPlan(args: AgentPlanArgs) {
 
   if (wantsOutfit) {
     const outfit = buildOutfit(args.message, args.catalog);
+    products = outfit.products;
     if (outfit.products.length) {
-      products = outfit.products;
       const total = outfit.products.reduce((sum, item) => sum + item.price, 0);
       const itemList = outfit.products.map((item) => `${item.name} (${item.color})`).join(" + ");
       const hasOuterwear = outfit.products.some((item) => item.category === "outerwear");
@@ -217,6 +251,8 @@ export function buildAgentPlan(args: AgentPlanArgs) {
         autoExecute: false
       });
       notes.push("Đã tạo sẵn nút cho phép khách đưa cả set phối vào phòng thử đồ AI để xem đồ lên dáng người.");
+    } else {
+      notes.push("Không tìm thấy outfit nào khớp đầy đủ các ràng buộc khách vừa yêu cầu. Không được tự thay màu hoặc đổi loại trang phục; hãy báo rõ món nào chưa có và mời khách đổi đúng ràng buộc đó.");
     }
   } else if (wantsTryOn) {
     const isFullSet = /(ca|nguyen|toan|bo|set|outfit)/.test(text);
