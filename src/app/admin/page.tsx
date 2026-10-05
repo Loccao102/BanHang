@@ -1026,6 +1026,26 @@ function AdminContent() {
                       />
                     </label>
                     <label className="antFormField">
+                      <span className="antFormLabel">Mã nhóm màu (groupCode)</span>
+                      <input
+                        className="antInput"
+                        list="groupCodeOptions"
+                        value={editing.groupCode ?? ""}
+                        onChange={(event) =>
+                          setEditing({
+                            ...editing,
+                            groupCode: event.target.value.trim().toUpperCase().replace(/\s+/g, "-") || undefined
+                          })
+                        }
+                        placeholder="VD: DR-AURA-MAXI - các màu cùng mã sẽ nối với nhau"
+                      />
+                      <datalist id="groupCodeOptions">
+                        {Array.from(new Set(catalog.map((item) => item.groupCode).filter(Boolean))).map((code) => (
+                          <option key={code} value={code} />
+                        ))}
+                      </datalist>
+                    </label>
+                    <label className="antFormField">
                       <span className="antFormLabel">Danh mục</span>
                       <select
                         className="antInput"
