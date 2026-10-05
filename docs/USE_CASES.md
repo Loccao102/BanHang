@@ -5,7 +5,7 @@
 ## 1. Actor của hệ thống
 
 - **A01 – Người dùng mua sắm:** actor tổng quát cho các chức năng mua sắm.
-- **A02 – Khách truy cập:** người chưa đăng nhập, chuyên biệt của A01.
+- **A02 – Khách truy cập:** người chưa đăng nhập, chuyên biệt của A01. Phạm vi: xem catalog, tìm kiếm, xem chi tiết sản phẩm và chat tư vấn ở chế độ khách (không lưu lịch sử). Các thao tác ghi dữ liệu — giỏ hàng, yêu thích, áp mã, đặt hàng, thanh toán, thử đồ, lưu hội thoại — **yêu cầu đăng nhập** với vai trò A03. Hệ thống không hỗ trợ mua hàng ẩn danh (guest checkout).
 - **A03 – Khách hàng:** người đã đăng nhập, có thêm hồ sơ, địa chỉ, lịch sử đơn hàng và lịch sử chat AI.
 - **A04 – Quản trị viên:** quản lý catalog, vận hành bán hàng, khách hàng, ưu đãi và theo dõi analytics.
 - **A05 – Dịch vụ AI Try-On:** FASHN API hoặc Hugging Face FASHN VTON.
@@ -66,6 +66,9 @@ Use Case mở rộng của UC20:
 | UC20.2 | Phản hồi đánh giá AI Stylist | Người dùng mua sắm |
 
 ### G04 – Giỏ hàng, đơn hàng & thanh toán
+
+> Ghi chú: UC23–UC28 chỉ thực hiện được khi đã đăng nhập (actor A03 – Khách hàng). Khách truy cập (A02) chỉ xem được sản phẩm và được điều hướng sang trang đăng nhập khi thao tác mua hàng.
+
 | Mã | Use Case | Actor |
 |---|---|---|
 | UC23 | Thêm sản phẩm vào giỏ hàng | Người dùng mua sắm |

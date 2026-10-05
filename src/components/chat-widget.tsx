@@ -23,6 +23,16 @@ function firstAvailableSize(product: Product) {
   return product.variants?.find((variant) => variant.stock > 0)?.size ?? (Array.isArray(product.sizes) ? product.sizes[0] : "S");
 }
 
+/** Mô tả set đồ đã phối (số món + tổng tiền) để chú thích ngay trên các thẻ sản phẩm. */
+function bundleCaption(message: ChatMessageView) {
+  const action = message.actions?.find((item) => item.type === "add_bundle");
+  if (!action || action.type !== "add_bundle" || action.items.length < 2) return null;
+  const total = (message.products ?? [])
+    .filter((product) => action.items.some((item) => item.productId === product.id))
+    .reduce((sum, product) => sum + product.price, 0);
+  return `Set gồm ${action.items.length} món · tổng ${formatPrice(total)}`;
+}
+
 function readGuestHistory() {
   if (typeof window === "undefined") return [welcome];
   try {
@@ -387,6 +397,7 @@ export function ChatWidget() {
 
                   {message.products?.length ? (
                     <div className="chatProducts">
+                      {bundleCaption(message) ? <div className="chatBundleSummary">{bundleCaption(message)}</div> : null}
                       {message.products.slice(0, 6).map((product) => {
                         const liked = wishlist.includes(product.id);
                         const availableSizes = product.variants?.filter((variant) => variant.stock > 0).map((variant) => variant.size).slice(0, 4).join(" · ") || (Array.isArray(product.sizes) ? product.sizes.slice(0, 4).join(" · ") : "");

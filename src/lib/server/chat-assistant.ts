@@ -235,10 +235,13 @@ ${args.message}
 Hãy phản hồi tận tình, chuyên nghiệp chuẩn stylist LSOUL:`;
 
   // Try gemini-flash-latest with thinkingBudget 0, fallback to standard call
+  // Có thể ghi đè model chính bằng biến môi trường GEMINI_MODEL.
+  const primaryModel = process.env.GEMINI_MODEL?.trim() || "gemini-flash-latest";
   const configs = [
-    { model: "gemini-flash-latest", thinkingBudget: 0 },
-    { model: "gemini-flash-latest", thinkingBudget: undefined },
-    { model: "gemini-2.5-flash-lite", thinkingBudget: undefined }
+    { model: primaryModel, thinkingBudget: 0 },
+    { model: primaryModel, thinkingBudget: undefined },
+    { model: "gemini-flash-lite-latest", thinkingBudget: undefined },
+    { model: "gemini-2.5-flash", thinkingBudget: undefined }
   ];
 
   for (const item of configs) {

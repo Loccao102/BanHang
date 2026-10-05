@@ -194,6 +194,11 @@ export type GenerateOutfitOptions = {
   requiredProductId?: string;
   excludeIds?: string[];
   variantSalt?: number;
+  /**
+   * Chỉ thêm lớp áo khoác ngoài khi người dùng YÊU CẦU rõ ràng.
+   * Mặc định false: khách chọn "áo + quần" thì set chỉ gồm đúng 2 món.
+   */
+  includeOuterwear?: boolean;
 };
 
 export function coordinateSmartOutfit(options?: GenerateOutfitOptions): CoordinatedOutfit {
@@ -301,14 +306,14 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
       { product: selectedPair.bottom, role: "bottom", roleName: "Quần / Chân váy" }
     ];
 
-    // Optionally add a matching outerwear if score is high and salt matches
-    if ((salt % 3 === 0 || styleChoice === "power") && outerwears.length > 0) {
+    // Chỉ thêm áo khoác ngoài khi khách yêu cầu (trước đây dựa vào salt nên tự thêm ngoài ý muốn)
+    if (options?.includeOuterwear && outerwears.length > 0) {
       const bestOuter = outerwears.find((o) =>
         evaluateColorScore(selectedPair.top, o) >= 25 &&
         evaluateFormality(selectedPair.top, o) >= 15
       );
       if (bestOuter && !finalItems.some((i) => i.product.id === bestOuter.id)) {
-        finalItems.push({ product: bestOuter, role: "outerwear", roleName: "Áo khoác ngoài" });
+        finalItems.push({ product: bestOuter, role: "outerwear", roleName: "Áo khoác ngoài (tùy chọn)" });
         finalScore = Math.min(99, finalScore + 2);
       }
     }
@@ -323,8 +328,8 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
     finalItems = [{ product: dress, role: "dress", roleName: "Đầm thiết kế" }];
     finalScore = 93;
 
-    // Find complementary outerwear
-    if (outerwears.length > 0) {
+    // Áo khoác chỉ được thêm khi khách yêu cầu rõ ràng
+    if (options?.includeOuterwear && outerwears.length > 0) {
       const scoredOuters = outerwears.map((o) => ({
         outer: o,
         score: evaluateColorScore(dress, o) + evaluateFormality(dress, o) + evaluateSharedTags(dress, o)
@@ -332,7 +337,7 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
 
       const bestOuter = scoredOuters[0];
       if (bestOuter && bestOuter.score >= 45) {
-        finalItems.push({ product: bestOuter.outer, role: "outerwear", roleName: "Áo khoác blazer / Cardigan" });
+        finalItems.push({ product: bestOuter.outer, role: "outerwear", roleName: "Áo khoác blazer / Cardigan (tùy chọn)" });
         finalScore = Math.min(99, 90 + Math.round(bestOuter.score / 6));
       }
     }
@@ -344,10 +349,10 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
     finalItems = [{ product: setItem, role: "set", roleName: "Set trang phục đồng bộ" }];
     finalScore = 96;
 
-    if (outerwears.length > 0 && salt % 2 === 0) {
+    if (options?.includeOuterwear && outerwears.length > 0) {
       const outer = outerwears[salt % outerwears.length];
       if (evaluateColorScore(setItem, outer) >= 24) {
-        finalItems.push({ product: outer, role: "outerwear", roleName: "Áo khoác ngoài" });
+        finalItems.push({ product: outer, role: "outerwear", roleName: "Áo khoác ngoài (tùy chọn)" });
       }
     }
   }

@@ -8,6 +8,7 @@ import { fromProductRow } from "@/lib/server/product-db";
 import { runHuggingFaceFashn, imageSourceToDataUri, tryReadLocalFile } from "@/lib/server/huggingface-fashn";
 import { runIdmVton } from "@/lib/server/idm-vton";
 import { runGeminiTryOn } from "@/lib/server/gemini-tryon";
+import { upscaleImage, localUpscale, withTimeout } from "@/lib/server/upscale";
 import { isValidOutfit, sortOutfitProducts } from "@/lib/wardrobe";
 
 export const runtime = "nodejs";
@@ -16,6 +17,26 @@ export const maxDuration = 300;
 type TryOnProvider = "fashn-api-v1.6" | "huggingface-fashn-vton-1.5" | "idm-vton" | "gemini-tryon" | "hybrid-fallback";
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Ảnh kết quả từ Hugging Face Space là URL có chữ ký (__sign=...) và sẽ hết hạn,
+ * nên tải về và nhúng thành data URL để kết quả hiển thị bền (client + DB + admin).
+ * Nếu tải lỗi thì giữ nguyên URL gốc.
+ */
+async function inlineRemoteImage(source: string): Promise<string> {
+  if (!/^https?:\/\//i.test(source)) return source;
+  try {
+    const response = await fetch(source);
+    if (!response.ok) return source;
+    const mime = response.headers.get("content-type") ?? "image/webp";
+    if (!mime.startsWith("image/")) return source;
+    const buffer = Buffer.from(await response.arrayBuffer());
+    if (!buffer.length || buffer.length > 12 * 1024 * 1024) return source;
+    return `data:${mime.split(";")[0]};base64,${buffer.toString("base64")}`;
+  } catch {
+    return source;
+  }
+}
 
 function categoryFor(product: Product): "tops" | "bottoms" | "one-pieces" {
   if (product.tryOnCategory) return product.tryOnCategory;
@@ -287,7 +308,7 @@ export async function POST(request: Request) {
           modelImage,
           products: ordered
         });
-        currentImage = geminiOutput;
+        currentImage = await inlineRemoteImage(geminiOutput);
         steps.push({
           productId: ordered.map((p) => p.id).join("+"),
           output: currentImage,
@@ -311,7 +332,7 @@ export async function POST(request: Request) {
             isOuterwearLayer
           });
 
-          currentImage = result.output;
+          currentImage = await inlineRemoteImage(result.output);
           steps.push({
             productId: product.id,
             output: currentImage,
@@ -326,7 +347,7 @@ export async function POST(request: Request) {
               modelImage,
               products: ordered
             });
-            currentImage = geminiOutput;
+            currentImage = await inlineRemoteImage(geminiOutput);
             steps.push({
               productId: ordered.map((p) => p.id).join("+"),
               output: currentImage,
@@ -340,6 +361,32 @@ export async function POST(request: Request) {
         }
       }
     }
+
+      // --- Làm nét ảnh kết quả (không bắt buộc; lỗi thì giữ ảnh gốc) ---
+      // TRYON_UPSCALE: "2"/"4" = siêu phân giải Real-ESRGAN (tốn quota HF),
+      //                "sharp"  = phóng Lanczos + unsharp tại chỗ (miễn phí, tức thì),
+      //                "off"/"0" = tắt.
+      const upscaleSetting = (process.env.TRYON_UPSCALE ?? "2").trim().toLowerCase();
+      const upscaleFactor = Number(upscaleSetting);
+      const useEsrgan = Number.isFinite(upscaleFactor) && upscaleFactor > 1;
+      const useLocal = upscaleSetting === "sharp" || upscaleSetting === "local";
+
+      if (useEsrgan || useLocal) {
+        try {
+          const enhanced = useLocal
+            ? await localUpscale(currentImage, 2)
+            : await withTimeout(upscaleImage(currentImage, upscaleFactor), 90_000);
+          if (enhanced && enhanced !== currentImage) {
+            currentImage = enhanced;
+            steps[steps.length - 1].output = enhanced;
+            console.log(`[try-on] đã làm nét (${useLocal ? "sharp 2x" : `siêu phân giải ${upscaleFactor}x`})`);
+          } else {
+            console.warn("[try-on] không làm nét được, giữ ảnh gốc");
+          }
+        } catch (upscaleError) {
+          console.warn("[try-on] làm nét lỗi, giữ ảnh gốc:", upscaleError instanceof Error ? upscaleError.message : upscaleError);
+        }
+      }
 
       const providers = Array.from(new Set(steps.map((step) => step.provider)));
       const provider =

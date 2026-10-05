@@ -368,11 +368,15 @@ export function TryOnClient() {
                 type="button"
                 className={engine === "gemini" ? "active" : ""}
                 onClick={() => setEngine("gemini")}
-                title="Gemini AI: Thử phối cả bộ outfit"
+                title="Gemini AI: ghép cả bộ outfit và trả ảnh độ phân giải cao (2K) nên nét nhất khi xem lớn. Cần GEMINI_API_KEY có quota model ảnh."
               >
-                ✨ Gemini
+                ✨ Gemini 2K
               </button>
             </div>
+            <p className="fittingEngineHint">
+              Ảnh kết quả được <strong>tự động làm nét 2×</strong> (siêu phân giải Real-ESRGAN) sau khi tạo, nên không bị mờ khi xem lớn.
+              IDM-VTON / Fashn trả ảnh gốc ~576–768px; chọn <strong>Gemini 2K</strong> nếu muốn ảnh gốc đã nét sẵn (yêu cầu GEMINI_API_KEY có quota model ảnh).
+            </p>
           </div>
 
           <button className="btn block fittingRun" disabled={!personImage || !outfitReady || loading} onClick={runTryOn}>
@@ -385,7 +389,11 @@ export function TryOnClient() {
 
         <div className="fittingStage">
           <div className="fittingResult">
-            {resultImage ? <Image src={resultImage} alt="Kết quả thử đồ LSOUL" fill unoptimized priority /> : personImage ? <Image src={personImage} alt="Ảnh người dùng" fill unoptimized /> : <div className="fittingPlaceholder"><WandSparkles size={34} /><strong>Ảnh thử đồ</strong><p>Ảnh kết quả sẽ xuất hiện tại đây.</p></div>}
+            {resultImage
+              ? <img className="fittingStageImage" src={resultImage} alt="Kết quả thử đồ LSOUL" />
+              : personImage
+                ? <img className="fittingStageImage" src={personImage} alt="Ảnh người dùng" />
+                : <div className="fittingPlaceholder"><WandSparkles size={34} /><strong>Ảnh thử đồ</strong><p>Ảnh kết quả sẽ xuất hiện tại đây.</p></div>}
             <span className="fittingStageLabel">{resultImage ? "KẾT QUẢ AI" : "ẢNH CỦA BẠN"}</span>
           </div>
           {intermediate.length > 1 ? <div className="fittingPasses">{intermediate.map((step, index) => <div key={step.productId}><Image src={step.output} alt={`Try-on pass ${index + 1}`} fill unoptimized /><span>PASS {index + 1}</span></div>)}</div> : null}

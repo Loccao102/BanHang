@@ -32,8 +32,16 @@ export async function POST(request: Request) {
   const origin = new URL(request.url).origin;
   const resetUrl = `${origin}/reset-password?token=${encodeURIComponent(token)}`;
 
+  // Chưa tích hợp dịch vụ gửi email: ở môi trường phát triển/demo, liên kết được ghi ra log
+  // và trả về response để luồng đặt lại mật khẩu vẫn kiểm thử được.
+  // Production chỉ bật khi đặt PASSWORD_RESET_EXPOSE_LINK=1 (ví dụ khi demo đồ án).
+  const exposeLink = process.env.NODE_ENV !== "production" || process.env.PASSWORD_RESET_EXPOSE_LINK === "1";
+  if (exposeLink) {
+    console.log(`[LSOUL] Liên kết đặt lại mật khẩu cho ${user.email}: ${resetUrl}`);
+  }
+
   return NextResponse.json({
     accepted: true,
-    ...(process.env.NODE_ENV !== "production" ? { resetUrl } : {})
+    ...(exposeLink ? { resetUrl } : {})
   });
 }

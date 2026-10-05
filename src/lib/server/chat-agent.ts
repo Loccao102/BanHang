@@ -67,7 +67,9 @@ export function buildOutfit(message: string, catalog: Product[]) {
     setType,
     occasion,
     style,
-    budget: Number.isFinite(budget) ? budget : undefined
+    budget: Number.isFinite(budget) ? budget : undefined,
+    // Chỉ thêm áo khoác ngoài khi khách yêu cầu rõ ràng.
+    includeOuterwear: /(khoac|blazer|jacket|cardigan|layer|layering|ao ngoai|giu am|mua dong|thu dong|lanh)/.test(text)
   });
 
   const products = coordinated.items.map((i) => i.product);
@@ -106,7 +108,17 @@ export function buildAgentPlan(args: AgentPlanArgs) {
     if (outfit.products.length) {
       products = outfit.products;
       const total = outfit.products.reduce((sum, item) => sum + item.price, 0);
-      notes.push("Outfit được chọn có " + outfit.products.length + " món, tổng " + total.toLocaleString("vi-VN") + " VND.");
+      const itemList = outfit.products.map((item) => `${item.name} (${item.color})`).join(" + ");
+      const hasOuterwear = outfit.products.some((item) => item.category === "outerwear");
+      const mainCount = outfit.products.filter((item) => item.category !== "outerwear").length;
+      notes.push(
+        "Outfit được chọn gồm đúng " + outfit.products.length + " món: " + itemList +
+        ", tổng " + total.toLocaleString("vi-VN") + " VND. " +
+        "Khi trả lời PHẢI liệt kê ĐÚNG và ĐỦ các món này (không thêm, không bớt) và dùng đúng tổng tiền trên." +
+        (hasOuterwear
+          ? " Lưu ý: set gồm " + mainCount + " món chính và 1 lớp ÁO KHOÁC NGOÀI là tùy chọn — hãy nói rõ khách có thể bỏ áo khoác nếu chỉ muốn " + mainCount + " món."
+          : "")
+      );
 
       if (explicitBundle || explicitAdd) {
         if (!requestedSize) {
@@ -136,7 +148,9 @@ export function buildAgentPlan(args: AgentPlanArgs) {
         actions.push({
           id: randomUUID(),
           type: "add_bundle",
-          label: "🛒 Thêm cả set vào giỏ (" + outfit.products.length + " món)",
+          label: hasOuterwear
+            ? `🛒 Thêm ${mainCount} món chính + áo khoác tùy chọn (${outfit.products.length} món)`
+            : `🛒 Thêm cả set vào giỏ (${outfit.products.length} món)`,
           items: bundleItems,
           autoExecute: false
         });
@@ -146,7 +160,9 @@ export function buildAgentPlan(args: AgentPlanArgs) {
       actions.push({
         id: randomUUID(),
         type: "open_try_on",
-        label: "✨ Thử cả set trong phòng thử AI (" + outfit.products.length + " món)",
+        label: hasOuterwear
+          ? `✨ Thử ${mainCount} món chính (áo khoác tùy chọn) trong phòng thử AI`
+          : `✨ Thử cả set trong phòng thử AI (${outfit.products.length} món)`,
         productIds: outfit.products.map((item) => item.id),
         autoExecute: false
       });
@@ -217,6 +233,38 @@ export function buildAgentPlan(args: AgentPlanArgs) {
         autoExecute: true
       });
       notes.push("Coupon " + coupon.code + " tồn tại và đang bật; client vẫn phải validate điều kiện theo giá trị giỏ hàng.");
+    }
+  } else if (!coupon && /(ma giam|giam gia|voucher|coupon|uu dai|khuyen mai|khuyen mai)/.test(text)) {
+    // Khách hỏi xin mã giảm giá (không gõ sẵn mã cụ thể) -> liệt kê mã đang bật + nút áp nhanh.
+    // Ưu tiên mã dễ dùng nhất (đơn tối thiểu thấp trước).
+    const usableCoupons = args.coupons
+      .filter((item) => item.active)
+      .sort((a, b) => a.minOrder - b.minOrder)
+      .slice(0, 3);
+    if (usableCoupons.length) {
+      const described = usableCoupons.map((item) => {
+        const value = item.type === "percentage"
+          ? "giảm " + item.value + "%"
+          : "giảm " + item.value.toLocaleString("vi-VN") + "đ";
+        const condition = item.minOrder > 0 ? ", đơn từ " + item.minOrder.toLocaleString("vi-VN") + "đ" : "";
+        const cap = item.maxDiscount ? ", tối đa " + item.maxDiscount.toLocaleString("vi-VN") + "đ" : "";
+        return item.code + " (" + value + condition + cap + ")";
+      });
+      for (const item of usableCoupons) {
+        actions.push({
+          id: randomUUID(),
+          type: "apply_coupon",
+          label: "Áp mã " + item.code,
+          code: item.code,
+          autoExecute: false
+        });
+      }
+      notes.push(
+        "Dạ LSOUL gửi bạn các mã ưu đãi đang hiệu lực: " + described.join("; ") +
+        ". Bạn bấm nút bên dưới để áp mã, hệ thống sẽ kiểm tra điều kiện theo giá trị giỏ hàng hiện tại nhé!"
+      );
+    } else {
+      notes.push("Hiện chưa có mã ưu đãi nào đang bật. Hãy thông báo khách quay lại sau hoặc theo dõi kênh chính thức của LSOUL.");
     }
   }
 

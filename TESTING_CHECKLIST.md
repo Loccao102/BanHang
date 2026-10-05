@@ -20,7 +20,7 @@
 | **Quản trị viên (Admin)** | `admin@lsoul.local` | `Admin@123456` | Toàn quyền kiểm tra Admin Dashboard, sửa đơn |
 | **Khách hàng 1** | `linh@lsoul.local` | `Lsoul@123456` | Khách VIP, có sẵn lịch sử đơn hàng và địa chỉ |
 | **Khách hàng 2** | `nam@lsoul.local` | `Lsoul@123456` | Khách hàng thông thường |
-| **Khách vãng lai** | Không cần đăng nhập | - | Kiểm thử mua hàng nhanh không cần tài khoản |
+| **Khách vãng lai** | Không cần đăng nhập | - | Chỉ xem catalog, tìm kiếm, chi tiết sản phẩm và chat tư vấn. **Mọi thao tác mua hàng (giỏ hàng, voucher, đặt hàng, thanh toán, yêu thích, thử đồ) đều yêu cầu đăng nhập.** |
 
 ### 🏷️ Danh Sách Mã Giảm Giá (Voucher) Sẵn Có
 | Mã Voucher | Loại giảm | Giá trị | Đơn tối thiểu | Giảm tối đa |
@@ -41,6 +41,8 @@
 ---
 
 ## 🚀 2. CÁC KỊCH BẢN KIỂM THỬ TRỌNG TÂM (CORE TEST SCENARIOS)
+
+> ⚠️ **Điều kiện tiên quyết:** các kịch bản mua hàng (1 → 5) yêu cầu **đăng nhập** bằng tài khoản khách hàng (`linh@lsoul.local` hoặc `nam@lsoul.local`). Nếu chưa đăng nhập, nút thêm vào giỏ / vào `/checkout` sẽ tự chuyển hướng về trang đăng nhập — đây là hành vi đúng theo thiết kế.
 
 ```mermaid
 flowchart TD
@@ -80,7 +82,7 @@ flowchart TD
 
 - **Mục tiêu:** Ngăn chặn việc tạo đơn thành công giả khi khách chưa thanh toán tiền QR. Khách chỉ được xác nhận thành công sau khi ngân hàng callback hoặc bấm xác nhận thử nghiệm.
 - **Các bước thực hiện:**
-  1. Tại trang Checkout, điền đầy đủ thông tin giao hàng (Họ tên, SĐT, Địa chỉ).
+  1. Đăng nhập tài khoản khách hàng, sau đó tại trang Checkout điền đầy đủ thông tin giao hàng (Họ tên, SĐT, Địa chỉ).
   2. Tại phần **Phương thức thanh toán**, chọn **"Chuyển khoản VietQR (Tự động xác nhận)"**.
   3. Bấm **"Hoàn tất đặt hàng"**.
   4. **Kiểm tra Phòng chờ thanh toán (Payment Waiting Room):**

@@ -29,10 +29,10 @@ interface OrderTrackerProps {
 }
 
 const steps = [
-  { key: "processing", label: "Tiếp nhận đơn", icon: FileCheck, desc: "Đơn hàng được ghi nhận" },
-  { key: "confirmed", label: "Đã xác nhận", icon: CheckCircle2, desc: "Đã kiểm tra & chuẩn bị hàng" },
-  { key: "shipping", label: "Đang giao hàng", icon: Truck, desc: "Đang trên đường tới bạn" },
-  { key: "completed", label: "Giao thành công", icon: PackageCheck, desc: "Đã nhận kiện hàng" }
+  { key: "processing", label: "Đang xử lý", icon: FileCheck, desc: "Đơn hàng đã được tiếp nhận" },
+  { key: "confirmed", label: "Đã xác nhận", icon: CheckCircle2, desc: "Đang chuẩn bị gói hàng" },
+  { key: "shipping", label: "Đang giao hàng", icon: Truck, desc: "Đơn vị vận chuyển đang phát" },
+  { key: "completed", label: "Hoàn thành", icon: PackageCheck, desc: "Giao hàng thành công" }
 ] as const;
 
 function getStepIndex(status: OrderStatus): number {

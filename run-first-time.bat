@@ -66,7 +66,7 @@ echo  * Phòng thử đồ AI (Try-On):          http://localhost:3000/try-on
 echo  * Trang quản trị (Admin Dashboard):  http://localhost:3001/admin
 echo.
 echo  * Tài khoản admin mặc định:
-echo    - Email:    admin@lsoul.com
+echo    - Email:    admin@lsoul.local
 echo    - Mật khẩu: Admin@123456
 echo.
 echo ========================================================

@@ -185,6 +185,15 @@ export async function POST(request: Request) {
         : []
     );
     contextProductIds = productIdsFromGuestHistory(guestHistory);
+
+    // Khách chưa đăng nhập vẫn cần được tư vấn mã giảm giá.
+    if (db) {
+      coupons = await db.coupon.findMany({
+        where: { active: true },
+        orderBy: { createdAt: "desc" },
+        take: 50
+      });
+    }
   }
 
   const contextProducts = contextProductIds.flatMap((id) => {
@@ -230,7 +239,32 @@ export async function POST(request: Request) {
     orderContext,
     agentContext: plan.notes.join("\n")
   });
-  const reply = aiText ?? fallbackReply(message, responseProducts, Boolean(orderContext), plan.notes);
+  const baseReply = aiText ?? fallbackReply(message, responseProducts, Boolean(orderContext), plan.notes);
+
+  // Câu trả lời của model có thể bỏ sót món trong set đã phối, gây lệch với số thẻ sản phẩm
+  // hiển thị bên dưới. Bổ sung danh sách chuẩn (tên + tổng tiền) khi thiếu món.
+  const bundleAction = plan.actions.find((action) => action.type === "add_bundle");
+  const bundleProducts = bundleAction
+    ? bundleAction.items.flatMap((item) => {
+        const product = catalogMap.get(item.productId);
+        return product ? [product] : [];
+      })
+    : [];
+  const bundleMissing = bundleProducts.filter((product) => !baseReply.includes(product.name));
+  const bundleTotal = bundleProducts.reduce((sum, product) => sum + product.price, 0);
+  const withBundle = bundleProducts.length && bundleMissing.length
+    ? `${baseReply}\n\n📌 Set đã phối gồm ${bundleProducts.length} món: ${bundleProducts.map((product) => `${product.name} (${product.color})`).join(" + ")} — tổng ${bundleTotal.toLocaleString("vi-VN")}đ.`
+    : baseReply;
+
+  // Khi khách hỏi xin mã giảm giá, đảm bảo câu trả lời luôn nêu rõ mã đang hiệu lực
+  // (một số model có thể bỏ qua danh sách mã trong prompt).
+  const couponActions = plan.actions.filter((action) => action.type === "apply_coupon");
+  const missingCodes = couponActions
+    .map((action) => action.code)
+    .filter((code) => !withBundle.toUpperCase().includes(code.toUpperCase()));
+  const reply = couponActions.length && missingCodes.length
+    ? `${withBundle}\n\nMã ưu đãi đang hiệu lực: ${missingCodes.join(", ")}. Bạn bấm nút bên dưới để áp dụng nhé!`
+    : withBundle;
 
   if (user && db && conversationId) {
     await db.$transaction([

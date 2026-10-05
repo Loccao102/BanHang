@@ -211,6 +211,36 @@ const data: Seed[] = [
     "colorTemperature": "neutral"
   },
   {
+    "sku": "DR-NOIR-SLIP-BEI",
+    "groupCode": "DR-NOIR-SLIP",
+    "name": "Noir Silk Slip Midi Dress",
+    "subtitle": "Đầm lụa hai dây cổ đổ dáng midi thanh lịch nhẹ nhàng (Be)",
+    "category": "dress",
+    "type": "midi-dress",
+    "price": 2150000,
+    "color": "Be",
+    "colorFamily": "beige",
+    "colorHex": "#D8C9B4",
+    "image": "/products/dress-satin-slip-beige.jpg",
+    "style": [
+      "minimal",
+      "elegant",
+      "nữ tính"
+    ],
+    "occasion": [
+      "hẹn hò",
+      "đi làm",
+      "sự kiện"
+    ],
+    "material": "Lụa satin cao cấp dệt chéo",
+    "fit": "Bias-cut cowl neck",
+    "silhouette": "sheath",
+    "lengthClass": "midi",
+    "neckline": "cowl",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "warm"
+  },
+  {
     "sku": "DR-SIREN-MINI-BLK",
     "groupCode": "DR-SIREN-MINI",
     "name": "Siren Bandeau Cut-Out Mini Dress",
@@ -479,6 +509,36 @@ const data: Seed[] = [
     "neckline": "halter",
     "sleeveLength": "sleeveless",
     "colorTemperature": "neutral"
+  },
+  {
+    "sku": "DR-LUNA-HALTER-GRN",
+    "groupCode": "DR-LUNA-HALTER",
+    "name": "Luna Backless Halter Midi Dress",
+    "subtitle": "Đầm cổ yếm hở lưng thắt nơ lụa satin quyến rũ (Xanh ngọc)",
+    "category": "dress",
+    "type": "midi-dress",
+    "price": 2290000,
+    "color": "Xanh ngọc",
+    "colorFamily": "green",
+    "colorHex": "#037E5F",
+    "image": "/products/dress-luna-halter-green.jpg",
+    "style": [
+      "romantic",
+      "nữ tính",
+      "elegant"
+    ],
+    "occasion": [
+      "hẹn hò",
+      "đi tiệc",
+      "sự kiện"
+    ],
+    "material": "Lụa tơ tằm dệt mềm mịn",
+    "fit": "Halter backless A-line",
+    "silhouette": "a-line",
+    "lengthClass": "midi",
+    "neckline": "halter",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "cool"
   },
   {
     "sku": "DR-VELVET-BODY-BLK",

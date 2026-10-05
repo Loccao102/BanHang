@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import type { Product } from "@/lib/products";
 import { requireAdmin } from "@/lib/server/auth";
@@ -22,11 +23,53 @@ function distributed(product: Product) {
   });
 }
 
+/** Các trường bắt buộc phải có khi thêm/sửa sản phẩm (thiếu sẽ lỗi Prisma khó hiểu). */
+const REQUIRED_FIELDS: Array<[keyof Product, string]> = [
+  ["name", "Tên sản phẩm"],
+  ["sku", "Mã SKU"],
+  ["subtitle", "Mô tả ngắn"],
+  ["category", "Danh mục"],
+  ["type", "Loại sản phẩm"],
+  ["color", "Màu sắc"],
+  ["colorFamily", "Nhóm màu"],
+  ["image", "Ảnh chính"],
+  ["material", "Chất liệu"],
+  ["fit", "Phom dáng"]
+];
+
 export async function POST(request: Request) {
   try {
     await requireAdmin();
-    const db = getDb()!;
-    const product = await request.json() as Product;
+  } catch {
+    return NextResponse.json({ error: "Bạn cần đăng nhập bằng tài khoản quản trị để lưu sản phẩm." }, { status: 403 });
+  }
+
+  const db = getDb();
+  if (!db) return NextResponse.json({ error: "Cơ sở dữ liệu chưa sẵn sàng." }, { status: 503 });
+
+  let product: Product;
+  try {
+    product = await request.json() as Product;
+  } catch {
+    return NextResponse.json({ error: "Dữ liệu sản phẩm không hợp lệ." }, { status: 400 });
+  }
+
+  const missing = REQUIRED_FIELDS
+    .filter(([field]) => !String(product?.[field] ?? "").trim())
+    .map(([, label]) => label);
+  if (missing.length) {
+    return NextResponse.json({ error: `Thiếu thông tin bắt buộc: ${missing.join(", ")}.` }, { status: 400 });
+  }
+
+  if (!Number.isFinite(Number(product.price)) || Number(product.price) < 0) {
+    return NextResponse.json({ error: "Giá bán không hợp lệ." }, { status: 400 });
+  }
+
+  if (!Array.isArray(product.sizes) || product.sizes.length === 0) {
+    return NextResponse.json({ error: "Sản phẩm phải có ít nhất một size." }, { status: 400 });
+  }
+
+  try {
     const variants = distributed(product);
     const normalized = { ...product, stock: variants.reduce((sum, variant) => sum + variant.stock, 0) };
     const row = toProductRow(normalized);
@@ -48,7 +91,22 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ saved: true });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Không thể lưu sản phẩm hoặc bạn không có quyền truy cập." }, { status: 403 });
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2002") {
+        const target = error.meta?.target;
+        const fields = Array.isArray(target) ? target.join(", ") : String(target ?? "sku");
+        const code = product.sku?.trim();
+        return NextResponse.json(
+          { error: `Trùng mã (${fields})${code ? ` — SKU "${code}" đã tồn tại` : ""}. Hãy đổi SKU rồi lưu lại.` },
+          { status: 409 }
+        );
+      }
+      if (error.code === "P2003") {
+        return NextResponse.json({ error: "Dữ liệu tham chiếu không hợp lệ (danh mục/loại sản phẩm)." }, { status: 400 });
+      }
+    }
+
+    console.error("Lưu sản phẩm thất bại:", error);
+    return NextResponse.json({ error: "Không thể lưu sản phẩm. Vui lòng kiểm tra dữ liệu và thử lại." }, { status: 500 });
   }
 }

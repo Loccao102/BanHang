@@ -4,3 +4,5 @@ node_modules
 .env.local
 .DS_Store
 npm-debug.log*
+e2e-results.json
+e2e-results.jsonl

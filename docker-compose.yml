@@ -63,6 +63,15 @@ services:
       NEXT_PUBLIC_BANK_ACCOUNT: ${NEXT_PUBLIC_BANK_ACCOUNT:-0123456789}
       NEXT_PUBLIC_BANK_ACCOUNT_NAME: ${NEXT_PUBLIC_BANK_ACCOUNT_NAME:-LSOUL}
       SEPAY_WEBHOOK_SECRET: ${SEPAY_WEBHOOK_SECRET:-}
+      # Đặt 1 để API quên mật khẩu trả link reset khi chưa có dịch vụ gửi email (demo/đồ án).
+      PASSWORD_RESET_EXPOSE_LINK: ${PASSWORD_RESET_EXPOSE_LINK:-0}
+      # Ghi đè model Gemini nếu cần (mặc định gemini-flash-latest).
+      GEMINI_MODEL: ${GEMINI_MODEL:-}
+      # Độ phân giải ảnh thử đồ AI: 1K / 2K / 4K (mặc định 2K cho ảnh nét).
+      TRYON_IMAGE_SIZE: ${TRYON_IMAGE_SIZE:-2K}
+      # Siêu phân giải ảnh kết quả thử đồ: 2 / 4 / off (mặc định 2).
+      TRYON_UPSCALE: ${TRYON_UPSCALE:-2}
+      TRYON_UPSCALE_SPACE: ${TRYON_UPSCALE_SPACE:-Nick088/Real-ESRGAN_Pytorch}
     ports:
       - "${APP_PORT:-3000}:3000"
     command: ["npm", "start"]
@@ -102,6 +111,10 @@ services:
       NEXT_PUBLIC_BANK_ACCOUNT: ${NEXT_PUBLIC_BANK_ACCOUNT:-0123456789}
       NEXT_PUBLIC_BANK_ACCOUNT_NAME: ${NEXT_PUBLIC_BANK_ACCOUNT_NAME:-LSOUL}
       SEPAY_WEBHOOK_SECRET: ${SEPAY_WEBHOOK_SECRET:-}
+      # Đặt 1 để API quên mật khẩu trả link reset khi chưa có dịch vụ gửi email (demo/đồ án).
+      PASSWORD_RESET_EXPOSE_LINK: ${PASSWORD_RESET_EXPOSE_LINK:-0}
+      # Ghi đè model Gemini nếu cần (mặc định gemini-flash-latest).
+      GEMINI_MODEL: ${GEMINI_MODEL:-}
     ports:
       - "${ADMIN_PORT:-3001}:3001"
     command: ["npm", "run", "start:admin"]

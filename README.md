@@ -10,7 +10,7 @@ Website thương mại điện tử thời trang xây dựng bằng Next.js App 
 - Tìm kiếm, lọc, sắp xếp và xem chi tiết sản phẩm.
 - Yêu thích theo nhóm: áo/corset, quần & chân váy, váy/đầm, áo khoác, set nguyên bộ.
 - Phối đồ từ danh sách yêu thích và thử đồ bằng FASHN.
-- Giỏ hàng, mã giảm giá, checkout COD/VietQR.
+- Giỏ hàng, mã giảm giá, checkout COD/VietQR (yêu cầu đăng nhập).
 - SePay webhook xác minh thanh toán.
 - Tài khoản, hồ sơ, sổ địa chỉ, đổi mật khẩu và đặt lại mật khẩu.
 - Lịch sử đơn hàng, trạng thái thanh toán, vận chuyển và đánh giá sản phẩm.
@@ -48,8 +48,12 @@ FASHN_API_KEY=
 NEXT_PUBLIC_BANK_ID=MB
 NEXT_PUBLIC_BANK_ACCOUNT=0123456789
 NEXT_PUBLIC_BANK_ACCOUNT_NAME=LSOUL
-SEPAY_WEBHOOK_SECRET=
+SEPAY_WEBHOOK_SECRET=lsoul_dev_sepay_secret
+PASSWORD_RESET_EXPOSE_LINK=1
 ```
+
+- `SEPAY_WEBHOOK_SECRET`: phải khớp Webhook Secret trên dashboard SePay. Giá trị mặc định chỉ dùng cho local/demo.
+- `PASSWORD_RESET_EXPOSE_LINK=1`: khi chưa tích hợp dịch vụ gửi email, API quên mật khẩu trả luôn link reset trong response và ghi ra log để demo. Đặt `0` khi chạy thật.
 
 Không commit file `.env` có secret thật lên GitHub.
 
@@ -266,6 +270,24 @@ Admin@123456
 Khách hàng
 linh@lsoul.local
 Lsoul@123456
+```
+
+## Kiểm thử
+
+Bộ kiểm thử end-to-end gọi trực tiếp API của hệ thống đang chạy (mặc định `localhost:3000` và `localhost:3001`):
+
+```bash
+npm run test:e2e
+```
+
+- Kết quả in ra màn hình và lưu tại `e2e-results.json` / `e2e-results.jsonl`.
+- Đổi môi trường kiểm thử: `STORE_URL=http://localhost:3100 ADMIN_URL=http://localhost:3101 npm run test:e2e`.
+
+Kiểm thử webhook SePay đã ký HMAC (Kịch bản 2 – Cách B):
+
+```bash
+# Lấy mã đơn QR đang chờ thanh toán trong Admin, sau đó:
+npm run test:webhook -- --order LS261004ABCDEF --amount 2500000
 ```
 
 ## CI

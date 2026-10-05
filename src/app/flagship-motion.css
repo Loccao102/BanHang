@@ -724,6 +724,28 @@ body[data-page="home"] .siteHeader{top:0!important}
   color: #6b7280;
 }
 
+.outfitCheckbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #ffffff;
+  font-size: 13px;
+  color: #111827;
+  cursor: pointer;
+  user-select: none;
+}
+
+.outfitCheckbox input {
+  width: 15px;
+  height: 15px;
+  accent-color: #111;
+  cursor: pointer;
+}
+
 .outfitSelect {
   height: 38px;
   border: 1px solid var(--line);

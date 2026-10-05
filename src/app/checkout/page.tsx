@@ -543,7 +543,7 @@ export default function CheckoutPage() {
                         void handleApplyCoupon(e);
                       }
                     }}
-                    placeholder="Nhập mã voucher (vd: TEST99, TEST2K)..."
+                    placeholder="Nhập mã voucher (vd: LSOUL10, WELCOME15)"
                   />
                   <button
                     type="button"
@@ -555,20 +555,20 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="checkoutPromoChips">
-                  <span className="checkoutPromoChipHint">Gợi ý thử nghiệm:</span>
+                  <span className="checkoutPromoChipHint">Mã đang có:</span>
                   <button
                     type="button"
                     className="checkoutPromoChip"
-                    onClick={() => void handleApplyCoupon(undefined, "TEST99")}
+                    onClick={() => void handleApplyCoupon(undefined, "LSOUL10")}
                   >
-                    TEST99 (-99%)
+                    LSOUL10 (-10%)
                   </button>
                   <button
                     type="button"
                     className="checkoutPromoChip"
-                    onClick={() => void handleApplyCoupon(undefined, "TEST2K")}
+                    onClick={() => void handleApplyCoupon(undefined, "WELCOME15")}
                   >
-                    TEST2K
+                    WELCOME15 (-15%)
                   </button>
                 </div>
               </>

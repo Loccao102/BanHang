@@ -33,6 +33,7 @@ export function OutfitClient() {
   const [setType, setSetType] = useState<OutfitSetType>("all");
   const [occasion, setOccasion] = useState<string>("all");
   const [style, setStyle] = useState<string>("all");
+  const [includeOuterwear, setIncludeOuterwear] = useState(false);
   const [salt, setSalt] = useState<number>(() => Math.floor(Math.random() * 1000));
   const [isGenerating, setIsGenerating] = useState(false);
   const [addedSuccess, setAddedSuccess] = useState(false);
@@ -46,9 +47,10 @@ export function OutfitClient() {
       occasion,
       style,
       requiredProductId,
-      variantSalt: salt
+      variantSalt: salt,
+      includeOuterwear
     });
-  }, [catalog, setType, occasion, style, requiredProductId, salt]);
+  }, [catalog, setType, occasion, style, requiredProductId, salt, includeOuterwear]);
 
   // Size selections for each item in the current outfit
   const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
@@ -204,7 +206,7 @@ export function OutfitClient() {
             onClick={() => handleGenerateNext("dress_layer")}
           >
             <Tag size={16} />
-            <span>Đầm liền & Áo khoác</span>
+            <span>Đầm liền</span>
           </button>
           <button
             type="button"
@@ -253,6 +255,21 @@ export function OutfitClient() {
               <option value="feminine">Feminine Nữ tính</option>
               <option value="glam">Glam Quyền lực</option>
             </select>
+          </div>
+
+          <div className="outfitFilterGroup">
+            <span className="filterLabel">Áo khoác ngoài:</span>
+            <label className="outfitCheckbox" title="Mặc định chỉ phối đúng áo + quần/chân váy bạn chọn. Bật nếu muốn thêm lớp khoác ngoài.">
+              <input
+                type="checkbox"
+                checked={includeOuterwear}
+                onChange={(e) => {
+                  setIncludeOuterwear(e.target.checked);
+                  setSalt((s) => s + 1);
+                }}
+              />
+              <span>Kèm áo khoác</span>
+            </label>
           </div>
 
           <button
