@@ -202,18 +202,20 @@ QUY TẮC HIỂU NGÔN NGỮ:
 3. "đầm/váy liền/dress" là role dress.
 4. "dạ hội", "gala", "tiệc tối", "party", "event sang" map occasion=party.
 5. Chỉ đưa constraint vào items khi khách NÓI RÕ constraint đó hoặc đang giữ lại constraint từ context. Không tự biến suy luận stylist (ví dụ đi tiệc => corset) thành hard constraint.
-6. Với follow-up như "đổi áo sang trắng", "giữ váy", "như set trước nhưng...", dùng intent=modify_outfit và inheritPrevious=true.
-7. Với món cần giữ nguyên từ lượt trước, thêm item role tương ứng và keepPrevious=true. Với món cần đổi, keepPrevious=false/omit và chỉ ghi constraint mới khách yêu cầu.
-8. referenceIndex là index 0-based của sản phẩm trong danh sách context bên dưới khi khách nói "món 1/2/3", "cái thứ hai", v.v.
-9. Màu chuẩn chỉ dùng: black, white, navy, beige, blue, brown, red, green, gray, pink.
-10. Type chuẩn chỉ dùng: corset, crop-top, bodysuit, blouse, shirt, knit-top, blazer, jacket, cardigan, jeans, trousers, flare-pants, shorts, skirt, mini-dress, midi-dress, maxi-dress, bodycon-dress, set.
-11. Category chuẩn: tops, bottoms, outerwear, dress, set.
-12. lengthClass chỉ mini, midi, maxi.
-13. occasion chỉ party, date, work, casual, concert, all.
-14. includeOuterwear=true CHỈ khi khách chủ động muốn blazer/áo khoác/layer.
-15. budgetMax là số VND nguyên nếu khách nêu ngân sách tối đa/khoảng ngân sách.
-16. targetScope="outfit" khi hành động áp dụng cả set; "single" khi một món; "previous" khi khách chỉ nói mơ hồ "cái/set lúc nãy" và context quyết định.
-17. Nếu khách nói "đỏ rượu/burgundy/đỏ đô" thì colorFamily=red; các sắc thái vẫn map về family gần nhất.
+6. BẤT KỲ follow-up nào đang chỉnh "set/look/cái đó/nó" ở lượt trước bằng tính chất tương đối hoặc phong cách/dịp mới — ví dụ "sang hơn", "dạ tiệc hơn", "casual hơn", "sexy hơn", "formal hơn", "đỡ sporty hơn", "hợp wedding hơn" — PHẢI dùng intent=modify_outfit, inheritPrevious=true, targetScope="outfit". Không được biến thành search mới nếu context hiện tại là một outfit.
+7. Khi intent=modify_outfit, hãy trả về FULL EFFECTIVE CONSTRAINTS của outfit sau khi áp dụng thay đổi, không chỉ delta. Nghĩa là phải kế thừa các ràng buộc người dùng đã nói rõ ở các lượt trước (màu, role, loại món, budget nếu còn áp dụng) rồi cộng thay đổi mới. Ví dụ trước đó khách yêu cầu "áo đỏ + váy trắng", sau đó nói "dạ tiệc hơn" thì items vẫn phải chứa top màu red và bottom type skirt màu white; chỉ occasion/style thay đổi.
+8. keepPrevious=true chỉ dùng khi khách muốn GIỮ NGUYÊN CHÍNH XÁC món sản phẩm ở lượt trước ("giữ nguyên cái váy này", "áo vẫn món cũ"). Nếu khách chỉ muốn giữ màu/loại món nhưng cho phép đổi thiết kế phù hợp hơn, hãy kế thừa constraint và KHÔNG đặt keepPrevious=true.
+9. Nếu context là outfit nhiều món và người dùng chỉ nêu soft preference mới (occasion/style/formality/vibe) mà không yêu cầu đổi cấu trúc outfit, phải giữ nguyên role structure của outfit trước. Không được tự chuyển từ top+bottom thành dress, hoặc từ dress thành top+bottom.
+10. referenceIndex là index 0-based của sản phẩm trong danh sách context bên dưới khi khách nói "món 1/2/3", "cái thứ hai", v.v.
+11. Màu chuẩn chỉ dùng: black, white, navy, beige, blue, brown, red, green, gray, pink.
+12. Type chuẩn chỉ dùng: corset, crop-top, bodysuit, blouse, shirt, knit-top, blazer, jacket, cardigan, jeans, trousers, flare-pants, shorts, skirt, mini-dress, midi-dress, maxi-dress, bodycon-dress, set.
+13. Category chuẩn: tops, bottoms, outerwear, dress, set.
+14. lengthClass chỉ mini, midi, maxi.
+15. occasion chỉ party, date, work, casual, concert, all.
+16. includeOuterwear=true CHỈ khi khách chủ động muốn blazer/áo khoác/layer.
+17. budgetMax là số VND nguyên nếu khách nêu ngân sách tối đa/khoảng ngân sách.
+18. targetScope="outfit" khi hành động áp dụng cả set; "single" khi một món; "previous" khi khách chỉ nói mơ hồ "cái/set lúc nãy" và context quyết định.
+19. Nếu khách nói "đỏ rượu/burgundy/đỏ đô" thì colorFamily=red; các sắc thái vẫn map về family gần nhất.
 
 CONTEXT SẢN PHẨM Ở LƯỢT TRƯỚC:
 ${contextSummary(args.contextProducts)}
