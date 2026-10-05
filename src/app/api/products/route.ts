@@ -26,7 +26,6 @@ function distributed(product: Product) {
 /** Các trường bắt buộc phải có khi thêm/sửa sản phẩm (thiếu sẽ lỗi Prisma khó hiểu). */
 const REQUIRED_FIELDS: Array<[keyof Product, string]> = [
   ["name", "Tên sản phẩm"],
-  ["sku", "Mã SKU"],
   ["subtitle", "Mô tả ngắn"],
   ["category", "Danh mục"],
   ["type", "Loại sản phẩm"],
@@ -36,6 +35,16 @@ const REQUIRED_FIELDS: Array<[keyof Product, string]> = [
   ["material", "Chất liệu"],
   ["fit", "Phom dáng"]
 ];
+
+/** Mã SKU kế tiếp dạng LSO-001, tính trên toàn bộ DB (kể cả sản phẩm đang ẩn). */
+async function nextSku(db: NonNullable<ReturnType<typeof getDb>>) {
+  const rows = await db.product.findMany({ where: { sku: { startsWith: "LSO-" } }, select: { sku: true } });
+  const max = rows.reduce((acc: number, row: { sku: string }) => {
+    const n = /^LSO-(\d+)$/.exec(row.sku)?.[1];
+    return n ? Math.max(acc, Number(n)) : acc;
+  }, 0);
+  return `LSO-${String(max + 1).padStart(3, "0")}`;
+}
 
 export async function POST(request: Request) {
   try {
@@ -54,6 +63,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Dữ liệu sản phẩm không hợp lệ." }, { status: 400 });
   }
 
+  product.name = String(product?.name ?? "").trim();
+  product.subtitle = String(product?.subtitle ?? "").trim();
+
   const missing = REQUIRED_FIELDS
     .filter(([field]) => !String(product?.[field] ?? "").trim())
     .map(([, label]) => label);
@@ -70,6 +82,7 @@ export async function POST(request: Request) {
   }
 
   try {
+    product.sku = product.sku?.trim() || await nextSku(db);
     const variants = distributed(product);
     const normalized = { ...product, stock: variants.reduce((sum, variant) => sum + variant.stock, 0) };
     const row = toProductRow(normalized);

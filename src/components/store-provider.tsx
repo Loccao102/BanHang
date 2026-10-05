@@ -38,7 +38,7 @@ type StoreContextValue = {
   clearCoupon: () => void;
   placeOrder: (order: OrderRecord) => Promise<OrderRecord>;
   updateOrderStatus: (id: string, status: OrderStatus, extra?: { paymentStatus?: PaymentStatus; shippingCarrier?: string; trackingCode?: string }) => void;
-  saveProduct: (product: Product) => void;
+  saveProduct: (product: Product) => Promise<boolean>;
   deleteProduct: (id: string) => void;
   adjustStock: (id: string, delta: number) => void;
   toggleProductActive: (id: string) => void;
@@ -134,7 +134,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const refreshCatalog = useCallback(async () => {
     try {
-      const response = await fetch("/api/store/bootstrap", { cache: "no-store" });
+      const scope = typeof window !== "undefined" && window.location.pathname.startsWith("/admin") ? "?scope=admin" : "";
+      const response = await fetch(`/api/store/bootstrap${scope}`, { cache: "no-store" });
       if (!response.ok) return;
       const data = await response.json() as { mode: PersistenceMode; products?: Product[]; settings?: StoreSettings };
       if (data.mode === "database") {
@@ -280,13 +281,27 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return () => window.clearTimeout(timer);
   }, [user, accountReady, wishlist]);
 
-  const persistProduct = useCallback((product: Product) => {
-    if (persistenceMode !== "database" || user?.role !== "admin") return;
-    void fetch("/api/products", {
-      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(product)
-    }).then((response) => {
-      if (!response.ok) throw new Error("save");
-    }).then(refreshCatalog).catch(() => showNotice("Không thể lưu thay đổi", "Kiểm tra quyền truy cập và kết nối cơ sở dữ liệu."));
+  // Resolves true when the product was saved. On failure it shows the server's own message
+  // (missing field, duplicate SKU, ...) and re-syncs the catalog to drop the optimistic edit.
+  const persistProduct = useCallback(async (product: Product): Promise<boolean> => {
+    if (persistenceMode !== "database" || user?.role !== "admin") return true;
+    try {
+      const response = await fetch("/api/products", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(product)
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({})) as { error?: string };
+        showNotice("Không thể lưu sản phẩm", body.error ?? "Kiểm tra quyền truy cập và kết nối cơ sở dữ liệu.");
+        await refreshCatalog();
+        return false;
+      }
+      await refreshCatalog();
+      return true;
+    } catch {
+      showNotice("Không thể lưu sản phẩm", "Mất kết nối tới máy chủ. Vui lòng thử lại.");
+      await refreshCatalog();
+      return false;
+    }
   }, [persistenceMode, user, showNotice, refreshCatalog]);
 
   const addToCart = useCallback((product: Product, size?: string, quantity = 1) => {
@@ -407,11 +422,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [orders, persistenceMode, user, showNotice]);
 
-  const saveProduct = useCallback((product: Product) => {
+  const saveProduct = useCallback((product: Product): Promise<boolean> => {
     setCatalog((current) => current.some((item) => item.id === product.id)
       ? current.map((item) => item.id === product.id ? product : item)
       : [product, ...current]);
-    persistProduct(product);
+    return persistProduct(product);
   }, [persistProduct]);
 
   const deleteProduct = useCallback((id: string) => {
@@ -434,7 +449,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     );
     const next = { ...product, variants, stock: variants.reduce((sum, variant) => sum + variant.stock, 0) || Math.max(0, product.stock + delta * sizes) };
     setCatalog((current) => current.map((item) => item.id === id ? next : item));
-    persistProduct(next);
+    void persistProduct(next);
   }, [catalog, persistProduct, user]);
 
   const toggleProductActive = useCallback((id: string) => {
@@ -443,7 +458,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     if (!product) return;
     const next = { ...product, active: product.active === false };
     setCatalog((current) => current.map((item) => item.id === id ? next : item));
-    persistProduct(next);
+    void persistProduct(next);
   }, [catalog, persistProduct, user]);
 
   const resetCatalog = useCallback(() => {

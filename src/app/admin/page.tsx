@@ -123,6 +123,7 @@ function AdminContent() {
       : "overview"
   );
   const [editing, setEditing] = useState<Product | null>(null);
+  const [saving, setSaving] = useState(false);
   const [promo, setPromo] = useState(settings.promoText);
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -264,9 +265,9 @@ function AdminContent() {
     setEditing(blankProduct());
   }
 
-  function submitProduct(event: FormEvent) {
+  async function submitProduct(event: FormEvent) {
     event.preventDefault();
-    if (!editing) return;
+    if (!editing || saving) return;
     const generatedId =
       editing.id.trim() ||
       `${editing.name
@@ -275,16 +276,21 @@ function AdminContent() {
         .replace(/[\u0300-\u036f]/g, "")
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-|-$/g, "")}-${crypto.randomUUID().slice(0, 5)}`;
-    saveProduct({
+    setSaving(true);
+    // SKU để trống => máy chủ tự sinh mã kế tiếp (không trùng với sản phẩm đang ẩn).
+    const saved = await saveProduct({
       ...editing,
       id: generatedId,
-      sku: editing.sku?.trim() || `LSO-${String(catalog.length + 1).padStart(3, "0")}`,
+      name: editing.name.trim(),
+      subtitle: editing.subtitle.trim(),
+      sku: editing.sku?.trim() ?? "",
       images: editing.images.length ? editing.images : [editing.image],
       stock: Math.max(0, Number(editing.stock)),
       price: Math.max(0, Number(editing.price)),
       oldPrice: editing.oldPrice ? Number(editing.oldPrice) : undefined
     });
-    setEditing(null);
+    setSaving(false);
+    if (saved) setEditing(null); // lỗi thì giữ form mở để sửa lại
   }
 
   return (
