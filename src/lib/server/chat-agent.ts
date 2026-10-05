@@ -122,7 +122,22 @@ function buildOutfitFromIntent(intent: ShoppingIntent, catalog: Product[], conte
   if (intent.inheritPrevious) {
     for (const product of contextProducts) {
       const role = productRole(product);
-      if (!roles[role]) roles[role] = { fixedProductId: product.id };
+      if (roles[role]) continue;
+
+      // Inheriting an outfit means preserve its semantic shape as constraints, not freeze
+      // the exact SKU. This lets a soft refinement such as "dạ tiệc hơn" re-rank to a more
+      // formal design while keeping role/type/color stable.
+      roles[role] = {
+        constraint: {
+          role,
+          category: product.category,
+          types: [product.type],
+          colorFamily: product.colorFamily,
+          ...(product.lengthClass === "mini" || product.lengthClass === "midi" || product.lengthClass === "maxi"
+            ? { lengthClass: product.lengthClass }
+            : {})
+        }
+      };
     }
   }
 
@@ -131,16 +146,18 @@ function buildOutfitFromIntent(intent: ShoppingIntent, catalog: Product[], conte
     if (!role) continue;
 
     if (item.keepPrevious) {
-      // Keep the concrete product already stored for this role. If there is no previous
-      // item for that role, keep the constraint as a best-effort preference.
-      if (!roles[role]?.fixedProductId) {
+      // keepPrevious means the customer explicitly wants the exact previous item.
+      const previous = contextProducts.find((product) => productRole(product) === role);
+      if (previous) {
+        roles[role] = { fixedProductId: previous.id };
+      } else {
         roles[role] = { constraint: item };
       }
       continue;
     }
 
-    // An explicit change releases the previous product for this role and applies the
-    // newly parsed hard constraints instead.
+    // The intent parser returns effective constraints for modified outfits. Replacing the
+    // role state here lets explicit user constraints win over inherited product properties.
     roles[role] = { constraint: item };
   }
 
