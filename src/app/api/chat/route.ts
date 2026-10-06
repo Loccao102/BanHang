@@ -305,14 +305,32 @@ export async function POST(request: Request) {
     })
     .slice(0, 6);
 
-  const aiText = await askGemini({
-    message,
-    products: responseProducts,
-    history,
-    orderContext,
-    agentContext: plan.notes.join("\n")
-  });
-  const baseReply = aiText ?? fallbackReply(message, responseProducts, Boolean(orderContext), plan.notes);
+  const hardOutfitNoMatch = Boolean(
+    intent &&
+    ["recommend_outfit", "modify_outfit", "add_outfit_to_cart"].includes(intent.intent) &&
+    responseProducts.length === 0
+  );
+  const noMatchReply = hardOutfitNoMatch
+    ? [
+        "Hiện LSOUL chưa có set nào trong catalog khớp đồng thời tất cả ràng buộc bạn đang giữ.",
+        intent?.budgetMax ? "Ngân sách tối đa hiện tại: " + intent.budgetMax.toLocaleString("vi-VN") + "đ." : "",
+        "Mình sẽ không tự đổi màu, loại trang phục, độ dài hoặc bịa sản phẩm thay thế.",
+        "Bạn có thể nới một điều kiện như ngân sách, kiểu áo/chân váy, độ dài hoặc màu để mình phối lại."
+      ].filter(Boolean).join(" ")
+    : "";
+
+  const aiText = hardOutfitNoMatch
+    ? null
+    : await askGemini({
+        message,
+        products: responseProducts,
+        history,
+        orderContext,
+        agentContext: plan.notes.join("\n")
+      });
+  const baseReply = hardOutfitNoMatch
+    ? noMatchReply
+    : aiText ?? fallbackReply(message, responseProducts, Boolean(orderContext), plan.notes);
 
   // Câu trả lời của model có thể bỏ sót món trong set đã phối, gây lệch với số thẻ sản phẩm
   // hiển thị bên dưới. Bổ sung danh sách chuẩn (tên + tổng tiền) khi thiếu món.
