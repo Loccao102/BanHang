@@ -8,9 +8,9 @@ import { SocialCommerceStrip } from "@/components/social-commerce-strip";
 import { useStore } from "@/components/store-provider";
 
 const categories = [
-  { title: "Đầm", subtitle: "Các mẫu đầm LSOUL đã đối chiếu", href: "/shop?category=dress", image: "https://down-vn.img.susercontent.com/file/vn-11134207-7ra0g-m6nne8nuelvcba" },
-  { title: "Đi tiệc", subtitle: "Phom corset và dáng nổi bật", href: "/shop?category=dress", image: "https://down-vn.img.susercontent.com/file/vn-11134207-7ras8-m1f1r7brp00o0c" },
-  { title: "Quần & chân váy", subtitle: "Denim, chân váy và các phom bottom dễ phối", href: "/shop?category=bottoms", image: "https://down-vn.img.susercontent.com/file/vn-11134207-7ras8-mcfweda66dlvc6" }
+  { title: "Đầm", subtitle: "Các mẫu đầm LSOUL đã đối chiếu", href: "/shop?category=dress", image: "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791259399/lsoul/home/category-dress-2026.webp" },
+  { title: "Đi tiệc", subtitle: "Phom corset và dáng nổi bật", href: "/shop?category=dress", image: "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791259507/lsoul/home/category-party-2026.webp" },
+  { title: "Quần & chân váy", subtitle: "Denim, chân váy và các phom bottom dễ phối", href: "/shop?category=bottoms", image: "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791259594/lsoul/home/category-bottoms-2026.webp" }
 ];
 
 export function HomeClient() {
@@ -23,7 +23,7 @@ export function HomeClient() {
     <>
       <section className="luxHero">
         <div className="luxHeroMedia" data-parallax="0.045">
-          <Image src="https://images.unsplash.com/photo-1776697453034-17d1942cd02a?auto=format&fit=crop&w=2400&q=92" alt="Editorial Thu Đông 2026 của LSOUL với đầm đen tối giản" fill priority sizes="100vw" />
+          <Image src="https://res.cloudinary.com/dbk2ncqss/image/upload/v1791260036/lsoul/home/hero-editorial-2026.webp" alt="Editorial Thu Đông 2026 của LSOUL trong không gian ánh đồng" fill priority sizes="100vw" />
         </div>
         <div className="luxHeroShade" />
         <div className="luxHeroSeason">THU / ĐÔNG · 2026</div>
