@@ -480,8 +480,8 @@ export function buildAgentPlan(args: AgentPlanArgs) {
 
   const customerCoupons = args.coupons.filter(isCustomerCoupon);
   const rawTokens = args.message
-    .split(/[\s,.;!?()[\]{}"'“”‘’]+/)
-    .map((token) => token.replace(/^[^A-Za-z0-9_-]+|[^A-Za-z0-9_-]+$/g, ""))
+    .split(/\s+/)
+    .map((token) => token.replace(/^[,.;!?()[\]{}"'“”‘’:#]+|[,.;!?()[\]{}"'“”‘’:#]+$/g, ""))
     .filter(Boolean);
   const structuredCouponCode = structured?.couponCode &&
     rawTokens.some((token) => token.toUpperCase() === structured.couponCode!.toUpperCase())
