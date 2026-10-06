@@ -725,12 +725,14 @@ export function retrieveProductsFromIntent(
   contextProducts: Product[] = [],
   affinityScores: Map<string, number> = new Map()
 ) {
+  const operationalIntent = ["size_advice", "coupon", "order", "checkout", "policy"].includes(intent.intent);
+  if (operationalIntent && intent.items.length === 0) {
+    return contextProducts.slice(0, limit);
+  }
+
   if (
     contextProducts.length &&
-    (
-      ["add_to_cart", "add_outfit_to_cart", "try_on", "open_product", "modify_outfit"].includes(intent.intent) ||
-      (intent.intent === "size_advice" && intent.items.length === 0)
-    )
+    ["add_to_cart", "add_outfit_to_cart", "try_on", "open_product", "modify_outfit"].includes(intent.intent)
   ) {
     return contextProducts.slice(0, limit);
   }
