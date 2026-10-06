@@ -197,12 +197,13 @@ function contextualizeIntent(
     };
   }
 
-  if (!contextProducts.length) return normalizedIntent;
+  if (!contextProducts.length && !hasPersistentState) return normalizedIntent;
 
   intent = normalizedIntent;
 
   const contextRoles = new Set(contextProducts.map(roleFromProduct));
   const isOutfitContext =
+    hasPersistentState ||
     contextRoles.has("dress") ||
     contextRoles.has("set") ||
     (contextRoles.has("top") && contextRoles.has("bottom"));
@@ -281,6 +282,219 @@ function contextualizeIntent(
   };
 }
 
+
+const fallbackColorPatterns: Array<[RegExp, ColorFamily]> = [
+  [/\b(?:den|black)\b/, "black"],
+  [/\b(?:trang|white|ivory)\b/, "white"],
+  [/\b(?:do|red|wine|burgundy)\b/, "red"],
+  [/\b(?:be|beige|kem|stone)\b/, "beige"],
+  [/\b(?:navy|xanh dam)\b/, "navy"],
+  [/\b(?:xanh la|green|olive)\b/, "green"],
+  [/\b(?:xanh|blue|denim)\b/, "blue"],
+  [/\b(?:nau|brown)\b/, "brown"],
+  [/\b(?:xam|gray|grey|charcoal)\b/, "gray"],
+  [/\b(?:hong|pink)\b/, "pink"]
+];
+
+function fallbackColor(segment: string) {
+  for (const [pattern, color] of fallbackColorPatterns) {
+    if (pattern.test(segment)) return color;
+  }
+  return undefined;
+}
+
+function fallbackBudget(text: string) {
+  const million = text.match(/(?:duoi|toi da|toi|tam|khoang|budget|ngan sach)?\s*(\d+(?:[.,]\d+)?)\s*(?:tr|trieu)\b/);
+  if (million) return Math.round(Number(million[1].replace(",", ".")) * 1_000_000);
+  const thousand = text.match(/(?:duoi|toi da|toi|tam|khoang|budget|ngan sach)?\s*(\d+)\s*k\b/);
+  if (thousand) return Number(thousand[1]) * 1000;
+  return undefined;
+}
+
+function fallbackItemConstraints(text: string) {
+  const items: IntentItemConstraint[] = [];
+  const topMatch = text.match(/\b(?:ao|corset|top|bodysuit|croptop|crop top|so mi|shirt|blouse)\b[^,.!?;]{0,55}/);
+  const bottomMatch = text.match(/\b(?:chan vay|skirt|quan|pants|trousers|jeans|shorts|vay)\b[^,.!?;]{0,55}/);
+  const dressMatch = text.match(/\b(?:dam|dress|vay lien)\b[^,.!?;]{0,55}/);
+  const outerMatch = text.match(/\b(?:blazer|jacket|cardigan|ao khoac)\b[^,.!?;]{0,55}/);
+
+  if (topMatch) {
+    const seg = topMatch[0];
+    const types: ClothingType[] = [];
+    if (/\bcorset\b/.test(seg)) types.push("corset");
+    else if (/\b(?:croptop|crop top)\b/.test(seg)) types.push("crop-top");
+    else if (/\bbodysuit\b/.test(seg)) types.push("bodysuit");
+    else if (/\b(?:so mi|shirt)\b/.test(seg)) types.push("shirt");
+    else if (/\bblouse\b/.test(seg)) types.push("blouse");
+    const color = fallbackColor(seg);
+    items.push({
+      role: "top",
+      category: "tops",
+      ...(types.length ? { types } : {}),
+      ...(color ? { colorFamily: color } : {}),
+      ...(/\bgiu(?: nguyen)? (?:ao|top|corset)\b/.test(text) ? { keepPrevious: true } : {})
+    });
+  }
+
+  if (bottomMatch && !dressMatch) {
+    const seg = bottomMatch[0];
+    const types: ClothingType[] = [];
+    if (/\b(?:chan vay|skirt|vay)\b/.test(seg)) types.push("skirt");
+    else if (/\bjeans?\b/.test(seg)) types.push("jeans");
+    else if (/\bshorts?\b/.test(seg)) types.push("shorts");
+    else if (/\b(?:quan|pants|trousers)\b/.test(seg)) types.push("trousers");
+    const lengthClass = /\bmidi\b/.test(seg) ? "midi"
+      : /\b(?:mini|ngan)\b/.test(seg) ? "mini"
+      : /\b(?:maxi|dai)\b/.test(seg) ? "maxi"
+      : undefined;
+    const color = fallbackColor(seg);
+    items.push({
+      role: "bottom",
+      category: "bottoms",
+      ...(types.length ? { types } : {}),
+      ...(color ? { colorFamily: color } : {}),
+      ...(lengthClass ? { lengthClass } : {}),
+      ...(/\bgiu(?: nguyen)? (?:chan vay|vay|quan|bottom)\b/.test(text) ? { keepPrevious: true } : {})
+    });
+  }
+
+  if (dressMatch) {
+    const seg = dressMatch[0];
+    const types: ClothingType[] = [];
+    if (/\bbodycon\b/.test(seg)) types.push("bodycon-dress");
+    else if (/\bmidi\b/.test(seg)) types.push("midi-dress");
+    else if (/\bmaxi\b/.test(seg)) types.push("maxi-dress");
+    else if (/\bmini\b/.test(seg)) types.push("mini-dress");
+    const color = fallbackColor(seg);
+    items.push({
+      role: "dress",
+      category: "dress",
+      ...(types.length ? { types } : {}),
+      ...(color ? { colorFamily: color } : {}),
+      ...(/\bgiu(?: nguyen)? (?:dam|dress|vay)\b/.test(text) ? { keepPrevious: true } : {})
+    });
+  }
+
+  if (outerMatch) {
+    const seg = outerMatch[0];
+    const types: ClothingType[] = [];
+    if (/\bblazer\b/.test(seg)) types.push("blazer");
+    else if (/\bcardigan\b/.test(seg)) types.push("cardigan");
+    else if (/\b(?:jacket|ao khoac)\b/.test(seg)) types.push("jacket");
+    const color = fallbackColor(seg);
+    items.push({
+      role: "outerwear",
+      category: "outerwear",
+      ...(types.length ? { types } : {}),
+      ...(color ? { colorFamily: color } : {}),
+      ...(/\bgiu(?: nguyen)? (?:blazer|jacket|cardigan|ao khoac)\b/.test(text) ? { keepPrevious: true } : {})
+    });
+  }
+
+  if (/\bgiu(?: nguyen)? (?:ao|top)\b/.test(text) && !items.some((item) => item.role === "top")) {
+    items.push({ role: "top", keepPrevious: true });
+  }
+  if (/\bgiu(?: nguyen)? (?:chan vay|vay|bottom)\b/.test(text) && !items.some((item) => item.role === "bottom")) {
+    items.push({ role: "bottom", keepPrevious: true });
+  }
+
+  return items;
+}
+
+export function inferFallbackShoppingIntent(args: {
+  message: string;
+  contextProducts?: Product[];
+  shoppingState?: ShoppingState | null;
+}): ShoppingIntent {
+  const text = normalized(args.message);
+  const hasOutfitState = Boolean(args.shoppingState?.outfit);
+  const items = fallbackItemConstraints(text);
+  const budgetMax = fallbackBudget(text);
+  const requestedSize = text.match(/\bsize\s*(xs|s|m|l|xl|xxl)\b/i)?.[1]?.toUpperCase();
+
+  const occasion: ShoppingIntent["occasion"] | undefined =
+    /\b(?:tiec|party|gala|da hoi|su kien|event|club)\b/.test(text) ? "party" :
+    /\b(?:hen ho|date)\b/.test(text) ? "date" :
+    /\b(?:di lam|cong so|office|work)\b/.test(text) ? "work" :
+    /\b(?:cafe|di choi|dao pho|casual)\b/.test(text) ? "casual" :
+    /\bconcert\b/.test(text) ? "concert" : undefined;
+
+  const style =
+    /\by2k\b/.test(text) ? "y2k" :
+    /\b(?:toi gian|minimal)\b/.test(text) ? "minimal" :
+    /\b(?:ca tinh|bold|edgy)\b/.test(text) ? "bold" :
+    /\b(?:nu tinh|feminine|romantic)\b/.test(text) ? "feminine" :
+    /\b(?:sang|glam|luxury|thanh lich|elegant)\b/.test(text) ? "elegant" :
+    undefined;
+
+  const asksCoupon = /\b(?:coupon|voucher|ma giam|giam gia|uu dai|khuyen mai|ap ma)\b/.test(text);
+  const asksOrder = /\b(?:don hang|order|tracking|van don|dang giao)\b/.test(text);
+  const asksCheckout = /\b(?:thanh toan|checkout|chot don)\b/.test(text);
+  const asksTryOn = /\b(?:thu do|thu set|thu outfit|phong thu|thu ca set)\b/.test(text);
+  const asksBundleAdd = /(?:them|add|bo|cho).*(?:ca|nguyen|toan).*(?:set|outfit|bo).*(?:gio|cart)/.test(text)
+    || /(?:them|add).*(?:set|outfit).*(?:gio|cart)/.test(text);
+  const asksAdd = /(?:them|add|bo|cho).*(?:gio|cart)/.test(text);
+  const asksSize = /\b(?:size|kich co|co nao|mac vua|vong eo|vong nguc|can nang|cao \d|con size)\b/.test(text);
+  const asksPolicy = /\b(?:doi tra|doi size|bao hanh|freeship|ship|giao hang|chinh sach)\b/.test(text);
+
+  const hasTop = items.some((item) => item.role === "top");
+  const hasBottom = items.some((item) => item.role === "bottom");
+  const hasDress = items.some((item) => item.role === "dress");
+  const explicitOutfit = /\b(?:set|outfit|full look|phoi do)\b/.test(text) || (hasTop && hasBottom);
+  const isRefinement = hasOutfitState && Boolean(
+    budgetMax || occasion || style || items.length ||
+    /\b(?:doi|thay|giu|hon|bot|them|bo|van|luc dau|ban dau|dang chon)\b/.test(text)
+  );
+
+  let intent: ShoppingIntentName = "general";
+  let targetScope: ShoppingIntent["targetScope"] = "single";
+  let inheritPrevious = false;
+
+  if (asksCoupon) intent = "coupon";
+  else if (asksOrder) intent = "order";
+  else if (asksCheckout) intent = "checkout";
+  else if (asksTryOn) {
+    intent = "try_on";
+    targetScope = /\b(?:ca set|set|outfit|bo)\b/.test(text) || hasOutfitState ? "outfit" : "single";
+    inheritPrevious = hasOutfitState;
+  } else if (asksBundleAdd) {
+    intent = "add_outfit_to_cart";
+    targetScope = "outfit";
+    inheritPrevious = hasOutfitState;
+  } else if (asksAdd) {
+    intent = hasOutfitState && /\b(?:set|outfit|bo)\b/.test(text) ? "add_outfit_to_cart" : "add_to_cart";
+    targetScope = intent === "add_outfit_to_cart" ? "outfit" : "single";
+    inheritPrevious = hasOutfitState;
+  } else if (asksSize) {
+    intent = "size_advice";
+    targetScope = hasOutfitState ? "previous" : "single";
+    inheritPrevious = hasOutfitState;
+  } else if (asksPolicy) intent = "policy";
+  else if (isRefinement) {
+    intent = "modify_outfit";
+    targetScope = "outfit";
+    inheritPrevious = true;
+  } else if (explicitOutfit || hasDress) {
+    intent = "recommend_outfit";
+    targetScope = "outfit";
+  } else if (items.length) {
+    intent = "search_products";
+  }
+
+  return contextualizeIntent({
+    intent,
+    confidence: 0.72,
+    inheritPrevious,
+    targetScope,
+    ...(requestedSize ? { requestedSize } : {}),
+    ...(budgetMax ? { budgetMax } : {}),
+    ...(occasion ? { occasion } : {}),
+    ...(style ? { style } : {}),
+    includeOuterwear: items.some((item) => item.role === "outerwear"),
+    items
+  }, args.contextProducts ?? [], hasOutfitState);
+}
+
 export async function analyzeShoppingIntent(args: {
   message: string;
   history: HistoryItem[];
@@ -289,7 +503,7 @@ export async function analyzeShoppingIntent(args: {
 }): Promise<ShoppingIntent | null> {
   const rawKey = process.env.GEMINI_API_KEY ?? "";
   const key = rawKey.replace(/^["']|["']$/g, "").trim();
-  if (!key) return null;
+  if (!key) return inferFallbackShoppingIntent(args);
 
   const history = args.history.slice(-8)
     .map((item) => `${item.role === "user" ? "Khách" : "LSOUL"}: ${item.text.slice(0, 700)}`)
@@ -432,7 +646,7 @@ Các field không có thông tin thì bỏ hẳn, riêng items luôn là array v
     }
   }
 
-  return null;
+  return inferFallbackShoppingIntent(args);
 }
 
 function normalized(value: string) {
@@ -493,7 +707,13 @@ export function retrieveProductsFromIntent(
   contextProducts: Product[] = [],
   affinityScores: Map<string, number> = new Map()
 ) {
-  if (["add_to_cart", "add_outfit_to_cart", "try_on", "open_product", "modify_outfit"].includes(intent.intent) && contextProducts.length) {
+  if (
+    contextProducts.length &&
+    (
+      ["add_to_cart", "add_outfit_to_cart", "try_on", "open_product", "modify_outfit"].includes(intent.intent) ||
+      (intent.intent === "size_advice" && intent.items.length === 0)
+    )
+  ) {
     return contextProducts.slice(0, limit);
   }
 
