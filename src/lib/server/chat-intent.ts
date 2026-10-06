@@ -297,10 +297,13 @@ const fallbackColorPatterns: Array<[RegExp, ColorFamily]> = [
 ];
 
 function fallbackColor(segment: string) {
+  let nearest: { index: number; color: ColorFamily } | undefined;
   for (const [pattern, color] of fallbackColorPatterns) {
-    if (pattern.test(segment)) return color;
+    const match = segment.match(pattern);
+    if (match?.index === undefined) continue;
+    if (!nearest || match.index < nearest.index) nearest = { index: match.index, color };
   }
-  return undefined;
+  return nearest?.color;
 }
 
 function fallbackBudget(text: string) {
