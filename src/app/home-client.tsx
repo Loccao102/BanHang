@@ -23,7 +23,7 @@ export function HomeClient() {
     <>
       <section className="luxHero">
         <div className="luxHeroMedia" data-parallax="0.045">
-          <Image src="https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=2200&q=94" alt="Bộ ảnh Thu Đông 2026 của LSOUL" fill priority sizes="100vw" />
+          <Image src="https://images.unsplash.com/photo-1776697453034-17d1942cd02a?auto=format&fit=crop&w=2400&q=92" alt="Editorial Thu Đông 2026 của LSOUL với đầm đen tối giản" fill priority sizes="100vw" />
         </div>
         <div className="luxHeroShade" />
         <div className="luxHeroSeason">THU / ĐÔNG · 2026</div>
@@ -69,7 +69,7 @@ export function HomeClient() {
       </section>
 
       <section className="luxCampaign" data-reveal>
-        <div className="luxCampaignMedia" data-parallax="0.055"><Image src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=2100&q=92" alt="Bộ ảnh LSOUL về đêm" fill sizes="100vw" /></div>
+        <div className="luxCampaignMedia" data-parallax="0.055"><Image src="https://images.unsplash.com/photo-1768610285049-c18b54b81f10?auto=format&fit=crop&w=2400&q=92" alt="Bộ ảnh LSOUL về đêm với đầm đỏ trên rooftop" fill sizes="100vw" /></div>
         <div className="luxCampaignOverlay">
           <p className="eyebrow">BỘ ẢNH 01 / VỀ ĐÊM</p>
           <h2>Khi phố lên đèn,<br />cùng LSOUL.</h2>
