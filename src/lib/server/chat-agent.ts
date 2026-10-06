@@ -478,9 +478,23 @@ export function buildAgentPlan(args: AgentPlanArgs) {
     });
   }
 
-  const couponTokens: string[] = args.message.toUpperCase().match(/\b[A-Z][A-Z0-9_-]{2,23}\b/g) ?? [];
-  const requestedCouponCode = structured?.couponCode || couponTokens[0];
   const customerCoupons = args.coupons.filter(isCustomerCoupon);
+  const rawTokens = args.message
+    .split(/[\s,.;!?()[\]{}"'“”‘’]+/)
+    .map((token) => token.replace(/^[^A-Za-z0-9_-]+|[^A-Za-z0-9_-]+$/g, ""))
+    .filter(Boolean);
+  const structuredCouponCode = structured?.couponCode &&
+    rawTokens.some((token) => token.toUpperCase() === structured.couponCode!.toUpperCase())
+      ? structured.couponCode
+      : undefined;
+  const explicitCouponCode = args.message.match(
+    /(?:mã|ma|code|coupon)\s*[:#-]?\s*([A-Za-z0-9][A-Za-z0-9_-]{2,23})\b/i
+  )?.[1]?.toUpperCase();
+  const exactKnownToken = rawTokens
+    .map((token) => token.toUpperCase())
+    .find((token) => args.coupons.some((item) => item.code.toUpperCase() === token));
+  const requestedCouponCode = structuredCouponCode || explicitCouponCode || exactKnownToken; 
+
   const coupon = requestedCouponCode
     ? customerCoupons.find((item) => item.code.toUpperCase() === requestedCouponCode.toUpperCase())
     : undefined;
