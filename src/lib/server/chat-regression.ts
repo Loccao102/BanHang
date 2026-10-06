@@ -489,21 +489,6 @@ test("structured retrieval keeps explicit color/type candidates above unrelated 
   assert.equal(found.every((item) => item.category === "bottoms" && item.type === "skirt" && item.colorFamily === "white"), true);
 });
 
-let passed = 0;
-for (const item of tests) {
-  try {
-    item.run();
-    passed += 1;
-    console.log(`✓ ${item.name}`);
-  } catch (error) {
-    console.error(`✗ ${item.name}`);
-    throw error;
-  }
-}
-
-console.log(`\nChat regression: ${passed}/${tests.length} passed.`);
-
-
 test("fallback intent creates stateful red + white-skirt outfit", () => {
   const parsed = inferFallbackShoppingIntent({
     message: "Mình muốn một set áo đỏ và chân váy trắng để đi tiệc"
@@ -558,3 +543,18 @@ test("add-outfit intent keeps previous state snapshot", () => {
   assert.equal(next.outfit?.roles.bottom?.colorFamily, "white");
   assert.equal(next.outfit?.selectedProductIds.length, 2);
 });
+
+let passed = 0;
+for (const item of tests) {
+  try {
+    item.run();
+    passed += 1;
+    console.log(`✓ ${item.name}`);
+  } catch (error) {
+    console.error(`✗ ${item.name}`);
+    throw error;
+  }
+}
+
+console.log(`\nChat regression: ${passed}/${tests.length} passed.`);
+
