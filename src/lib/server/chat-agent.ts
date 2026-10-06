@@ -13,6 +13,21 @@ function normalize(text: string) {
     .replace(/đ/g, "d");
 }
 
+function isCustomerCoupon(coupon: Coupon) {
+  const code = coupon.code.trim().toUpperCase();
+  if (/^(?:TEST|DEV|QA|DEBUG|DEMO|SAMPLE)(?:[_-]|\d|$)/.test(code)) return false;
+  if (coupon.type === "percentage" && coupon.value >= 100) return false;
+  return coupon.active;
+}
+
+function couponDiscount(coupon: Coupon, subtotal: number) {
+  if (subtotal <= 0 || subtotal < coupon.minOrder) return 0;
+  const raw = coupon.type === "percentage"
+    ? Math.floor(subtotal * coupon.value / 100)
+    : coupon.value;
+  return Math.max(0, Math.min(raw, coupon.maxDiscount ?? raw));
+}
+
 const outfitColorPatterns: Array<[RegExp, Product["colorFamily"]]> = [
   [/\b(?:den|black)\b/, "black"],
   [/\b(?:trang|white|ivory)\b/, "white"],
@@ -465,54 +480,81 @@ export function buildAgentPlan(args: AgentPlanArgs) {
 
   const couponTokens: string[] = args.message.toUpperCase().match(/\b[A-Z][A-Z0-9_-]{2,23}\b/g) ?? [];
   const requestedCouponCode = structured?.couponCode || couponTokens[0];
+  const customerCoupons = args.coupons.filter(isCustomerCoupon);
   const coupon = requestedCouponCode
-    ? args.coupons.find((item) => item.code.toUpperCase() === requestedCouponCode.toUpperCase())
+    ? customerCoupons.find((item) => item.code.toUpperCase() === requestedCouponCode.toUpperCase())
     : undefined;
   const asksCoupon = structured
     ? structured.intent === "coupon"
     : /(ap|apply|dung|nhap|coupon|ma giam|giam gia|voucher|uu dai|khuyen mai)/.test(text);
+  const asksBestCoupon = /(tot nhat|loi nhat|giam nhieu nhat|toi uu|best)/.test(text);
+  const currentSubtotal = args.contextProducts.reduce((sum, item) => sum + item.price, 0);
+
   if (coupon && asksCoupon) {
-    if (coupon.active) {
-      actions.push({
-        id: randomUUID(),
-        type: "apply_coupon",
-        label: "Áp mã " + coupon.code,
-        code: coupon.code,
-        autoExecute: true
-      });
-      notes.push("Coupon " + coupon.code + " tồn tại và đang bật; client vẫn phải validate điều kiện theo giá trị giỏ hàng.");
-    }
-  } else if (!coupon && asksCoupon) {
-    // Khách hỏi xin mã giảm giá (không gõ sẵn mã cụ thể) -> liệt kê mã đang bật + nút áp nhanh.
-    // Ưu tiên mã dễ dùng nhất (đơn tối thiểu thấp trước).
-    const usableCoupons = args.coupons
-      .filter((item) => item.active)
-      .sort((a, b) => a.minOrder - b.minOrder)
-      .slice(0, 3);
-    if (usableCoupons.length) {
-      const described = usableCoupons.map((item) => {
-        const value = item.type === "percentage"
-          ? "giảm " + item.value + "%"
-          : "giảm " + item.value.toLocaleString("vi-VN") + "đ";
-        const condition = item.minOrder > 0 ? ", đơn từ " + item.minOrder.toLocaleString("vi-VN") + "đ" : "";
-        const cap = item.maxDiscount ? ", tối đa " + item.maxDiscount.toLocaleString("vi-VN") + "đ" : "";
-        return item.code + " (" + value + condition + cap + ")";
-      });
-      for (const item of usableCoupons) {
+    actions.push({
+      id: randomUUID(),
+      type: "apply_coupon",
+      label: "Áp mã " + coupon.code,
+      code: coupon.code,
+      autoExecute: true
+    });
+    notes.push("Coupon " + coupon.code + " là mã khách hàng hợp lệ và đang bật; client vẫn phải validate điều kiện theo giá trị giỏ hàng.");
+  } else if (requestedCouponCode && asksCoupon) {
+    notes.push("Mã " + requestedCouponCode + " không khả dụng cho khách hàng. Không được gợi ý hoặc tự áp mã này.");
+  } else if (asksCoupon) {
+    const eligible = customerCoupons
+      .filter((item) => !currentSubtotal || currentSubtotal >= item.minOrder);
+
+    if (asksBestCoupon && currentSubtotal > 0 && eligible.length) {
+      const best = [...eligible]
+        .map((item) => ({ item, discount: couponDiscount(item, currentSubtotal) }))
+        .sort((a, b) => b.discount - a.discount || a.item.minOrder - b.item.minOrder)[0];
+
+      if (best.discount > 0) {
         actions.push({
           id: randomUUID(),
           type: "apply_coupon",
-          label: "Áp mã " + item.code,
-          code: item.code,
-          autoExecute: false
+          label: "Áp mã tốt nhất " + best.item.code,
+          code: best.item.code,
+          autoExecute: true
         });
+        notes.push(
+          "Mã tốt nhất cho set hiện tại là " + best.item.code +
+          ": tạm tính " + currentSubtotal.toLocaleString("vi-VN") + "đ, giảm đúng " +
+          best.discount.toLocaleString("vi-VN") + "đ, còn " +
+          (currentSubtotal - best.discount).toLocaleString("vi-VN") +
+          "đ trước các khoản phát sinh khác. Không được nói mức giảm khác con số này."
+        );
       }
-      notes.push(
-        "Dạ LSOUL gửi bạn các mã ưu đãi đang hiệu lực: " + described.join("; ") +
-        ". Bạn bấm nút bên dưới để áp mã, hệ thống sẽ kiểm tra điều kiện theo giá trị giỏ hàng hiện tại nhé!"
-      );
     } else {
-      notes.push("Hiện chưa có mã ưu đãi nào đang bật. Hãy thông báo khách quay lại sau hoặc theo dõi kênh chính thức của LSOUL.");
+      const usableCoupons = [...eligible]
+        .sort((a, b) => a.minOrder - b.minOrder)
+        .slice(0, 3);
+      if (usableCoupons.length) {
+        const described = usableCoupons.map((item) => {
+          const value = item.type === "percentage"
+            ? "giảm " + item.value + "%"
+            : "giảm " + item.value.toLocaleString("vi-VN") + "đ";
+          const condition = item.minOrder > 0 ? ", đơn từ " + item.minOrder.toLocaleString("vi-VN") + "đ" : "";
+          const cap = item.maxDiscount ? ", tối đa " + item.maxDiscount.toLocaleString("vi-VN") + "đ" : "";
+          return item.code + " (" + value + condition + cap + ")";
+        });
+        for (const item of usableCoupons) {
+          actions.push({
+            id: randomUUID(),
+            type: "apply_coupon",
+            label: "Áp mã " + item.code,
+            code: item.code,
+            autoExecute: false
+          });
+        }
+        notes.push(
+          "Dạ LSOUL gửi bạn các mã ưu đãi khách hàng đang hiệu lực: " + described.join("; ") +
+          ". Các mã test/dev đã bị loại khỏi danh sách. Bạn bấm nút bên dưới để áp mã nhé!"
+        );
+      } else {
+        notes.push("Hiện chưa có mã ưu đãi khách hàng nào đang bật hoặc đủ điều kiện cho set hiện tại.");
+      }
     }
   }
 
