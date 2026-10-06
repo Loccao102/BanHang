@@ -194,8 +194,12 @@ export function buildShoppingState(
   const outfitIntent = ["recommend_outfit", "modify_outfit", "add_outfit_to_cart"].includes(intent.intent);
   if (!outfitIntent) return previous ?? { version: 1 };
 
+  const shouldCarryPrevious = Boolean(
+    previous?.outfit &&
+    (intent.intent === "modify_outfit" || intent.intent === "add_outfit_to_cart" || intent.inheritPrevious)
+  );
   const baseRoles: NonNullable<ShoppingState["outfit"]>["roles"] =
-    intent.intent === "modify_outfit" && previous?.outfit
+    shouldCarryPrevious && previous?.outfit
       ? { ...previous.outfit.roles }
       : {};
 
@@ -235,11 +239,21 @@ export function buildShoppingState(
     version: 1,
     outfit: {
       roles: baseRoles,
-      ...(intent.occasion ? { occasion: intent.occasion } : {}),
-      ...(intent.style ? { style: intent.style } : {}),
-      ...(intent.budgetMax ? { budgetMax: intent.budgetMax } : {}),
-      includeOuterwear: intent.includeOuterwear,
-      selectedProductIds: selectedProducts.map((product) => product.id).slice(0, 8)
+      ...(intent.occasion || previous?.outfit?.occasion
+        ? { occasion: intent.occasion ?? previous?.outfit?.occasion }
+        : {}),
+      ...(intent.style || previous?.outfit?.style
+        ? { style: intent.style ?? previous?.outfit?.style }
+        : {}),
+      ...(intent.budgetMax || previous?.outfit?.budgetMax
+        ? { budgetMax: intent.budgetMax ?? previous?.outfit?.budgetMax }
+        : {}),
+      includeOuterwear: intent.includeOuterwear || Boolean(previous?.outfit?.includeOuterwear),
+      selectedProductIds: (
+        selectedProducts.length
+          ? selectedProducts.map((product) => product.id)
+          : previous?.outfit?.selectedProductIds ?? []
+      ).slice(0, 8)
     }
   };
 }
