@@ -314,6 +314,24 @@ function fallbackBudget(text: string) {
   return undefined;
 }
 
+function fallbackLength(text: string) {
+  const candidates: Array<{ index: number; value: "mini" | "midi" | "maxi" }> = [];
+  const patterns: Array<[RegExp, "mini" | "midi" | "maxi"]> = [
+    [/\bmidi\b/g, "midi"],
+    [/\bmaxi\b/g, "maxi"],
+    [/\bmini\b/g, "mini"],
+    [/\bdai\b/g, "maxi"],
+    [/\bngan\b/g, "mini"]
+  ];
+  for (const [pattern, value] of patterns) {
+    for (const match of text.matchAll(pattern)) {
+      if (match.index !== undefined) candidates.push({ index: match.index, value });
+    }
+  }
+  candidates.sort((a, b) => b.index - a.index);
+  return candidates[0]?.value;
+}
+
 function fallbackItemConstraints(text: string) {
   const items: IntentItemConstraint[] = [];
   const topMatch = text.match(/\b(?:ao|corset|top|bodysuit|croptop|crop top|so mi|shirt|blouse)\b[^,.!?;]{0,55}/);
@@ -346,10 +364,7 @@ function fallbackItemConstraints(text: string) {
     else if (/\bjeans?\b/.test(seg)) types.push("jeans");
     else if (/\bshorts?\b/.test(seg)) types.push("shorts");
     else if (/\b(?:quan|pants|trousers)\b/.test(seg)) types.push("trousers");
-    const lengthClass = /\bmidi\b/.test(seg) ? "midi"
-      : /\b(?:mini|ngan)\b/.test(seg) ? "mini"
-      : /\b(?:maxi|dai)\b/.test(seg) ? "maxi"
-      : undefined;
+    const lengthClass = fallbackLength(text);
     const color = fallbackColor(seg);
     items.push({
       role: "bottom",
