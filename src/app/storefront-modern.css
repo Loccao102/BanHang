@@ -135,9 +135,9 @@
   .searchBigInput input { font-size:33px; }
   .searchResultGrid { grid-template-columns:repeat(2,1fr); gap:10px; }
   .searchOverlayMeta { align-items:flex-start; }
-  .productHoverActions { position:static; transform:none; grid-template-columns:1fr; margin-top:8px; }
-  .productHoverActions button:first-child { display:none; }
-  .productHoverActions button:last-child { height:36px; }
+  .productHoverActions { position:static; transform:none; grid-template-columns:1fr 1fr; gap:6px; margin-top:8px; }
+  .productHoverActions button { display:flex; height:38px; }
+  .productHoverActions button:last-child { height:38px; }
   .quickViewBackdrop { padding:0; align-items:end; }
   .quickView { width:100%; max-height:90vh; grid-template-columns:1fr; border-radius:16px 16px 0 0; }
   .quickViewImage { min-height:260px; max-height:36vh; }
