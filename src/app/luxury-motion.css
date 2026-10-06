@@ -43,5 +43,5 @@ body[data-page="home"] main{margin-top:0}
  .luxCampaign{height:82svh;min-height:650px}.luxCampaignOverlay{left:20px;width:calc(100% - 40px)}.luxCampaignOverlay h2{font-size:19vw}.luxCampaignNumber{font-size:60vw}
  .luxServiceRail{margin:0;grid-template-columns:1fr 1fr}.luxServiceRail>div{min-height:130px}.luxNewsletter{margin:0;padding:75px 18px;min-height:55vh}.luxNewsletter h2{font-size:17vw}
 }
-@media(hover:none){.productImageSecondary{display:none}.productCard:hover .productImagePrimary{opacity:1;transform:none!important}.productHoverActions{display:none}}
+@media(hover:none){.productImageSecondary{display:none}.productCard:hover .productImagePrimary{opacity:1;transform:none!important}.productHoverActions{display:grid;transform:none}}
 @media(prefers-reduced-motion:reduce){[data-reveal]{opacity:1!important;transform:none!important;transition:none!important}.luxHeroMedia img,.luxCampaignMedia img{transform:scale(1.02)!important}.productImagePrimary,.productImageSecondary{transition:none!important}.pageScrollProgress{display:none}}
