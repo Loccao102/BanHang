@@ -6,6 +6,7 @@ import { applyShoppingState, buildShoppingState, type ShoppingState } from "./ch
 import { evaluateRecommendation } from "./chat-evaluation";
 import { semanticTextScore } from "./product-semantic-profile";
 import { coordinateSmartOutfit } from "../stylist-outfit-engine";
+import { buildAgentPlan } from "./chat-agent";
 
 function product(overrides: Partial<Product> & Pick<Product, "id" | "category" | "type" | "colorFamily">): Product {
   const colorLabels: Record<Product["colorFamily"], string> = {
@@ -542,6 +543,93 @@ test("add-outfit intent keeps previous state snapshot", () => {
   assert.equal(next.outfit?.roles.top?.colorFamily, "red");
   assert.equal(next.outfit?.roles.bottom?.colorFamily, "white");
   assert.equal(next.outfit?.selectedProductIds.length, 2);
+});
+
+
+test("failed midi refinement never resurrects the stale mini skirt", () => {
+  const previous = buildShoppingState(initialRedWhiteIntent(), [redCorset, whiteCasualSkirt], null);
+  const parsed = inferFallbackShoppingIntent({
+    message: "Váy ngắn quá, đổi sang váy midi nhưng giữ nguyên áo nhé.",
+    contextProducts: [redCorset, whiteCasualSkirt],
+    shoppingState: previous
+  });
+  const merged = applyShoppingState(parsed, previous);
+  const next = buildShoppingState(merged, [], previous);
+
+  assert.equal(next.outfit?.roles.top?.fixedProductId, redCorset.id);
+  assert.equal(next.outfit?.roles.bottom?.lengthClass, "midi");
+  assert.equal(next.outfit?.roles.bottom?.fixedProductId, undefined);
+  assert.equal(next.outfit?.roles.bottom?.selectedProductId, undefined);
+  assert.equal(next.outfit?.selectedProductIds.includes(whiteCasualSkirt.id), false);
+});
+
+test("operational intents stay grounded in current products instead of random catalog cards", () => {
+  const sizeFound = retrieveProductsFromIntent(
+    intent({ intent: "size_advice", targetScope: "previous", items: [] }),
+    catalog,
+    5,
+    []
+  );
+  assert.deepEqual(sizeFound, []);
+
+  const couponFound = retrieveProductsFromIntent(
+    intent({ intent: "coupon", targetScope: "previous", items: [] }),
+    catalog,
+    5,
+    [redCorset, whitePartySkirt]
+  );
+  assert.deepEqual(couponFound.map((item) => item.id), [redCorset.id, whitePartySkirt.id]);
+});
+
+test("size advice persists requested size into the outfit state for later cart actions", () => {
+  const previous = buildShoppingState(initialRedWhiteIntent(), [redCorset, whitePartySkirt], null);
+  const sizeIntent = inferFallbackShoppingIntent({
+    message: "Áo đang chọn còn size M không?",
+    contextProducts: [redCorset, whitePartySkirt],
+    shoppingState: previous
+  });
+  const sized = buildShoppingState(sizeIntent, [redCorset, whitePartySkirt], previous);
+  assert.equal(sized.outfit?.requestedSize, "M");
+
+  const addIntent = inferFallbackShoppingIntent({
+    message: "Thêm cả set đang chọn vào giỏ cho mình.",
+    contextProducts: [redCorset, whitePartySkirt],
+    shoppingState: sized
+  });
+  const merged = applyShoppingState(addIntent, sized);
+  assert.equal(merged.requestedSize, "M");
+});
+
+test("generic Vietnamese coupon question never turns 'đang' into coupon code ANG", () => {
+  const plan = buildAgentPlan({
+    message: "Có mã giảm giá nào đang áp được không?",
+    found: [redCorset, whitePartySkirt],
+    contextProducts: [redCorset, whitePartySkirt],
+    catalog,
+    orders: [],
+    coupons: [{
+      id: "welcome",
+      code: "WELCOME15",
+      type: "percentage",
+      value: 15,
+      minOrder: 0,
+      maxDiscount: 500_000,
+      active: true,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    } as any],
+    loggedIn: false,
+    intent: intent({
+      intent: "coupon",
+      targetScope: "previous",
+      items: [],
+      couponCode: "ANG"
+    })
+  });
+
+  const couponActions = plan.actions.filter((action) => action.type === "apply_coupon");
+  assert.equal(couponActions.some((action) => action.code === "ANG"), false);
+  assert.equal(couponActions.some((action) => action.code === "WELCOME15"), true);
 });
 
 let passed = 0;
