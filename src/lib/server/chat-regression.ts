@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import type { Product } from "../products";
 import type { ShoppingIntent } from "./chat-intent";
-import { retrieveProductsFromIntent } from "./chat-intent";
+import { inferFallbackShoppingIntent, retrieveProductsFromIntent } from "./chat-intent";
 import { applyShoppingState, buildShoppingState, type ShoppingState } from "./chat-state";
 import { evaluateRecommendation } from "./chat-evaluation";
 import { semanticTextScore } from "./product-semantic-profile";
@@ -502,3 +502,59 @@ for (const item of tests) {
 }
 
 console.log(`\nChat regression: ${passed}/${tests.length} passed.`);
+
+
+test("fallback intent creates stateful red + white-skirt outfit", () => {
+  const parsed = inferFallbackShoppingIntent({
+    message: "Mình muốn một set áo đỏ và chân váy trắng để đi tiệc"
+  });
+  assert.equal(parsed.intent, "recommend_outfit");
+  assert.equal(parsed.occasion, "party");
+  assert.equal(parsed.items.some((item) => item.role === "top" && item.colorFamily === "red"), true);
+  assert.equal(parsed.items.some((item) => item.role === "bottom" && item.colorFamily === "white" && item.types?.includes("skirt")), true);
+});
+
+test("fallback follow-up keeps exact top and patches white skirt to midi", () => {
+  const previous = buildShoppingState(initialRedWhiteIntent(), [redCorset, whiteCasualSkirt], null);
+  const parsed = inferFallbackShoppingIntent({
+    message: "Váy ngắn quá, đổi sang váy midi nhưng giữ nguyên áo nhé.",
+    contextProducts: [redCorset, whiteCasualSkirt],
+    shoppingState: previous
+  });
+  const merged = applyShoppingState(parsed, previous);
+  assert.equal(merged.intent, "modify_outfit");
+  const top = merged.items.find((item) => item.role === "top");
+  const bottom = merged.items.find((item) => item.role === "bottom");
+  assert.equal(top?.keepPrevious, true);
+  assert.equal(bottom?.colorFamily, "white");
+  assert.deepEqual(bottom?.types, ["skirt"]);
+  assert.equal(bottom?.lengthClass, "midi");
+});
+
+test("fallback budget refinement preserves prior outfit constraints", () => {
+  const previous = buildShoppingState(initialRedWhiteIntent(), [redCorset, whitePartySkirt], null);
+  const parsed = inferFallbackShoppingIntent({
+    message: "Ngân sách cả set dưới 2 triệu được không?",
+    contextProducts: [redCorset, whitePartySkirt],
+    shoppingState: previous
+  });
+  const merged = applyShoppingState(parsed, previous);
+  assert.equal(merged.intent, "modify_outfit");
+  assert.equal(merged.budgetMax, 2_000_000);
+  assert.equal(merged.items.find((item) => item.role === "top")?.colorFamily, "red");
+  assert.equal(merged.items.find((item) => item.role === "bottom")?.colorFamily, "white");
+});
+
+test("add-outfit intent keeps previous state snapshot", () => {
+  const previous = buildShoppingState(initialRedWhiteIntent(), [redCorset, whitePartySkirt], null);
+  const actionIntent = inferFallbackShoppingIntent({
+    message: "Thêm cả set đang chọn vào giỏ cho mình.",
+    contextProducts: [redCorset, whitePartySkirt],
+    shoppingState: previous
+  });
+  const next = buildShoppingState(actionIntent, [redCorset, whitePartySkirt], previous);
+  assert.equal(actionIntent.intent, "add_outfit_to_cart");
+  assert.equal(next.outfit?.roles.top?.colorFamily, "red");
+  assert.equal(next.outfit?.roles.bottom?.colorFamily, "white");
+  assert.equal(next.outfit?.selectedProductIds.length, 2);
+});
