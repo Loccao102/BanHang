@@ -8,6 +8,7 @@ export type ShoppingRoleState = {
   colorFamily?: Product["colorFamily"];
   lengthClass?: "mini" | "midi" | "maxi";
   fixedProductId?: string;
+  selectedProductId?: string;
 };
 
 export type ShoppingState = {
@@ -18,6 +19,7 @@ export type ShoppingState = {
     style?: string;
     budgetMax?: number;
     includeOuterwear: boolean;
+    requestedSize?: string;
     selectedProductIds: string[];
   };
 };
@@ -101,7 +103,8 @@ export function parseShoppingState(value: unknown): ShoppingState | null {
       ...(types?.length ? { types } : {}),
       ...(colorFamily ? { colorFamily } : {}),
       ...(lengthClass ? { lengthClass } : {}),
-      ...(typeof item.fixedProductId === "string" && item.fixedProductId ? { fixedProductId: item.fixedProductId } : {})
+      ...(typeof item.fixedProductId === "string" && item.fixedProductId ? { fixedProductId: item.fixedProductId } : {}),
+      ...(typeof item.selectedProductId === "string" && item.selectedProductId ? { selectedProductId: item.selectedProductId } : {})
     };
   }
 
@@ -113,6 +116,9 @@ export function parseShoppingState(value: unknown): ShoppingState | null {
       ...(typeof outfit.style === "string" && outfit.style ? { style: outfit.style.slice(0, 40) } : {}),
       ...(Number.isFinite(Number(outfit.budgetMax)) && Number(outfit.budgetMax) > 0 ? { budgetMax: Math.round(Number(outfit.budgetMax)) } : {}),
       includeOuterwear: outfit.includeOuterwear === true,
+      ...(typeof outfit.requestedSize === "string" && outfit.requestedSize
+        ? { requestedSize: outfit.requestedSize.slice(0, 8).toUpperCase() }
+        : {}),
       selectedProductIds: Array.isArray(outfit.selectedProductIds)
         ? outfit.selectedProductIds.filter((id): id is string => typeof id === "string").slice(0, 8)
         : []
@@ -179,6 +185,7 @@ export function applyShoppingState(intent: ShoppingIntent, previous: ShoppingSta
     occasion: intent.occasion ?? previousOutfit.occasion,
     style: intent.style ?? previousOutfit.style,
     budgetMax: intent.budgetMax ?? previousOutfit.budgetMax,
+    requestedSize: intent.requestedSize ?? previousOutfit.requestedSize,
     includeOuterwear: intent.includeOuterwear || previousOutfit.includeOuterwear,
     items: Array.from(itemsByRole.values())
   };
@@ -192,7 +199,18 @@ export function buildShoppingState(
   if (!intent) return previous ?? { version: 1 };
 
   const outfitIntent = ["recommend_outfit", "modify_outfit", "add_outfit_to_cart"].includes(intent.intent);
-  if (!outfitIntent) return previous ?? { version: 1 };
+  if (!outfitIntent) {
+    if (previous?.outfit && intent.requestedSize) {
+      return {
+        ...previous,
+        outfit: {
+          ...previous.outfit,
+          requestedSize: intent.requestedSize
+        }
+      };
+    }
+    return previous ?? { version: 1 };
+  }
 
   const shouldCarryPrevious = Boolean(
     previous?.outfit &&
@@ -210,18 +228,36 @@ export function buildShoppingState(
     const selected = selectedProducts.find((product) => roleFromProduct(product) === role);
     const previousRole = previous?.outfit?.roles[role];
 
+    const previousSelectedId = previousRole?.selectedProductId
+      ?? (previousRole?.fixedProductId || undefined);
+
     baseRoles[role] = {
       role,
       ...(item.category ? { category: item.category } : {}),
       ...(item.types?.length ? { types: item.types } : {}),
       ...(item.colorFamily ? { colorFamily: item.colorFamily } : {}),
       ...(item.lengthClass ? { lengthClass: item.lengthClass } : {}),
-      ...(item.keepPrevious && previousRole?.fixedProductId
-        ? { fixedProductId: previousRole.fixedProductId }
+      ...(selected ? { selectedProductId: selected.id } : {}),
+      ...(item.keepPrevious && previousSelectedId
+        ? { fixedProductId: previousSelectedId, selectedProductId: previousSelectedId }
         : item.keepPrevious && selected
-        ? { fixedProductId: selected.id }
+        ? { fixedProductId: selected.id, selectedProductId: selected.id }
         : {})
     };
+  }
+
+  if (intent.intent === "modify_outfit" && selectedProducts.length === 0) {
+    const explicitlyKept = new Set(
+      intent.items
+        .filter((item) => item.keepPrevious)
+        .map(roleFromConstraint)
+        .filter((role): role is Exclude<OutfitRole, "any"> => Boolean(role))
+    );
+    for (const [role, roleState] of Object.entries(baseRoles) as Array<[Exclude<OutfitRole, "any">, ShoppingRoleState | undefined]>) {
+      if (!roleState || explicitlyKept.has(role)) continue;
+      delete roleState.selectedProductId;
+      delete roleState.fixedProductId;
+    }
   }
 
   // If a role was only implicit in a valid selected outfit, keep its structure so
@@ -231,7 +267,8 @@ export function buildShoppingState(
     if (baseRoles[role]) continue;
     baseRoles[role] = {
       role,
-      category: product.category
+      category: product.category,
+      selectedProductId: product.id
     };
   }
 
@@ -249,10 +286,16 @@ export function buildShoppingState(
         ? { budgetMax: intent.budgetMax ?? previous?.outfit?.budgetMax }
         : {}),
       includeOuterwear: intent.includeOuterwear || Boolean(previous?.outfit?.includeOuterwear),
+      ...(intent.requestedSize || previous?.outfit?.requestedSize
+        ? { requestedSize: intent.requestedSize ?? previous?.outfit?.requestedSize }
+        : {}),
       selectedProductIds: (
         selectedProducts.length
           ? selectedProducts.map((product) => product.id)
-          : previous?.outfit?.selectedProductIds ?? []
+          : intent.intent === "add_outfit_to_cart"
+          ? previous?.outfit?.selectedProductIds ?? []
+          : Object.values(baseRoles)
+              .flatMap((role) => role?.selectedProductId ? [role.selectedProductId] : [])
       ).slice(0, 8)
     }
   };
