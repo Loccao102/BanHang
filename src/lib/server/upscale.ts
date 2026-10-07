@@ -81,29 +81,3 @@ export async function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T
     if (timer) clearTimeout(timer);
   }
 }
-
-/**
- * Phương án dự phòng không tốn quota Hugging Face: phóng bằng Lanczos3 + unsharp mask
- * (không tạo thêm chi tiết mới nhưng tránh việc trình duyệt tự phóng ảnh và làm nét viền).
- */
-export async function localUpscale(source: string, factor: number): Promise<string> {
-  try {
-    const { default: sharp } = await import("sharp");
-    const blob = await toBlob(source);
-    if (!blob) return source;
-    const input = Buffer.from(await blob.arrayBuffer());
-    const meta = await sharp(input).metadata();
-    if (!meta.width || !meta.height) return source;
-    if (meta.width >= 1600) return source; // đủ nét rồi, không cần phóng
-
-    const output = await sharp(input)
-      .resize({ width: Math.round(meta.width * factor), kernel: "lanczos3" })
-      .sharpen({ sigma: 1.1, m1: 0.6, m2: 2.2 })
-      .webp({ quality: 92 })
-      .toBuffer();
-
-    return `data:image/webp;base64,${output.toString("base64")}`;
-  } catch {
-    return source;
-  }
-}
