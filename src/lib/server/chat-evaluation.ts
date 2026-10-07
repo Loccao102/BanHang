@@ -33,6 +33,7 @@ function matchesHardConstraint(product: Product, item: IntentItemConstraint) {
   if (item.types?.length && !item.types.includes(product.type)) return false;
   if (item.colorFamily && product.colorFamily !== item.colorFamily) return false;
   if (item.lengthClass && product.lengthClass !== item.lengthClass) return false;
+  if (item.minCoverage && (product.coverage ?? 0) < item.minCoverage) return false;
   return true;
 }
 
@@ -93,7 +94,8 @@ export function evaluateRecommendation(
         role || item.category || "item",
         item.types?.join("/") || "",
         item.colorFamily || "",
-        item.lengthClass || ""
+        item.lengthClass || "",
+        item.minCoverage || ""
       ].filter(Boolean).join(":");
       violations.push("missing_or_mismatched:" + description);
     }
