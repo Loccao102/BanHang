@@ -39,10 +39,24 @@ async function inlineRemoteImage(source: string): Promise<string> {
 }
 
 function categoryFor(product: Product): "tops" | "bottoms" | "one-pieces" {
-  if (product.tryOnCategory) return product.tryOnCategory;
-  if (product.category === "bottoms") return "bottoms";
+  // Product category is the canonical source of truth. Do not let stale try-on
+  // metadata turn a dress into a bottom/skirt for the VTON provider.
   if (product.category === "dress" || product.category === "set") return "one-pieces";
-  return "tops";
+  if (product.category === "bottoms") return "bottoms";
+  if (product.category === "tops" || product.category === "outerwear") return "tops";
+  return product.tryOnCategory ?? "tops";
+}
+
+function isLongDress(product: Product) {
+  return product.category === "dress" && (
+    product.lengthClass === "maxi" ||
+    product.lengthClass === "midi" ||
+    product.type === "maxi-dress" ||
+    product.type === "midi-dress" ||
+    /maxi|midi|floor|ankle|long dress|đầm dài|váy dài/i.test(
+      [product.name, product.subtitle, product.silhouette, product.fit].filter(Boolean).join(" ")
+    )
+  );
 }
 
 function photoTypeFor(product: Product): "flat-lay" | "model" {
@@ -299,8 +313,13 @@ export async function POST(request: Request) {
       provider: TryOnProvider;
     }> = [];
 
-    // Check if user explicitly selected Gemini
-    const preferGemini = body.engine === "gemini" && Boolean(process.env.GEMINI_API_KEY);
+    // Long one-piece dresses need strong global silhouette preservation. FASHN can
+    // occasionally shorten a maxi/midi garment into a skirt-like result, so Auto
+    // prefers Gemini for these items and keeps sequential VTON as the fallback.
+    const containsLongDress = ordered.some(isLongDress);
+    const preferGemini =
+      Boolean(process.env.GEMINI_API_KEY) &&
+      (body.engine === "gemini" || (body.engine === "auto" && containsLongDress));
 
     if (preferGemini) {
       try {
