@@ -273,6 +273,10 @@ export type GenerateOutfitOptions = {
   preferredTopLength?: string;
   preferredBottomLength?: string;
   preferredDressLength?: string;
+  minTopCoverage?: number;
+  minBottomCoverage?: number;
+  minDressCoverage?: number;
+  minSetCoverage?: number;
   fixedTopProductId?: string;
   fixedBottomProductId?: string;
   fixedDressProductId?: string;
@@ -365,9 +369,12 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
     const topsByColor = options?.preferredTopColor
       ? topsByType.filter((p) => p.colorFamily === options.preferredTopColor)
       : topsByType;
-    const topHardPool = options?.preferredTopLength
+    const topsByLength = options?.preferredTopLength
       ? topsByColor.filter((p) => p.lengthClass === options.preferredTopLength)
       : topsByColor;
+    const topHardPool = options?.minTopCoverage
+      ? topsByLength.filter((p) => (p.coverage ?? 0) >= options.minTopCoverage!)
+      : topsByLength;
 
     const bottomsByType = options?.preferredBottomTypes?.length
       ? bottoms.filter((p) => options.preferredBottomTypes!.includes(p.type))
@@ -375,9 +382,12 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
     const bottomsByColor = options?.preferredBottomColor
       ? bottomsByType.filter((p) => p.colorFamily === options.preferredBottomColor)
       : bottomsByType;
-    const bottomHardPool = options?.preferredBottomLength
+    const bottomsByLength = options?.preferredBottomLength
       ? bottomsByColor.filter((p) => p.lengthClass === options.preferredBottomLength)
       : bottomsByColor;
+    const bottomHardPool = options?.minBottomCoverage
+      ? bottomsByLength.filter((p) => (p.coverage ?? 0) >= options.minBottomCoverage!)
+      : bottomsByLength;
 
     const preferredTops = topHardPool.filter(filterFn);
     const candidateTops = preferredTops.length > 0 ? preferredTops : topHardPool;
@@ -394,6 +404,8 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
     for (const t of topList) {
       for (const b of bottomList) {
         if (t.id === b.id) continue;
+        if (options?.minTopCoverage && (t.coverage ?? 0) < options.minTopCoverage) continue;
+        if (options?.minBottomCoverage && (b.coverage ?? 0) < options.minBottomCoverage) continue;
         if (options?.budget && t.price + b.price > options.budget) continue;
         const colorPts = evaluateColorScore(t, b);
         const silPts = evaluateSilhouette(t, b);
@@ -457,9 +469,12 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
     const dressesByColor = options?.preferredDressColor
       ? dressesByType.filter((p) => p.colorFamily === options.preferredDressColor)
       : dressesByType;
-    const dressHardPool = options?.preferredDressLength
+    const dressesByLength = options?.preferredDressLength
       ? dressesByColor.filter((p) => p.lengthClass === options.preferredDressLength)
       : dressesByColor;
+    const dressHardPool = options?.minDressCoverage
+      ? dressesByLength.filter((p) => (p.coverage ?? 0) >= options.minDressCoverage!)
+      : dressesByLength;
     const withinBudget = options?.budget
       ? dressHardPool.filter((p) => p.price <= options.budget!)
       : dressHardPool;
@@ -506,6 +521,7 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
       ? sets.find((p) => p.id === options.fixedSetProductId)
       : undefined;
     const candidateSets = (sets.length > 0 ? sets : activePool.filter((p) => p.category === "set"))
+      .filter((p) => !options?.minSetCoverage || (p.coverage ?? 0) >= options.minSetCoverage)
       .filter((p) => !options?.budget || p.price <= options.budget);
     const setItem = fixedSet || candidateSets[salt % (candidateSets.length || 1)] || candidateSets[0];
 
