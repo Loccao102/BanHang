@@ -1430,6 +1430,9 @@
 .antModalBackdrop {
   position: fixed;
   inset: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
   background: rgba(0, 0, 0, 0.45);
   backdrop-filter: blur(4px);
   z-index: 1000;
@@ -1437,6 +1440,7 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
+  overflow: hidden;
 }
 
 .antModal {
@@ -1445,7 +1449,8 @@
   box-shadow: var(--ant-shadow-lg);
   width: 900px;
   max-width: 95vw;
-  max-height: 90vh;
+  max-height: calc(100vh - 48px);
+  max-height: calc(100dvh - 48px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -1949,7 +1954,8 @@
   }
 
   .antModal {
-    max-height: 96vh;
+    max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px);
     max-width: 100%;
   }
 
