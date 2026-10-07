@@ -432,3 +432,71 @@ html[lang="vi"] .desktopNav{letter-spacing:.08em}
   .cartVariantControls { gap:6px; }
   .cartVariantField select { max-width:112px; }
 }
+
+
+/* Shop faceted filters + grouped color variants */
+.priceFilterHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.priceFilterHeading strong { margin-bottom: 0; }
+.priceFilterHeading span {
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.priceRange {
+  width: 100%;
+  margin: 14px 0 4px;
+  cursor: pointer;
+}
+.priceRangeLabels {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.filterColorDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(27, 25, 22, .22);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .35);
+  flex: 0 0 auto;
+}
+.productColorRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 2px 0 11px;
+}
+.productColorSwatches {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+.productColorSwatch {
+  width: 17px;
+  height: 17px;
+  padding: 0;
+  border: 1px solid rgba(27, 25, 22, .22);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 2px var(--paper);
+  transition: transform .18s ease, outline-color .18s ease;
+}
+.productColorSwatch:hover { transform: scale(1.08); }
+.productColorSwatch.active {
+  outline: 1px solid var(--ink);
+  outline-offset: 2px;
+}
+.productColorName {
+  color: var(--muted);
+  font-size: 10px;
+  white-space: nowrap;
+}
