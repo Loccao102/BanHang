@@ -693,6 +693,9 @@ test("relative 'kín hơn' raises coverage above the current top and persists in
 
   const nextState = buildShoppingState(merged, [], previous);
   assert.equal(nextState.outfit?.roles.top?.minCoverage, 3);
+  assert.equal(nextState.outfit?.roles.bottom?.minCoverage, undefined);
+  assert.equal(nextState.outfit?.roles.bottom?.fixedProductId, whitePartySkirt.id);
+  assert.equal(nextState.outfit?.roles.bottom?.selectedProductId, whitePartySkirt.id);
 });
 
 test("production red-top + white-skirt catalog does not violate 'không quá hở'", () => {
