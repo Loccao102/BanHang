@@ -90,7 +90,24 @@ main { min-height: 60vh; }
 .pageHero h1 { font-size: clamp(50px, 7vw, 92px); margin: 0 0 18px; }
 .pageHero > p:not(.eyebrow) { color: var(--muted); max-width: 680px; line-height: 1.7; }
 .shopShell { display: grid; grid-template-columns: 250px 1fr; gap: 30px; padding: 35px 4vw 90px; }
-.filters { position: sticky; top: 125px; align-self: start; }
+.filters {
+  position: sticky;
+  top: 125px;
+  align-self: start;
+  max-height: calc(100vh - 145px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(31, 29, 26, .28) transparent;
+}
+.filters::-webkit-scrollbar { width: 6px; }
+.filters::-webkit-scrollbar-track { background: transparent; }
+.filters::-webkit-scrollbar-thumb {
+  background: rgba(31, 29, 26, .22);
+  border-radius: 999px;
+}
+.filters::-webkit-scrollbar-thumb:hover { background: rgba(31, 29, 26, .36); }
 .filterGroup { padding: 20px 0; border-bottom: 1px solid var(--line); }
 .filterGroup strong { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .1em; margin-bottom: 13px; }
 .filterGroup label { display: flex; align-items: center; gap: 9px; margin: 9px 0; color: #55514c; font-size: 12px; text-transform: capitalize; }
