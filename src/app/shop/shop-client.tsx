@@ -24,6 +24,35 @@ export function ShopClient() {
   const [mobileFilters, setMobileFilters] = useState(false);
   const { catalog, wishlist } = useStore();
 
+  // Only expose filter values that can actually lead to an in-stock product.
+  // This keeps the left sidebar aligned with the live catalog instead of the
+  // static enum lists in products.ts.
+  const availableFilterProducts = useMemo(
+    () => catalog.filter((product) => product.active !== false && product.stock > 0),
+    [catalog]
+  );
+  const availableCategories = useMemo(
+    () => new Set(availableFilterProducts.map((product) => product.category)),
+    [availableFilterProducts]
+  );
+  const availableTypes = useMemo(
+    () => new Set(availableFilterProducts.map((product) => product.type)),
+    [availableFilterProducts]
+  );
+  const availableColors = useMemo(
+    () => new Set(availableFilterProducts.map((product) => product.colorFamily)),
+    [availableFilterProducts]
+  );
+  const availablePrices = useMemo(() => {
+    const values = new Set<string>();
+    for (const product of availableFilterProducts) {
+      if (product.price < 500000) values.add("under500");
+      else if (product.price <= 700000) values.add("500to700");
+      else values.add("over700");
+    }
+    return values;
+  }, [availableFilterProducts]);
+
   useEffect(() => {
     const nextCategory = searchParams.get("category") ?? "all";
     setCategory(nextCategory);
@@ -71,6 +100,13 @@ export function ShopClient() {
     return result;
   }, [catalog, query, category, productType, color, price, stockOnly, sort, saleOnly, wishlist]);
 
+  useEffect(() => {
+    if (category !== "all" && !availableCategories.has(category as never)) setCategory("all");
+    if (productType !== "all" && !availableTypes.has(productType as never)) setProductType("all");
+    if (color !== "all" && !availableColors.has(color as never)) setColor("all");
+    if (price !== "all" && !availablePrices.has(price)) setPrice("all");
+  }, [category, productType, color, price, availableCategories, availableTypes, availableColors, availablePrices]);
+
   const resetFilters = () => {
     setQuery("");
     setCategory("all");
@@ -93,28 +129,36 @@ export function ShopClient() {
       <div className="filterGroup">
         <strong>Danh mục</strong>
         <label><input type="radio" checked={category === "all"} onChange={() => setCategory("all")} /> Tất cả</label>
-        {Object.entries(categoryLabels).map(([key, label]) => (
-          <label key={key}><input type="radio" checked={category === key} onChange={() => setCategory(key)} /> {label}</label>
-        ))}
+        {Object.entries(categoryLabels)
+          .filter(([key]) => availableCategories.has(key as never))
+          .map(([key, label]) => (
+            <label key={key}><input type="radio" checked={category === key} onChange={() => setCategory(key)} /> {label}</label>
+          ))}
       </div>
       <div className="filterGroup">
         <strong>Loại sản phẩm</strong>
         <label><input type="radio" checked={productType === "all"} onChange={() => setProductType("all")} /> Tất cả</label>
-        {Object.entries(typeLabels).map(([key, label]) => (
-          <label key={key}><input type="radio" checked={productType === key} onChange={() => setProductType(key)} /> {label}</label>
-        ))}
+        {Object.entries(typeLabels)
+          .filter(([key]) => availableTypes.has(key as never))
+          .map(([key, label]) => (
+            <label key={key}><input type="radio" checked={productType === key} onChange={() => setProductType(key)} /> {label}</label>
+          ))}
       </div>
       <div className="filterGroup">
         <strong>Màu sắc</strong>
-        {["all","black","white","navy","beige","blue","brown","red","green","gray","pink"].map((value) => (
-          <label key={value}><input type="radio" checked={color === value} onChange={() => setColor(value)} /> {value === "all" ? "Tất cả" : value}</label>
-        ))}
+        {["all","black","white","navy","beige","blue","brown","red","green","gray","pink"]
+          .filter((value) => value === "all" || availableColors.has(value as never))
+          .map((value) => (
+            <label key={value}><input type="radio" checked={color === value} onChange={() => setColor(value)} /> {value === "all" ? "Tất cả" : value}</label>
+          ))}
       </div>
       <div className="filterGroup">
         <strong>Giá</strong>
-        {[["all","Tất cả"],["under500","Dưới 500K"],["500to700","500K – 700K"],["over700","Trên 700K"]].map(([value,label]) => (
-          <label key={value}><input type="radio" checked={price === value} onChange={() => setPrice(value)} /> {label}</label>
-        ))}
+        {[["all","Tất cả"],["under500","Dưới 500K"],["500to700","500K – 700K"],["over700","Trên 700K"]]
+          .filter(([value]) => value === "all" || availablePrices.has(value))
+          .map(([value,label]) => (
+            <label key={value}><input type="radio" checked={price === value} onChange={() => setPrice(value)} /> {label}</label>
+          ))}
       </div>
       <div className="filterGroup">
         <label className="switchLabel">
