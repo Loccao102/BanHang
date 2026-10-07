@@ -30,6 +30,8 @@ export type IntentItemConstraint = {
   types?: ClothingType[];
   colorFamily?: ColorFamily;
   lengthClass?: "mini" | "midi" | "maxi";
+  /** Minimum 1-5 coverage requested by the customer. 3 = "không quá hở". */
+  minCoverage?: number;
   keepPrevious?: boolean;
 };
 
@@ -112,6 +114,10 @@ function validateItem(value: unknown): IntentItemConstraint | null {
   const lengthClass = ["mini", "midi", "maxi"].includes(String(raw.lengthClass))
     ? raw.lengthClass as "mini" | "midi" | "maxi"
     : undefined;
+  const rawCoverage = Number(raw.minCoverage);
+  const minCoverage = Number.isFinite(rawCoverage) && rawCoverage >= 1 && rawCoverage <= 5
+    ? Math.round(rawCoverage)
+    : undefined;
 
   return {
     role,
@@ -119,6 +125,7 @@ function validateItem(value: unknown): IntentItemConstraint | null {
     ...(requestedTypes.length ? { types: requestedTypes } : {}),
     ...(colorFamily ? { colorFamily } : {}),
     ...(lengthClass ? { lengthClass } : {}),
+    ...(minCoverage ? { minCoverage } : {}),
     ...(raw.keepPrevious === true ? { keepPrevious: true } : {})
   };
 }
@@ -175,11 +182,74 @@ function roleFromProduct(product: Product): Exclude<OutfitRole, "any"> {
   return "set";
 }
 
+function applyCoverageLanguage(
+  intent: ShoppingIntent,
+  contextProducts: Product[],
+  message: string
+): ShoppingIntent {
+  const text = normalized(message);
+  const absoluteModesty = /\b(?:khong qua ho|khong ho qua|kin dao|it ho(?! hon)|lich su|che kin|do ho vua phai)\b/.test(text);
+  const relativeModesty = /\b(?:kin hon|it ho hon|bot ho|do ho hon|che kin hon)\b/.test(text);
+  if (!absoluteModesty && !relativeModesty) return intent;
+
+  const explicitRoles = new Set<Exclude<OutfitRole, "any">>();
+  const rolePatterns: Array<[RegExp, Exclude<OutfitRole, "any">]> = [
+    [/\b(?:ao|top|corset|bodysuit|croptop|crop top|blouse|shirt|so mi)\b[^.!?;]{0,90}\b(?:khong qua ho|khong ho qua|kin dao|it ho|kin hon|bot ho|do ho hon|che kin|lich su)\b/, "top"],
+    [/\b(?:chan vay|skirt|quan|pants|trousers|jeans|shorts)\b[^.!?;]{0,90}\b(?:khong qua ho|khong ho qua|kin dao|it ho|kin hon|bot ho|do ho hon|che kin|lich su)\b/, "bottom"],
+    [/\b(?:dam|dress|vay lien)\b[^.!?;]{0,90}\b(?:khong qua ho|khong ho qua|kin dao|it ho|kin hon|bot ho|do ho hon|che kin|lich su)\b/, "dress"]
+  ];
+  for (const [pattern, role] of rolePatterns) {
+    if (pattern.test(text)) explicitRoles.add(role);
+  }
+
+  const targetRoles = explicitRoles.size
+    ? explicitRoles
+    : new Set(
+        intent.items
+          .filter((item) => !item.keepPrevious)
+          .map(inferConstraintRole)
+          .filter((role): role is Exclude<OutfitRole, "any"> =>
+            Boolean(role && ["top", "bottom", "dress", "set"].includes(role))
+          )
+      );
+
+  if (!targetRoles.size) {
+    for (const product of contextProducts) {
+      const role = roleFromProduct(product);
+      if (["top", "bottom", "dress", "set"].includes(role)) targetRoles.add(role);
+    }
+  }
+
+  if (!targetRoles.size) return intent;
+
+  const items = [...intent.items];
+  for (const role of targetRoles) {
+    const currentProduct = contextProducts.find((product) => roleFromProduct(product) === role);
+    const requestedCoverage = relativeModesty
+      ? Math.min(5, Math.max(3, (currentProduct?.coverage ?? 2) + 1))
+      : 3;
+
+    const index = items.findIndex((item) => inferConstraintRole(item) === role && !item.keepPrevious);
+    if (index >= 0) {
+      items[index] = {
+        ...items[index],
+        minCoverage: Math.max(items[index].minCoverage ?? 0, requestedCoverage)
+      };
+    } else {
+      items.push({ role, minCoverage: requestedCoverage });
+    }
+  }
+
+  return { ...intent, items };
+}
+
 function contextualizeIntent(
   intent: ShoppingIntent,
   contextProducts: Product[],
-  hasPersistentState = false
+  hasPersistentState = false,
+  message = ""
 ): ShoppingIntent {
+  intent = applyCoverageLanguage(intent, contextProducts, message);
   const parsedRoles = new Set(intent.items.map(inferConstraintRole));
   const structurallyRequestsOutfit =
     (parsedRoles.has("top") && parsedRoles.has("bottom")) ||
@@ -510,7 +580,7 @@ export function inferFallbackShoppingIntent(args: {
     ...(style ? { style } : {}),
     includeOuterwear: items.some((item) => item.role === "outerwear"),
     items
-  }, args.contextProducts ?? [], hasOutfitState);
+  }, args.contextProducts ?? [], hasOutfitState, args.message);
 }
 
 export async function analyzeShoppingIntent(args: {
@@ -554,7 +624,8 @@ QUY TẮC HIỂU NGÔN NGỮ:
 6. BẤT KỲ follow-up nào đang chỉnh "set/look/cái đó/nó" ở lượt trước bằng tính chất tương đối hoặc phong cách/dịp mới — ví dụ "sang hơn", "dạ tiệc hơn", "casual hơn", "sexy hơn", "formal hơn", "đỡ sporty hơn", "hợp wedding hơn" — PHẢI dùng intent=modify_outfit, inheritPrevious=true, targetScope="outfit". Không được biến thành search mới nếu context hiện tại là một outfit.
 7. Khi intent=modify_outfit, hãy trả về FULL EFFECTIVE CONSTRAINTS của outfit sau khi áp dụng thay đổi, không chỉ delta. Nghĩa là phải kế thừa các ràng buộc người dùng đã nói rõ ở các lượt trước (màu, role, loại món, budget nếu còn áp dụng) rồi cộng thay đổi mới. Ví dụ trước đó khách yêu cầu "áo đỏ + váy trắng", sau đó nói "dạ tiệc hơn" thì items vẫn phải chứa top màu red và bottom type skirt màu white; chỉ occasion/style thay đổi.
 8. keepPrevious=true chỉ dùng khi khách muốn GIỮ NGUYÊN CHÍNH XÁC món sản phẩm ở lượt trước ("giữ nguyên cái váy này", "áo vẫn món cũ"). Nếu khách chỉ muốn giữ màu/loại món nhưng cho phép đổi thiết kế phù hợp hơn, hãy kế thừa constraint và KHÔNG đặt keepPrevious=true.
-9. Nếu context là outfit nhiều món và người dùng chỉ nêu soft preference mới (occasion/style/formality/vibe) mà không yêu cầu đổi cấu trúc outfit, phải giữ nguyên role structure của outfit trước. Không được tự chuyển từ top+bottom thành dress, hoặc từ dress thành top+bottom.
+9. Nếu khách nói "không quá hở", "kín đáo", "ít hở", "lịch sự" thì đây là hard coverage constraint: minCoverage=3 cho các role trang phục mà yêu cầu đang áp dụng. Nếu khách nói "kín hơn", "ít hở hơn", "bớt hở" thì giữ role/màu/loại hiện tại và tăng minCoverage so với món đang mặc; backend sẽ chuẩn hóa giá trị tương đối.
+10. Nếu context là outfit nhiều món và người dùng chỉ nêu soft preference mới (occasion/style/formality/vibe) mà không yêu cầu đổi cấu trúc outfit, phải giữ nguyên role structure của outfit trước. Không được tự chuyển từ top+bottom thành dress, hoặc từ dress thành top+bottom.
 10. referenceIndex là index 0-based của sản phẩm trong danh sách context bên dưới khi khách nói "món 1/2/3", "cái thứ hai", v.v.
 11. Màu chuẩn chỉ dùng: black, white, navy, beige, blue, brown, red, green, gray, pink.
 12. Type chuẩn chỉ dùng: corset, crop-top, bodysuit, blouse, shirt, knit-top, blazer, jacket, cardigan, jeans, trousers, flare-pants, shorts, skirt, mini-dress, midi-dress, maxi-dress, bodycon-dress, set.
@@ -602,6 +673,7 @@ Trả về đúng JSON shape:
       "types": ["corset"],
       "colorFamily": "red",
       "lengthClass": "mini",
+      "minCoverage": 3,
       "keepPrevious": false
     }
   ],
@@ -655,7 +727,7 @@ Các field không có thông tin thì bỏ hẳn, riêng items luôn là array v
 
       const parsed = validateIntent(JSON.parse(output));
       if (parsed) {
-        return contextualizeIntent(parsed, args.contextProducts, Boolean(args.shoppingState?.outfit));
+        return contextualizeIntent(parsed, args.contextProducts, Boolean(args.shoppingState?.outfit), args.message);
       }
     } catch {
       // Intent parsing is an enhancement. The caller keeps a deterministic fallback.
@@ -715,6 +787,7 @@ function productMatchesConstraint(product: Product, item: IntentItemConstraint) 
   if (item.types?.length && !item.types.includes(product.type)) return false;
   if (item.colorFamily && product.colorFamily !== item.colorFamily) return false;
   if (item.lengthClass && product.lengthClass !== item.lengthClass) return false;
+  if (item.minCoverage && (product.coverage ?? 0) < item.minCoverage) return false;
   return true;
 }
 
