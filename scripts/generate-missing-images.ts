@@ -216,6 +216,65 @@ function antigravityName(task: Task) {
   return task.targetFilename.replace(/\.[a-z0-9]+$/i, "").replace(/-/g, "_").toLowerCase();
 }
 
+function parseCloudinaryUrl(value: string) {
+  const parsed = new URL(value);
+  if (parsed.protocol !== "cloudinary:") {
+    throw new Error("CLOUDINARY_URL phải bắt đầu bằng cloudinary://");
+  }
+  return {
+    cloudName: parsed.hostname,
+    apiKey: decodeURIComponent(parsed.username),
+    apiSecret: decodeURIComponent(parsed.password)
+  };
+}
+
+function getCloudinaryCredentials() {
+  let cloudName = process.env.CLOUDINARY_CLOUD_NAME?.trim() || "";
+  let apiKey = process.env.CLOUDINARY_API_KEY?.trim() || "";
+  let apiSecret = process.env.CLOUDINARY_API_SECRET?.trim() || "";
+
+  if ((!cloudName || !apiKey || !apiSecret) && process.env.CLOUDINARY_URL) {
+    try {
+      const parsed = parseCloudinaryUrl(process.env.CLOUDINARY_URL.trim());
+      cloudName ||= parsed.cloudName;
+      apiKey ||= parsed.apiKey;
+      apiSecret ||= parsed.apiSecret;
+    } catch {}
+  }
+  if (!cloudName || !apiKey || !apiSecret) return null;
+  const folder = (process.env.CLOUDINARY_FOLDER || "lsoul/products").trim().replace(/^\/+|\/+$/g, "");
+  return { cloudName, apiKey, apiSecret, folder };
+}
+
+async function uploadToCloudinary(filePath: string, filename: string): Promise<string | null> {
+  const creds = getCloudinaryCredentials();
+  if (!creds) return null;
+  const buffer = fs.readFileSync(filePath);
+  const blob = new Blob([buffer], { type: "image/jpeg" });
+  const publicId = `${creds.folder}/${filename.replace(/\.[^/.]+$/, "")}`;
+
+  const formData = new FormData();
+  formData.append("file", blob, filename);
+  formData.append("public_id", publicId);
+  formData.append("overwrite", "true");
+
+  const authorization = Buffer.from(`${creds.apiKey}:${creds.apiSecret}`).toString("base64");
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${encodeURIComponent(creds.cloudName)}/image/upload`,
+    {
+      method: "POST",
+      headers: { Authorization: `Basic ${authorization}` },
+      body: formData
+    }
+  );
+  const payload = (await response.json().catch(() => ({}))) as any;
+  if (!response.ok || !payload?.secure_url) {
+    console.error(`[CLOUDINARY] Upload thất bại cho ${filename}:`, payload?.error?.message || response.statusText);
+    return null;
+  }
+  return payload.secure_url as string;
+}
+
 /** Cập nhật catalog nguồn + database + container cho các ảnh đã sẵn sàng. */
 async function applyToProject(ready: Task[], total: number) {
   console.log("\n=== Cập nhật catalog nguồn ===");
@@ -224,15 +283,31 @@ async function applyToProject(ready: Task[], total: number) {
     console.log(`${result.changed ? "[OK]" : "[BỎ QUA]"} ${task.skus[0]}: ${result.detail}`);
   }
 
-  console.log("\n=== Cập nhật database ===");
+  console.log("\n=== Upload Cloudinary & Cập nhật database ===");
   const prisma = new PrismaClient();
+  const creds = getCloudinaryCredentials();
+  if (creds) {
+    console.log(`[CLOUDINARY] Cấu hình Cloudinary hợp lệ (cloud_name: ${creds.cloudName}, folder: ${creds.folder}). Đang upload song song...`);
+  } else {
+    console.log("[CLOUDINARY] Chưa phát hiện cấu hình Cloudinary trong .env, lưu ảnh local /products/");
+  }
+
   for (const task of ready) {
-    const url = `/products/${task.targetFilename}`;
+    let finalUrl = `/products/${task.targetFilename}`;
+    if (creds) {
+      const cloudUrl = await uploadToCloudinary(fileOf(task), task.targetFilename);
+      if (cloudUrl) {
+        console.log(`[CLOUDINARY] Đã đưa lên Cloudinary: ${task.targetFilename} -> ${cloudUrl}`);
+        if (process.env.UPLOAD_DRIVER === "cloudinary") {
+          finalUrl = cloudUrl;
+        }
+      }
+    }
     const res = await prisma.product.updateMany({
       where: { sku: { in: task.skus } },
-      data: { image: url, hoverImage: url, tryOnImage: url, images: [url] }
+      data: { image: finalUrl, hoverImage: finalUrl, tryOnImage: finalUrl, images: [finalUrl] }
     });
-    console.log(`[DB] ${task.skus.join(", ")} -> ${url} (${res.count} dòng)`);
+    console.log(`[DB] ${task.skus.join(", ")} -> ${finalUrl} (${res.count} dòng)`);
   }
   await prisma.$disconnect();
 

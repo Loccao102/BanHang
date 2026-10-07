@@ -197,7 +197,7 @@ const data: Seed[] = [
     "color": "Đỏ rượu",
     "colorFamily": "red",
     "colorHex": "#7A1C2E",
-    "image": "/products/dress-silk-slip-red.jpg",
+    "image": "/products/dress-noir-slip-red.jpg",
     "style": [
       "glam",
       "sexy",
@@ -1067,7 +1067,7 @@ const data: Seed[] = [
     "color": "Trắng",
     "colorFamily": "white",
     "colorHex": "#FFFFFF",
-    "image": "/products/shirt-poplin-white.jpg",
+    "image": "/products/shirt-poplin-luxe-white.jpg",
     "style": [
       "công sở",
       "minimal",
@@ -1097,7 +1097,7 @@ const data: Seed[] = [
     "color": "Xanh pastel",
     "colorFamily": "blue",
     "colorHex": "#BFDBFE",
-    "image": "/products/shirt-poplin-blue.jpg",
+    "image": "/products/shirt-poplin-luxe-blue.jpg",
     "style": [
       "công sở",
       "minimal",
@@ -1127,7 +1127,7 @@ const data: Seed[] = [
     "color": "Đen",
     "colorFamily": "black",
     "colorHex": "#111111",
-    "image": "/products/shirt-poplin-black.jpg",
+    "image": "/products/shirt-poplin-luxe-black.jpg",
     "style": [
       "chic",
       "minimal",
@@ -1217,7 +1217,7 @@ const data: Seed[] = [
     "color": "Đen",
     "colorFamily": "black",
     "colorHex": "#111111",
-    "image": "/products/skirt-slit-midi-black.jpg",
+    "image": "/products/skirt-satin-slit-black.jpg",
     "style": [
       "sexy",
       "elegant",
@@ -1246,7 +1246,7 @@ const data: Seed[] = [
     "color": "Be",
     "colorFamily": "beige",
     "colorHex": "#F3ECE2",
-    "image": "/products/skirt-slit-midi-beige.jpg",
+    "image": "/products/skirt-satin-slit-beige.jpg",
     "style": [
       "elegant",
       "nữ tính",
@@ -1591,7 +1591,7 @@ const data: Seed[] = [
     "color": "Xanh",
     "colorFamily": "blue",
     "colorHex": "#1E40AF",
-    "image": "/products/pants-flare-denim-blue.jpg",
+    "image": "/products/pants-flare-midrise-blue.jpg",
     "style": [
       "Y2K",
       "casual",
@@ -1620,7 +1620,7 @@ const data: Seed[] = [
     "color": "Đen",
     "colorFamily": "black",
     "colorHex": "#1F2937",
-    "image": "/products/pants-flare-denim-black.jpg",
+    "image": "/products/pants-flare-midrise-black.jpg",
     "style": [
       "Y2K",
       "statement",
@@ -1649,7 +1649,7 @@ const data: Seed[] = [
     "color": "Đen",
     "colorFamily": "black",
     "colorHex": "#111111",
-    "image": "/products/pants-tailored-wide-black.jpg",
+    "image": "/products/pants-wide-pleat-black.jpg",
     "style": [
       "công sở",
       "minimal",
@@ -1678,7 +1678,7 @@ const data: Seed[] = [
     "color": "Be",
     "colorFamily": "beige",
     "colorHex": "#EFECE6",
-    "image": "/products/pants-tailored-wide-beige.jpg",
+    "image": "/products/pants-wide-pleat-beige.jpg",
     "style": [
       "công sở",
       "minimal",
@@ -1707,7 +1707,7 @@ const data: Seed[] = [
     "color": "Nâu",
     "colorFamily": "brown",
     "colorHex": "#58311E",
-    "image": "/products/pants-trousers-brown.jpg",
+    "image": "/products/pants-wide-pleat-brown.jpg",
     "style": [
       "chic",
       "vintage",
