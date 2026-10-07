@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   AppstoreOutlined,
   ArrowRightOutlined,
@@ -123,6 +124,18 @@ function AdminContent() {
       : "overview"
   );
   const [editing, setEditing] = useState<Product | null>(null);
+  const isProductModalOpen = Boolean(editing);
+
+  useEffect(() => {
+    if (!isProductModalOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isProductModalOpen]);
   const [saving, setSaving] = useState(false);
   const [promo, setPromo] = useState(settings.promoText);
   const [query, setQuery] = useState("");
@@ -958,7 +971,7 @@ function AdminContent() {
       )}
 
       {/* Ant Design Modal: Product Create / Edit */}
-      {editing && (
+      {editing && typeof document !== "undefined" && createPortal(
         <div
           className="antModalBackdrop"
           onMouseDown={(event) => {
@@ -1611,7 +1624,8 @@ function AdminContent() {
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
