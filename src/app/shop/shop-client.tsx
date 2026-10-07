@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { SlidersHorizontal, X } from "lucide-react";
+import { SlidersHorizontal, Sparkles, X } from "lucide-react";
 import { ProductCard } from "@/components/product-card";
 import { useStore } from "@/components/store-provider";
 import { categoryLabels, typeLabels } from "@/lib/products";
+import { calculateProductSearchScore, getPersonalizedRecommendations } from "@/lib/product-search";
 
 export function ShopClient() {
   const searchParams = useSearchParams();
@@ -21,7 +22,7 @@ export function ShopClient() {
   const [stockOnly, setStockOnly] = useState(true);
   const [sort, setSort] = useState(searchParams.get("sort") === "new" ? "new" : "featured");
   const [mobileFilters, setMobileFilters] = useState(false);
-  const { catalog } = useStore();
+  const { catalog, wishlist } = useStore();
 
   useEffect(() => {
     const nextCategory = searchParams.get("category") ?? "all";
@@ -31,15 +32,16 @@ export function ShopClient() {
     setQuery(nextQuery);
 
     const nextSort = searchParams.get("sort");
-    if (nextSort === "new" || nextSort === "featured" || nextSort === "price-low" || nextSort === "price-high") {
+    if (nextSort === "new" || nextSort === "featured" || nextSort === "price-low" || nextSort === "price-high" || nextSort === "foryou") {
       setSort(nextSort);
     }
   }, [searchParams]);
 
   const filtered = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
+    const rawQuery = query.trim();
     let result = catalog.filter((product) => {
-      const matchText = !normalized || `${product.name} ${product.subtitle} ${product.color} ${product.material} ${product.sku ?? ""}`.toLowerCase().includes(normalized);
+      const searchScore = !rawQuery ? 1 : calculateProductSearchScore(product, rawQuery);
+      const matchText = searchScore > 0;
       const matchCategory = category === "all" || product.category === category;
       const matchType = productType === "all" || product.type === productType;
       const matchColor = color === "all" || product.colorFamily === color;
@@ -48,11 +50,26 @@ export function ShopClient() {
       const matchPrice = price === "all" || (price === "under500" && product.price < 500000) || (price === "500to700" && product.price >= 500000 && product.price <= 700000) || (price === "over700" && product.price > 700000);
       return product.active !== false && matchText && matchCategory && matchType && matchColor && matchSale && matchStock && matchPrice;
     });
-    if (sort === "price-low") result = result.toSorted((a, b) => a.price - b.price);
-    if (sort === "price-high") result = result.toSorted((a, b) => b.price - a.price);
-    if (sort === "new") result = result.toSorted((a, b) => Number(b.isNew) - Number(a.isNew));
+
+    if (rawQuery && sort === "featured") {
+      result = result.toSorted((a, b) => calculateProductSearchScore(b, rawQuery) - calculateProductSearchScore(a, rawQuery));
+    } else if (sort === "foryou") {
+      const personalizedSet = new Set(getPersonalizedRecommendations(catalog, wishlist, 20).map((p) => p.id));
+      result = result.toSorted((a, b) => {
+        const aFav = personalizedSet.has(a.id) ? 1 : 0;
+        const bFav = personalizedSet.has(b.id) ? 1 : 0;
+        return bFav - aFav;
+      });
+    } else if (sort === "price-low") {
+      result = result.toSorted((a, b) => a.price - b.price);
+    } else if (sort === "price-high") {
+      result = result.toSorted((a, b) => b.price - a.price);
+    } else if (sort === "new") {
+      result = result.toSorted((a, b) => Number(b.isNew) - Number(a.isNew));
+    }
+
     return result;
-  }, [catalog, query, category, productType, color, price, stockOnly, sort, saleOnly]);
+  }, [catalog, query, category, productType, color, price, stockOnly, sort, saleOnly, wishlist]);
 
   const resetFilters = () => {
     setQuery("");
@@ -65,8 +82,13 @@ export function ShopClient() {
   const filters = (
     <>
       <div className="filterGroup">
-        <strong>Tìm kiếm</strong>
-        <input className="searchInput" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tên sản phẩm, SKU, màu..." />
+        <strong>Tìm kiếm thông minh</strong>
+        <input
+          className="searchInput"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Tên, SKU, hoặc gu: sexy, đi tiệc, Y2K..."
+        />
       </div>
       <div className="filterGroup">
         <strong>Danh mục</strong>
@@ -120,6 +142,7 @@ export function ShopClient() {
               </button>
               <select value={sort} onChange={(event) => setSort(event.target.value)}>
                 <option value="featured">Nổi bật</option>
+                <option value="foryou">✨ Dành riêng cho bạn (AI)</option>
                 <option value="new">Mới nhất</option>
                 <option value="price-low">Giá thấp → cao</option>
                 <option value="price-high">Giá cao → thấp</option>

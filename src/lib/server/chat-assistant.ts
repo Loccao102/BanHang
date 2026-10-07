@@ -141,6 +141,16 @@ export function retrieveProducts(
       if (refinement && contextTypes.has(item.type)) score += 7;
       else if (refinement && contextCategories.has(item.category)) score += 4;
       if (item.featured) score += 2;
+      if (/(?:sexy|goi cam|quyen ru|boc lua|nong bong)/.test(text)) {
+        const isCorsetOrBodysuitOrCutout = item.type === "corset" || item.type === "bodysuit" ||
+          /corset|bodysuit|cut-?out|khoét|cắt xẻ|siết eo|gọng định hình|lace-?up|hở lưng|hở eo|xẻ tà|cutout/.test(
+            `${item.name} ${item.subtitle} ${item.fit || ""} ${item.neckline || ""} ${(item.styleKeywords || []).join(" ")}`.toLowerCase()
+          );
+        const isTubeTop = !isCorsetOrBodysuitOrCutout &&
+          /tube|áo quây|quây ngực|strapless tube/.test(`${item.name} ${item.subtitle} ${item.fit || ""}`.toLowerCase());
+        if (isCorsetOrBodysuitOrCutout) score += 16;
+        else if (isTubeTop) score -= 8;
+      }
       return { item, score };
     })
     .filter(({ item, score }) => score > 0 || (!category && !requestedTypes.length && !colors.length && !occasionGroups.length && (!budget || item.price <= budget)))
@@ -188,6 +198,7 @@ export async function askGemini(args: {
   history: HistoryItem[];
   orderContext?: string;
   agentContext?: string;
+  image?: string;
 }) {
   const rawKey = process.env.GEMINI_API_KEY ?? "";
   const key = rawKey.replace(/^["']|["']$/g, "").trim();
@@ -199,8 +210,6 @@ export async function askGemini(args: {
         return `- ${item.name} | Mã: ${item.id} | Màu: ${item.color} | Giá: ${item.price.toLocaleString("vi-VN")} VND | Size còn: ${availableSizes || item.sizes.join(", ")} | Phom/Style: ${item.fit}, ${item.style.join(", ")} | Dịp: ${item.occasion.join(", ")}`;
       }).join("\n")
     : "(Không có sản phẩm trực tiếp trong danh sách này)";
-
-  const history = args.history.slice(-8).map((item) => `${item.role === "user" ? "Khách" : "LSOUL Stylist"}: ${item.text}`).join("\n");
 
   const system = `Bạn là LSOUL Stylist AI - Chuyên gia tư vấn thời trang cao cấp của thương hiệu thời trang thiết kế LSOUL (Việt Nam).
 LSOUL nổi tiếng toàn cầu với phong cách gợi cảm, cá tính mạnh mẽ, thời thượng (empowered chic, Y2K glam, edgy elegance), được yêu thích bởi nhiều ngôi sao quốc tế như Lisa (Blackpink), Jennie, Ningning, IU, Chi Pu...
@@ -231,51 +240,62 @@ TÍNH NĂNG ĐẶC BIỆT - PHÒNG THỬ ĐỒ AI (Virtual Fitting Room):
 - Khách có thể ướm thử cả set đồ hoặc từng món lên dáng người thực tế bằng ảnh toàn thân.
 - Khi tư vấn phối đồ hoặc gợi ý set đồ, hãy hào hứng mời khách bấm "Thử cả set trong phòng thử AI" hoặc nút "Thử đồ" ngay trên thẻ sản phẩm để ngắm đồ lên dáng trước khi mua sắm.
 
-QUY TẮC PHẢN HỒI:
-1. Xưng hô tự nhiên, thân thiện và sành điệu ("Dạ nàng ơi", "LSOUL gợi ý cho bạn nè", "Bạn yêu ơi"...).
-2. Khi khách hỏi về sản phẩm, hãy dựa trực tiếp vào danh sách sản phẩm được cung cấp, nêu rõ tên, màu sắc, ưu điểm tôn dáng và giá tiền.
-3. Nếu khách hỏi tư vấn size mà chưa có chiều cao/cân nặng/số đo eo ngực, hãy đưa ra bảng size tham khảo và ân cần hỏi thêm thông tin để tư vấn chuẩn xác.
-4. Trả lời mạch lạc, súc tích, định dạng gạch đầu dòng dễ nhìn. TUYỆT ĐỐI KHÔNG dùng bảng markdown table (vì màn hình di động hẹp).
-5. Không bịa đặt sản phẩm không có thật. Nếu khách cần thao tác như thêm vào giỏ hàng, gợi ý khách bấm nút "Thêm giỏ" ngay bên dưới sản phẩm.
-6. Khi phối đồ hoặc giới thiệu outfit, luôn khuyến khích khách bấm nút "Thử cả set trong phòng thử AI" hoặc bấm "Thử đồ" để xem đồ lên vóc dáng thực tế.`;
+QUY TẮC MẠCH TRÒ CHUYỆN LIÊN TỤC (MULTI-TURN) VÀ CHỐNG SAI CONTEXT:
+1. KHÔNG CHÀO LẶP LẠI: Nếu đã có lịch sử trò chuyện phía trên, TUYỆT ĐỐI KHÔNG chào hỏi lại ("Dạ chào bạn", "LSOUL xin chào",...). Đi thẳng vào nội dung tư vấn một cách tự nhiên, duyên dáng như một stylist chuyên nghiệp đang trò chuyện trực tiếp.
+2. GHI NHỚ THÔNG TIN KHÁCH ĐÃ NÊU: Giữ vững thông tin khách đã chia sẻ trong các lượt trước (chiều cao, cân nặng, số đo, màu ưa thích, ngân sách). Không bao giờ hỏi lại những gì khách vừa cung cấp.
+3. NGUỒN SỰ THẬT DUY NHẤT VỀ SẢN PHẨM: Chỉ được nhắc tới đúng tên, đúng màu sắc, đúng giá của các sản phẩm có trong danh sách [SẢN PHẨM LIÊN QUAN TRONG HỆ THỐNG] ở lượt này. Tuyệt đối KHÔNG tự ý nhắc lại sản phẩm ở các lượt cũ nếu chúng không có mặt trong danh sách hiện tại.
+4. TÔN TRỌNG YÊU CẦU MỚI: Nếu khách muốn chuyển sang tìm món khác hoặc đổi phong cách, hãy tập trung giải quyết mong muốn mới, không cố ép khách tiếp tục set đồ cũ.
+5. ĐỊNH DẠNG: Trả lời mạch lạc, súc tích, gạch đầu dòng dễ nhìn. TUYỆT ĐỐI KHÔNG dùng bảng markdown table (vì màn hình di động hẹp). Không bịa đặt sản phẩm không có thật.
+6. TƯ VẤN QUA HÌNH ẢNH (MULTIMODAL STYLIST): Nếu khách gửi kèm ảnh (ảnh outfit mẫu từ Instagram/Pinterest hoặc ảnh dáng người), hãy nhiệt tình khen ngợi, phân tích gu thời trang (màu sắc, phom dáng, phong cách như sexy, y2k, thanh lịch) và gợi ý các thiết kế LSOUL tương đồng nhất trong danh sách sản phẩm!`;
 
-  const prompt = `${system}
-Lịch sử trao đổi trước đó:
-${history || "(Bắt đầu cuộc trò chuyện)"}
+  const historyContents: Array<{ role: "user" | "model"; parts: [{ text: string }] }> = [];
+  for (const item of args.history.slice(-8)) {
+    historyContents.push({
+      role: item.role === "user" ? "user" : "model",
+      parts: [{ text: item.text.slice(0, 1000) }]
+    });
+  }
 
-Thông tin đơn hàng của khách (nếu có):
-${args.orderContext || "(Khách chưa cung cấp hoặc chưa hỏi đơn hàng)"}
+  const currentTurnContext = [
+    args.orderContext ? `[THÔNG TIN ĐƠN HÀNG CỦA KHÁCH]:\n${args.orderContext}` : "",
+    args.agentContext ? `[NGỮ CẢNH HỆ THỐNG BẮT BUỘC]:\n${args.agentContext}` : "",
+    `[SẢN PHẨM LIÊN QUAN TRONG HỆ THỐNG]:\n${catalog}`,
+    `[TIN NHẮN MỚI CỦA KHÁCH]:\n${args.message}`
+  ].filter(Boolean).join("\n\n");
 
-NGỮ CẢNH HỆ THỐNG BẮT BUỘC (nếu có):
-${args.agentContext || "(Không có ràng buộc bổ sung)"}
+  type ContentPart = { text: string } | { inline_data: { mime_type: string; data: string } };
+  const userParts: ContentPart[] = [{ text: currentTurnContext }];
 
-Sản phẩm liên quan trong hệ thống LSOUL:
-${catalog}
+  if (args.image && typeof args.image === "string") {
+    const match = args.image.match(/^data:([a-zA-Z0-9]+\/[a-zA-Z0-9-.+]+);base64,(.+)$/);
+    if (match) {
+      userParts.push({
+        inline_data: {
+          mime_type: match[1],
+          data: match[2]
+        }
+      });
+    }
+  }
 
-QUY TẮC ĐỒNG BỘ SẢN PHẨM:
-- Danh sách sản phẩm phía trên và NGỮ CẢNH HỆ THỐNG BẮT BUỘC là nguồn sự thật duy nhất.
-- Chỉ được nhắc tới đúng sản phẩm, đúng màu, đúng giá đang có trong danh sách; tuyệt đối không tự đặt tên hoặc tự đổi màu sản phẩm.
-- Nếu ngữ cảnh hệ thống nói outfit đã được chọn, phải mô tả đúng và đủ outfit đó để nội dung khớp 100% với các thẻ sản phẩm hiển thị bên dưới.
+  const contents = [
+    ...historyContents,
+    { role: "user" as const, parts: userParts }
+  ];
 
-Tin nhắn mới của khách:
-${args.message}
-
-Hãy phản hồi tận tình, chuyên nghiệp chuẩn stylist LSOUL:`;
-
-  // Try gemini-flash-latest with thinkingBudget 0, fallback to standard call
-  // Có thể ghi đè model chính bằng biến môi trường GEMINI_MODEL.
-  const primaryModel = process.env.GEMINI_MODEL?.trim() || "gemini-flash-latest";
+  // Thứ tự ưu tiên model: model tùy chỉnh qua GEMINI_MODEL -> gemini-flash-lite-latest (ổn định, cực nhanh <1s) -> các bản preview mới
+  const primaryModel = process.env.GEMINI_MODEL?.trim() || "gemini-flash-lite-latest";
   const configs = [
     { model: primaryModel, thinkingBudget: 0 },
-    { model: primaryModel, thinkingBudget: undefined },
-    { model: "gemini-flash-lite-latest", thinkingBudget: undefined },
-    { model: "gemini-2.5-flash", thinkingBudget: undefined }
+    { model: "gemini-flash-lite-latest", thinkingBudget: 0 },
+    { model: "gemini-3.1-flash-lite-preview", thinkingBudget: 0 },
+    { model: "gemini-3-flash-preview", thinkingBudget: 0 }
   ];
 
   for (const item of configs) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 12000);
+      const timeoutId = setTimeout(() => controller.abort(), 9000);
       const generationConfig: Record<string, unknown> = {
         temperature: 0.6,
         maxOutputTokens: 1500
@@ -288,7 +308,8 @@ Hãy phản hồi tận tình, chuyên nghiệp chuẩn stylist LSOUL:`;
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
+          system_instruction: { parts: [{ text: system }] },
+          contents,
           generationConfig
         }),
         signal: controller.signal

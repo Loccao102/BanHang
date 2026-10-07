@@ -191,6 +191,18 @@ function evaluateOccasionPreference(product: Product, requested: string) {
   return 8;
 }
 
+function isCorsetOrBodysuitOrCutout(product: Product): boolean {
+  if (product.type === "corset" || product.type === "bodysuit") return true;
+  const searchable = `${product.name} ${product.subtitle} ${product.fit || ""} ${product.neckline || ""} ${(product.styleKeywords || []).join(" ")}`.toLowerCase();
+  return /corset|bodysuit|cut-?out|khoét|cắt xẻ|siết eo|gọng định hình|lace-?up|hở lưng|hở eo|xẻ tà|cutout/.test(searchable);
+}
+
+function isTubeTop(product: Product): boolean {
+  if (product.type === "corset" || product.type === "bodysuit") return false;
+  const searchable = `${product.name} ${product.subtitle} ${product.fit || ""}`.toLowerCase();
+  return /tube|áo quây|quây ngực|strapless tube/.test(searchable);
+}
+
 function evaluateStylePreference(product: Product, requested: string) {
   if (requested === "all") return 0;
   const target = normalizeSearchValue(requested);
@@ -198,6 +210,16 @@ function evaluateStylePreference(product: Product, requested: string) {
   if ((product.style || []).some((value) => normalizeSearchValue(value).includes(target))) score += 10;
   if ((product.styleKeywords || []).some((value) => normalizeSearchValue(value).includes(target))) score += 6;
   score += Math.min(12, semanticTextScore(product, requested) * 2);
+
+  const isSexyStyle = /(?:sexy|goi cam|quyen ru|boc lua|nong bong)/.test(target);
+  if (isSexyStyle) {
+    if (isCorsetOrBodysuitOrCutout(product)) {
+      score += 24; // Ưu tiên mạnh các thiết kế corset/bodysuit/cut-out khi khách yêu cầu sexy
+    } else if (isTubeTop(product)) {
+      score -= 8; // Giảm ưu tiên tube top cơ bản khi có lựa chọn sexy sắc sảo hơn
+    }
+  }
+
   return score;
 }
 

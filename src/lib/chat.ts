@@ -58,6 +58,7 @@ export type ChatMessageView = {
   id: string;
   role: ChatRole;
   text: string;
+  imageUrl?: string;
   createdAt?: string;
   products?: Product[];
   actions?: ChatAgentAction[];

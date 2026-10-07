@@ -313,6 +313,14 @@ function contextualizeIntent(
 
   let resolved = intent;
 
+  const isExplicitReset = /\b(?:bo set|set khac|khac hoan toan|bat dau lai|chon lai|khong thich set|doi kieu khac|tim set khac|tim kieu khac|tu van cai khac|tim do khac|xoa set)\b/.test(normalized(message));
+  if (isExplicitReset) {
+    return {
+      ...normalizedIntent,
+      inheritPrevious: false
+    };
+  }
+
   // Semantic guardrail, not phrase matching: if the model sees a current outfit and
   // emits only a new vibe/occasion/budget, treat it as a refinement of that outfit
   // rather than a brand-new catalog search.
@@ -550,7 +558,8 @@ export function inferFallbackShoppingIntent(args: {
   const hasBottom = items.some((item) => item.role === "bottom");
   const hasDress = items.some((item) => item.role === "dress");
   const explicitOutfit = /\b(?:set|outfit|full look|phoi do)\b/.test(text) || (hasTop && hasBottom);
-  const isRefinement = hasOutfitState && Boolean(
+  const asksReset = /\b(?:bo set|set khac|khac hoan toan|bat dau lai|chon lai|khong thich set|doi kieu khac|tim set khac|tim kieu khac|tu van cai khac|tim do khac|xoa set)\b/.test(text);
+  const isRefinement = !asksReset && hasOutfitState && Boolean(
     budgetMax || occasion || style || items.length ||
     /\b(?:doi|thay|giu|hon|bot|them|bo|van|luc dau|ban dau|dang chon)\b/.test(text)
   );
@@ -579,7 +588,11 @@ export function inferFallbackShoppingIntent(args: {
     targetScope = hasOutfitState ? "previous" : "single";
     inheritPrevious = hasOutfitState;
   } else if (asksPolicy) intent = "policy";
-  else if (isRefinement) {
+  else if (asksReset) {
+    intent = explicitOutfit || hasDress ? "recommend_outfit" : items.length ? "search_products" : "recommend_outfit";
+    targetScope = intent === "recommend_outfit" ? "outfit" : "single";
+    inheritPrevious = false;
+  } else if (isRefinement) {
     intent = "modify_outfit";
     targetScope = "outfit";
     inheritPrevious = true;
@@ -657,6 +670,7 @@ QUY TẮC HIỂU NGÔN NGỮ:
 17. budgetMax là số VND nguyên nếu khách nêu ngân sách tối đa/khoảng ngân sách.
 18. targetScope="outfit" khi hành động áp dụng cả set; "single" khi một món; "previous" khi khách chỉ nói mơ hồ "cái/set lúc nãy" và context quyết định.
 19. Nếu khách nói "đỏ rượu/burgundy/đỏ đô" thì colorFamily=red; các sắc thái vẫn map về family gần nhất.
+20. Nếu khách nói "bỏ set này", "set khác", "tìm cái khác hoàn toàn", "bắt đầu lại", "chọn lại", "không thích set này", "đổi kiểu khác", hoặc chuyển sang tìm đồ đơn lẻ không liên quan đến set trước: PHẢI trả về inheritPrevious=false, targetScope tương ứng, KHÔNG dùng modify_outfit.
 
 TRẠNG THÁI MUA SẮM ĐANG ĐƯỢC BACKEND GIỮ:
 ${args.shoppingState?.outfit ? JSON.stringify(args.shoppingState.outfit) : "(chưa có state)"}
@@ -708,8 +722,8 @@ Các field không có thông tin thì bỏ hẳn, riêng items luôn là array v
     || "gemini-flash-lite-latest";
   const configs = [
     { model: primaryModel, thinkingBudget: 0 },
-    { model: "gemini-flash-latest", thinkingBudget: 0 },
-    { model: "gemini-2.5-flash", thinkingBudget: undefined }
+    { model: "gemini-flash-lite-latest", thinkingBudget: 0 },
+    { model: "gemini-3.1-flash-lite-preview", thinkingBudget: 0 }
   ];
 
   for (const config of configs) {
@@ -854,6 +868,16 @@ export function retrieveProductsFromIntent(
       const target = normalized(intent.style);
       if ((product.style || []).some((value) => normalized(value).includes(target))) score += 10;
       if ((product.styleKeywords || []).some((value) => normalized(value).includes(target))) score += 6;
+      if (/(?:sexy|goi cam|quyen ru|boc lua|nong bong)/.test(target)) {
+        const isCorsetOrBodysuitOrCutout = product.type === "corset" || product.type === "bodysuit" ||
+          /corset|bodysuit|cut-?out|khoét|cắt xẻ|siết eo|gọng định hình|lace-?up|hở lưng|hở eo|xẻ tà|cutout/.test(
+            `${product.name} ${product.subtitle} ${product.fit || ""} ${product.neckline || ""} ${(product.styleKeywords || []).join(" ")}`.toLowerCase()
+          );
+        const isTubeTop = !isCorsetOrBodysuitOrCutout &&
+          /tube|áo quây|quây ngực|strapless tube/.test(`${product.name} ${product.subtitle} ${product.fit || ""}`.toLowerCase());
+        if (isCorsetOrBodysuitOrCutout) score += 18;
+        else if (isTubeTop) score -= 8;
+      }
     }
 
     const semanticQuery = [intent.style, intent.occasion && intent.occasion !== "all" ? intent.occasion : undefined]

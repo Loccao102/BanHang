@@ -3,12 +3,16 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { BrainCircuit, Camera, Check, Heart, LoaderCircle, ShoppingBag, Sparkles, ThumbsDown, ThumbsUp, Upload, WandSparkles } from "lucide-react";
+import { BrainCircuit, Camera, Check, ChevronDown, ChevronUp, Heart, LoaderCircle, Ruler, ShoppingBag, Sparkles, ThumbsDown, ThumbsUp, Trash2, Upload, WandSparkles } from "lucide-react";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
 import { formatPrice, type Product } from "@/lib/products";
 import type { StylistAssessment } from "@/lib/stylist-assessment";
 import { isValidOutfit, normalizeOutfitSelection, outfitLabel, sortOutfitProducts, wardrobeGroup, wardrobeGroupLabels, type WardrobeGroup } from "@/lib/wardrobe";
 import { useStore } from "@/components/store-provider";
+import { analyzeBodyShape, evaluateProductFit, type BodyMeasurements } from "@/lib/body-shape";
+
+const SAVED_MODEL_KEY = "lsoul_saved_tryon_model";
+const MEASUREMENTS_KEY = "lsoul_user_measurements";
 
 type ConfiguredItem = {
   productId: string;
@@ -114,6 +118,31 @@ export function TryOnClient() {
   const [assessmentError, setAssessmentError] = useState("");
   const [feedbackReaction, setFeedbackReaction] = useState<FeedbackReaction | null>(null);
   const [feedbackSaving, setFeedbackSaving] = useState(false);
+  const [showFitAdvisor, setShowFitAdvisor] = useState(false);
+  const [measurements, setMeasurements] = useState<BodyMeasurements>({
+    height: 160,
+    weight: 48,
+    bust: 84,
+    waist: 64,
+    hips: 90
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const savedModel = window.localStorage.getItem(SAVED_MODEL_KEY);
+      if (savedModel) {
+        setPersonImage(savedModel);
+        setMessage("Đã tải ảnh người mẫu cá nhân đã lưu từ phiên trước.");
+      }
+      const rawMeasurements = window.localStorage.getItem(MEASUREMENTS_KEY);
+      if (rawMeasurements) {
+        setMeasurements(JSON.parse(rawMeasurements));
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
 
   useEffect(() => {
     if (!selectedIds.length && initialProducts.length) {
@@ -137,6 +166,22 @@ export function TryOnClient() {
 
   const total = selectedProducts.reduce((sum, product) => sum + product.price, 0);
   const outfitReady = isValidOutfit(selectedProducts);
+
+  const bodyAnalysis = useMemo(() => analyzeBodyShape(measurements), [measurements]);
+
+  function saveMeasurements(updated: BodyMeasurements) {
+    setMeasurements(updated);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(MEASUREMENTS_KEY, JSON.stringify(updated));
+    }
+  }
+
+  function applyRecommendedSize() {
+    if (!bodyAnalysis) return;
+    const recSize = bodyAnalysis.recommendedSize;
+    setConfigured((configs) => configs.map((c) => ({ ...c, size: recSize })));
+    setMessage(`Đã áp dụng size chuẩn ${recSize} (${bodyAnalysis.shapeLabel}) cho toàn bộ trang phục.`);
+  }
 
   function clearStylistResult() {
     setTryOnSessionId(null);
@@ -167,13 +212,26 @@ export function TryOnClient() {
       await validatePerson(file);
       const encoded = await compressImage(file);
       setPersonImage(encoded);
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(SAVED_MODEL_KEY, encoded);
+      }
       setResultImage(null);
       clearStylistResult();
-      setMessage("Ảnh đạt kiểm tra. Bạn có thể bắt đầu thử đồ.");
+      setMessage("Ảnh đạt kiểm tra và đã lưu làm mẫu thử cá nhân.");
     } catch (error) {
       setPersonImage(null);
       setMessage(error instanceof Error ? error.message : "Ảnh chưa phù hợp.");
     }
+  }
+
+  function removeSavedModel() {
+    setPersonImage(null);
+    setResultImage(null);
+    clearStylistResult();
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(SAVED_MODEL_KEY);
+    }
+    setMessage("Đã xóa ảnh người mẫu. Vui lòng tải ảnh mới.");
   }
 
   async function assessResult(output: string, sessionId: string | null, productIds: string[]) {
@@ -299,12 +357,141 @@ export function TryOnClient() {
             <label className="fittingUpload">
               {personImage ? <Image src={personImage} alt="Ảnh người dùng" fill unoptimized /> : <div><Upload size={26} /><strong>Tải ảnh toàn thân</strong><small>JPG / PNG / WebP · tối đa 8 MB</small></div>}
               <input hidden type="file" accept="image/jpeg,image/png,image/webp" onChange={onFile} />
-              {personImage ? <span>Đổi ảnh</span> : null}
+              {!personImage ? null : <span>Bấm để đổi ảnh</span>}
             </label>
+            {personImage ? (
+              <div className="fittingUploadActions">
+                <button type="button" className="fittingDeletePhotoBtn" onClick={removeSavedModel} title="Xóa ảnh đã lưu">
+                  <Trash2 size={13} /> Xóa ảnh mẫu
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="fittingStep fittingFitAdvisorStep">
+            <div className="fittingStepHead">
+              <span>02</span>
+              <div>
+                <strong>Tư vấn vóc dáng & Size AI</strong>
+                <small>{bodyAnalysis ? `${bodyAnalysis.shapeLabel} · Size ${bodyAnalysis.recommendedSize}` : "Nhập 3 vòng để AI tính size chuẩn"}</small>
+              </div>
+              <button
+                type="button"
+                className="fittingAdvisorToggle"
+                onClick={() => setShowFitAdvisor((v) => !v)}
+                aria-label="Thu gọn hoặc mở rộng tư vấn vóc dáng"
+              >
+                {showFitAdvisor ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </button>
+            </div>
+
+            {showFitAdvisor ? (
+              <div className="fittingAdvisorBody">
+                <div className="fittingMeasurementsGrid">
+                  <label>
+                    <span>Cao (cm)</span>
+                    <input
+                      type="number"
+                      min={140}
+                      max={200}
+                      value={measurements.height ?? ""}
+                      onChange={(e) => saveMeasurements({ ...measurements, height: Number(e.target.value) || undefined })}
+                    />
+                  </label>
+                  <label>
+                    <span>Nặng (kg)</span>
+                    <input
+                      type="number"
+                      min={35}
+                      max={120}
+                      value={measurements.weight ?? ""}
+                      onChange={(e) => saveMeasurements({ ...measurements, weight: Number(e.target.value) || undefined })}
+                    />
+                  </label>
+                  <label>
+                    <span>Vòng 1 (cm)</span>
+                    <input
+                      type="number"
+                      min={65}
+                      max={130}
+                      value={measurements.bust ?? ""}
+                      onChange={(e) => saveMeasurements({ ...measurements, bust: Number(e.target.value) || undefined })}
+                    />
+                  </label>
+                  <label>
+                    <span>Vòng 2 (cm)</span>
+                    <input
+                      type="number"
+                      min={50}
+                      max={110}
+                      value={measurements.waist ?? ""}
+                      onChange={(e) => saveMeasurements({ ...measurements, waist: Number(e.target.value) || undefined })}
+                    />
+                  </label>
+                  <label>
+                    <span>Vòng 3 (cm)</span>
+                    <input
+                      type="number"
+                      min={70}
+                      max={140}
+                      value={measurements.hips ?? ""}
+                      onChange={(e) => saveMeasurements({ ...measurements, hips: Number(e.target.value) || undefined })}
+                    />
+                  </label>
+                </div>
+
+                {bodyAnalysis ? (
+                  <div className="fittingAnalysisResult">
+                    <div className="fittingShapeCard">
+                      <div className="fittingShapeBadge">
+                        <Sparkles size={12} /> {bodyAnalysis.shapeLabel}
+                      </div>
+                      <p className="fittingShapeDesc">{bodyAnalysis.shapeDescription}</p>
+                      <div className="fittingSizeRecommendRow">
+                        <span>Size đề xuất:</span>
+                        <strong className="fittingRecSize">{bodyAnalysis.recommendedSize}</strong>
+                        <button
+                          type="button"
+                          className="fittingApplySizeBtn"
+                          onClick={applyRecommendedSize}
+                          title="Áp dụng size đề xuất cho cả set đồ"
+                        >
+                          Áp dụng size {bodyAnalysis.recommendedSize}
+                        </button>
+                      </div>
+                    </div>
+
+                    {selectedProducts.length ? (
+                      <div className="fittingProductsFitList">
+                        <strong className="fittingProductsFitTitle">Độ vừa vặn theo sản phẩm:</strong>
+                        {selectedProducts.map((p) => {
+                          const fitAdvice = evaluateProductFit(p, measurements);
+                          return (
+                            <div key={p.id} className="fittingProductFitItem">
+                              <span className="fittingProductName">{p.name} ({fitAdvice.recommendedSize}):</span>
+                              <p className="fittingProductAdvice">{fitAdvice.adviceText}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              bodyAnalysis ? (
+                <div className="fittingAdvisorQuick">
+                  <span className="fittingQuickBadge">{bodyAnalysis.shapeLabel} · Size {bodyAnalysis.recommendedSize}</span>
+                  <button type="button" className="fittingQuickApply" onClick={applyRecommendedSize}>
+                    Chọn size {bodyAnalysis.recommendedSize}
+                  </button>
+                </div>
+              ) : null
+            )}
           </div>
 
           <div className="fittingStep">
-            <div className="fittingStepHead"><span>02</span><div><strong>Chọn trang phục thử</strong><small>Thử từng món riêng lẻ hoặc kết hợp cả bộ</small></div><Sparkles size={17} /></div>
+            <div className="fittingStepHead"><span>03</span><div><strong>Chọn trang phục thử</strong><small>Thử từng món riêng lẻ hoặc kết hợp cả bộ</small></div><Sparkles size={17} /></div>
             <div className="fittingLookSummary"><span>ĐANG CHỌN</span><strong>{outfitLabel(selectedProducts)}</strong></div>
             <div className="fittingWishlist fittingWardrobeGroups">
               {!wishlistProducts.length ? (

@@ -20,6 +20,21 @@ export default function AccountPage() {
   const [editingAddress, setEditingAddress] = useState<CustomerAddress | null>(null);
   const [profileMessage, setProfileMessage] = useState("");
   const [passwordMessage, setPasswordMessage] = useState("");
+  const [sizingMessage, setSizingMessage] = useState("");
+  const [userMeasurements, setUserMeasurements] = useState<{
+    height?: number; weight?: number; bust?: number; waist?: number; hips?: number;
+  }>({ height: 160, weight: 48, bust: 84, waist: 64, hips: 90 });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const raw = window.localStorage.getItem("lsoul_user_measurements");
+        if (raw) setUserMeasurements(JSON.parse(raw));
+      } catch {
+        // ignore
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (!accountLoading && !user) router.replace("/login?next=/account");
@@ -148,6 +163,42 @@ export default function AccountPage() {
           <label><span>Số điện thoại</span><input name="phone" defaultValue={user.phone ?? ""} /></label>
           {profileMessage ? <p className="formSuccess">{profileMessage}</p> : null}
           <button className="btn" type="submit">Lưu thay đổi</button>
+        </form>
+        <div className="accountDivider" />
+        <form
+          className="accountForm"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const form = new FormData(e.currentTarget);
+            const updated = {
+              height: Number(form.get("height")) || undefined,
+              weight: Number(form.get("weight")) || undefined,
+              bust: Number(form.get("bust")) || undefined,
+              waist: Number(form.get("waist")) || undefined,
+              hips: Number(form.get("hips")) || undefined
+            };
+            if (typeof window !== "undefined") {
+              window.localStorage.setItem("lsoul_user_measurements", JSON.stringify(updated));
+            }
+            setSizingMessage("Đã lưu số đo thành công. Phòng thử đồ AI và Stylist sẽ sử dụng số đo này để chọn size chuẩn.");
+          }}
+        >
+          <p className="eyebrow">VÓC DÁNG & SIZE AI</p>
+          <h3>Hồ sơ số đo cá nhân</h3>
+          <p style={{ fontSize: "12px", color: "var(--muted)", margin: "0 0 10px" }}>
+            Lưu số đo 3 vòng để AI Stylist tự động chọn size chuẩn xác nhất khi thử đồ và tư vấn.
+          </p>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+            <label><span>Chiều cao (cm)</span><input name="height" type="number" defaultValue={userMeasurements.height ?? 160} /></label>
+            <label><span>Cân nặng (kg)</span><input name="weight" type="number" defaultValue={userMeasurements.weight ?? 48} /></label>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
+            <label><span>Vòng 1 (cm)</span><input name="bust" type="number" defaultValue={userMeasurements.bust ?? 84} /></label>
+            <label><span>Vòng 2 / Eo (cm)</span><input name="waist" type="number" defaultValue={userMeasurements.waist ?? 64} /></label>
+            <label><span>Vòng 3 / Mông (cm)</span><input name="hips" type="number" defaultValue={userMeasurements.hips ?? 90} /></label>
+          </div>
+          {sizingMessage ? <p className="formSuccess">{sizingMessage}</p> : null}
+          <button className="btn" type="submit">Lưu hồ sơ số đo</button>
         </form>
         <div className="accountDivider" />
         <form className="accountForm" onSubmit={changePassword}>

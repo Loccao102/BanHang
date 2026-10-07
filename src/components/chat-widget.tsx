@@ -3,8 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
-  Bot, Check, ChevronRight, Clock3, Heart, History, MessageCircle,
-  Pencil, Plus, Send, ShoppingBag, Sparkles, Trash2, X
+  Bot, Camera, Check, ChevronRight, Clock3, Heart, History, ImagePlus,
+  MessageCircle, Pencil, Plus, Send, ShoppingBag, Sparkles, Trash2, X
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
@@ -60,8 +60,11 @@ export function ChatWidget() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
   const [actionState, setActionState] = useState<Record<string, "running" | "done" | "failed">>({});
+  const [attachedImage, setAttachedImage] = useState<string | null>(null);
+  const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isGuest = !user;
 
@@ -128,10 +131,34 @@ export function ChatWidget() {
     setMessages([welcome]);
     setActiveConversationId(null);
     setInput("");
+    setAttachedImage(null);
     setError("");
     setHistoryOpen(false);
     setActionState({});
     inputRef.current?.focus();
+  }
+
+  function handleImageSelect(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setError("Vui lòng chọn ảnh định dạng JPG, PNG hoặc WebP.");
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      setError("Kích thước ảnh tối đa là 8MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAttachedImage(String(reader.result));
+      setError("");
+    };
+    reader.onerror = () => {
+      setError("Không thể đọc file ảnh.");
+    };
+    reader.readAsDataURL(file);
+    if (event.target) event.target.value = "";
   }
 
   async function executeAction(action: ChatAgentAction) {
@@ -207,12 +234,14 @@ export function ChatWidget() {
 
   async function send(text: string) {
     const clean = text.trim();
-    if (!clean || loading) return;
+    const imageToSend = attachedImage;
+    if ((!clean && !imageToSend) || loading) return;
 
     const optimistic: ChatMessageView = {
       id: crypto.randomUUID(),
       role: "user",
-      text: clean,
+      text: clean || "Gợi ý phối đồ cho ảnh này giúp mình",
+      imageUrl: imageToSend || undefined,
       createdAt: new Date().toISOString()
     };
     const historyForRequest = messages.filter((message) => message.id !== "welcome").slice(-10);
@@ -220,6 +249,7 @@ export function ChatWidget() {
       .find((message) => message.role === "assistant" && message.shoppingState)?.shoppingState;
     setMessages((current) => [...current, optimistic]);
     setInput("");
+    setAttachedImage(null);
     setLoading(true);
     setError("");
 
@@ -229,9 +259,10 @@ export function ChatWidget() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: clean,
+          image: imageToSend || undefined,
           conversationId: activeConversationId,
           history: isGuest ? historyForRequest : undefined,
-          shoppingState: isGuest ? latestShoppingState : undefined
+          shoppingState: latestShoppingState ?? undefined
         })
       });
       const data = await response.json() as {
@@ -299,8 +330,8 @@ export function ChatWidget() {
   }
 
   function quickAdd(product: Product) {
-    const size = firstAvailableSize(product);
-    if (size) addToCart(product, size);
+    const chosenSize = selectedSizes[product.id] || firstAvailableSize(product);
+    if (chosenSize) addToCart(product, chosenSize);
   }
 
   function quickTryOn(product: Product) {
@@ -314,6 +345,24 @@ export function ChatWidget() {
     }
     setOpen(false);
     router.push(`/try-on?products=${encodeURIComponent(product.id)}`);
+  }
+
+  function quickTryOnBundle(bundleProducts: Product[]) {
+    const productIds = Array.from(new Set(bundleProducts.map((p) => p.id).filter(Boolean)));
+    if (!productIds.length) return;
+    if (!user) {
+      setOpen(false);
+      const targetUrl = `/try-on?products=${encodeURIComponent(productIds.join(","))}`;
+      router.push(`/login?next=${encodeURIComponent(targetUrl)}`);
+      return;
+    }
+    productIds.forEach((id) => {
+      if (!wishlist.includes(id)) {
+        toggleWishlist(id);
+      }
+    });
+    setOpen(false);
+    router.push(`/try-on?products=${encodeURIComponent(productIds.join(","))}`);
   }
 
   function actionLabel(action: ChatAgentAction) {
@@ -398,14 +447,36 @@ export function ChatWidget() {
               <div className={`message ${message.role}`} key={message.id}>
                 {message.role === "assistant" ? <Bot size={16} /> : null}
                 <div className="messageBubble">
+                  {message.imageUrl ? (
+                    <div className="chatMessageImage">
+                      <Image src={message.imageUrl} alt="Ảnh gửi cho AI" width={180} height={220} unoptimized />
+                    </div>
+                  ) : null}
                   <p>{message.text}</p>
 
                   {message.products?.length ? (
                     <div className="chatProducts">
-                      {bundleCaption(message) ? <div className="chatBundleSummary">{bundleCaption(message)}</div> : null}
+                      {bundleCaption(message) ? (
+                        <div className="chatBundleSummaryRow">
+                          <div className="chatBundleSummary">{bundleCaption(message)}</div>
+                          <button
+                            type="button"
+                            className="chatTryBundleBtn"
+                            onClick={() => quickTryOnBundle(message.products ?? [])}
+                            title="Ướm thử cả set trong phòng thử đồ AI"
+                          >
+                            <Sparkles size={13} />
+                            <span>Thử cả set</span>
+                          </button>
+                        </div>
+                      ) : null}
                       {message.products.slice(0, 6).map((product) => {
                         const liked = wishlist.includes(product.id);
-                        const availableSizes = product.variants?.filter((variant) => variant.stock > 0).map((variant) => variant.size).slice(0, 4).join(" · ") || (Array.isArray(product.sizes) ? product.sizes.slice(0, 4).join(" · ") : "");
+                        const activeSize = selectedSizes[product.id] || firstAvailableSize(product);
+                        const variantsWithStock = product.variants?.filter((variant) => variant.stock > 0) ?? [];
+                        const availableSizesList = variantsWithStock.length
+                          ? variantsWithStock.map((variant) => variant.size)
+                          : (Array.isArray(product.sizes) ? product.sizes : ["S"]);
                         return (
                           <div className="chatProductCard" key={product.id}>
                             <Link className="chatProductBody" href={`/product/${product.id}`} onClick={() => setOpen(false)}>
@@ -415,7 +486,26 @@ export function ChatWidget() {
                               <div className="chatProductInfo">
                                 <strong>{product.name}</strong>
                                 <span className="chatProductPrice">{formatPrice(product.price)}</span>
-                                <span className="chatProductSizes">Size: {availableSizes}</span>
+                                <div className="chatProductSizesRow">
+                                  <span className="chatSizeLabel">Size:</span>
+                                  <div className="chatSizeChips">
+                                    {availableSizesList.slice(0, 4).map((s) => (
+                                      <button
+                                        key={s}
+                                        type="button"
+                                        className={`chatSizeChip ${activeSize === s ? "active" : ""}`}
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          setSelectedSizes((prev) => ({ ...prev, [product.id]: s }));
+                                        }}
+                                        title={`Chọn size ${s}`}
+                                      >
+                                        {s}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
                               </div>
                               <ChevronRight size={16} className="chatProductArrow" />
                             </Link>
@@ -424,11 +514,11 @@ export function ChatWidget() {
                                 type="button"
                                 className="chatAddBtn"
                                 onClick={() => quickAdd(product)}
-                                aria-label={`Thêm ${product.name} vào giỏ`}
-                                title="Thêm vào giỏ hàng"
+                                aria-label={`Thêm ${product.name} size ${activeSize} vào giỏ`}
+                                title={`Thêm size ${activeSize} vào giỏ hàng`}
                               >
                                 <ShoppingBag size={13} />
-                                <span>Thêm giỏ</span>
+                                <span>Thêm {activeSize}</span>
                               </button>
                               <button
                                 type="button"
@@ -486,9 +576,44 @@ export function ChatWidget() {
             <div ref={endRef} />
           </div>
 
+          {attachedImage ? (
+            <div className="chatAttachedPreview">
+              <div className="chatAttachedThumb">
+                <Image src={attachedImage} alt="Ảnh đính kèm" width={38} height={46} unoptimized />
+                <button
+                  type="button"
+                  className="chatAttachedRemove"
+                  onClick={() => setAttachedImage(null)}
+                  title="Gỡ ảnh"
+                >
+                  <X size={12} />
+                </button>
+              </div>
+              <span className="chatAttachedLabel">Đã đính kèm ảnh mẫu (AI Stylist sẽ phân tích gu & phối đồ tương tự)</span>
+            </div>
+          ) : null}
+
           <form className="chatForm" onSubmit={handleSubmit}>
-            <input ref={inputRef} value={input} onChange={(event) => setInput(event.target.value)} maxLength={2000} placeholder='Ví dụ: "thêm cái thứ 2 cỡ M vào giỏ"' />
-            <button disabled={loading || !input.trim()} aria-label="Gửi"><Send size={17} /></button>
+            <label className="chatUploadBtn" title="Gửi ảnh mẫu outfit hoặc vóc dáng để AI stylist tư vấn">
+              <ImagePlus size={18} />
+              <input
+                ref={fileInputRef}
+                hidden
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleImageSelect}
+              />
+            </label>
+            <input
+              ref={inputRef}
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              maxLength={2000}
+              placeholder={attachedImage ? "Nhập thêm yêu cầu (hoặc bấm gửi để AI phân tích ảnh)..." : 'Ví dụ: "tìm set sexy giống ảnh", "thêm cỡ M vào giỏ"...'}
+            />
+            <button disabled={loading || (!input.trim() && !attachedImage)} aria-label="Gửi">
+              <Send size={17} />
+            </button>
           </form>
           <div className="chatFoot">{user ? "Trợ lý mua sắm · lịch sử lưu vào tài khoản LSOUL." : "Chế độ khách · lịch sử lưu trên trình duyệt."}</div>
         </aside>

@@ -90,13 +90,15 @@ function productIdsFromGuestHistory(history: ChatMessageView[]) {
 export async function POST(request: Request) {
   const body = await request.json() as {
     message?: string;
+    image?: string;
     conversationId?: string;
     history?: ChatMessageView[];
     shoppingState?: unknown;
   };
-  const message = String(body.message ?? "").replace(/\s+/g, " ").trim();
+  const rawMessage = String(body.message ?? "").replace(/\s+/g, " ").trim();
+  const message = rawMessage || (body.image ? "Hãy tư vấn trang phục LSOUL phù hợp với phong cách trong bức ảnh này giúp tôi." : "");
 
-  if (!message) return NextResponse.json({ error: "Vui lòng nhập nội dung." }, { status: 400 });
+  if (!message && !body.image) return NextResponse.json({ error: "Vui lòng nhập nội dung hoặc gửi ảnh." }, { status: 400 });
   if (message.length > 2000) return NextResponse.json({ error: "Tin nhắn quá dài. Vui lòng rút gọn dưới 2.000 ký tự." }, { status: 400 });
 
   const db = getDb();
@@ -143,14 +145,16 @@ export async function POST(request: Request) {
     if (persistedContext && typeof persistedContext === "object" && !Array.isArray(persistedContext)) {
       shoppingState = parseShoppingState((persistedContext as Record<string, unknown>).shoppingState) ?? shoppingState;
     }
-    const chronological = previous.reverse();
+    // Lấy tin nhắn assistant gần nhất TRƯỚC KHI đảo ngược previous (previous đang sort desc: mới nhất -> cũ nhất)
+    const lastAssistant = previous.find((item) => item.role === "assistant" && productIdsFromMessage(item).length);
+    contextProductIds = lastAssistant ? productIdsFromMessage(lastAssistant) : [];
+
+    const chronological = [...previous].reverse();
     history = chronological.flatMap((item) =>
       item.role === "user" || item.role === "assistant"
         ? [{ role: item.role as "user" | "assistant", text: item.content }]
         : []
     );
-    const lastAssistant = [...previous].find((item) => item.role === "assistant" && productIdsFromMessage(item).length);
-    contextProductIds = lastAssistant ? productIdsFromMessage(lastAssistant) : [];
 
     await db.chatMessage.create({
       data: {
@@ -338,7 +342,8 @@ export async function POST(request: Request) {
         products: responseProducts,
         history,
         orderContext,
-        agentContext: plan.notes.join("\n")
+        agentContext: plan.notes.join("\n"),
+        image: body.image
       });
   const baseReply = hardOutfitNoMatch
     ? noMatchReply
@@ -369,7 +374,11 @@ export async function POST(request: Request) {
     ? `${withBundle}\n\nMã ưu đãi đang hiệu lực: ${missingCodes.join(", ")}. Bạn bấm nút bên dưới để áp dụng nhé!`
     : withBundle;
 
-  const nextShoppingState = buildShoppingState(intent, responseProducts, shoppingState);
+  // Khi khách chuyển sang tìm kiếm mới độc lập hoặc reset, giải phóng outfit state cũ để tránh dính context
+  const stateContext = (intent?.inheritPrevious || intent?.intent === "modify_outfit" || intent?.intent === "size_advice" || intent?.intent === "add_outfit_to_cart")
+    ? shoppingState
+    : null;
+  const nextShoppingState = buildShoppingState(intent, responseProducts, stateContext);
   const evaluation = evaluateRecommendation(intent, responseProducts);
 
   if (user && db && conversationId) {

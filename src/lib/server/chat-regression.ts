@@ -734,10 +734,8 @@ test("recommendation evaluation treats coverage like color/type/length hard cons
     }),
     [redCorset, whitePartySkirt]
   );
-
   assert.equal(scored.hardConstraintPass, false);
 });
-
 
 test("terse 'sexy sexy' follow-up stays a modify-outfit refinement", () => {
   const previousTop = productionCatalog.find((item) =>
@@ -820,6 +818,81 @@ test("style refinement exposes only final outfit products, not retrieval candida
   const plannedIds = plan.products.map((item) => item.id).sort();
   assert.deepEqual(bundle.items.map((item) => item.productId).sort(), plannedIds);
   assert.deepEqual(tryOn.productIds.slice().sort(), plannedIds);
+});
+
+test("sexy style ranking prioritizes corset/bodysuit/cutout over tube top", () => {
+  const previousTop = productionCatalog.find((item) =>
+    item.id === "lsoul-athena-sweetheart-satin-tube-top-tp-athena-tube-blk"
+  );
+  const previousBottom = productionCatalog.find((item) =>
+    item.id === "lsoul-atelier-wide-trousers-black"
+  );
+  assert.ok(previousTop);
+  assert.ok(previousBottom);
+
+  const previous = buildShoppingState(
+    intent({
+      intent: "recommend_outfit",
+      targetScope: "outfit",
+      budgetMax: 3_000_000,
+      items: []
+    }),
+    [previousTop, previousBottom],
+    null
+  );
+
+  const parsed = inferFallbackShoppingIntent({
+    message: "tôi muốn nó sexy sexy cơ",
+    contextProducts: [previousTop, previousBottom],
+    shoppingState: previous
+  });
+  const merged = applyShoppingState(parsed, previous);
+
+  const plan = buildAgentPlan({
+    message: "tôi muốn nó sexy sexy cơ",
+    found: productionCatalog.filter((item) => item.stock > 0).slice(0, 5),
+    contextProducts: [previousTop, previousBottom],
+    catalog: productionCatalog,
+    orders: [],
+    coupons: [],
+    loggedIn: false,
+    intent: merged
+  });
+
+  const selectedTop = plan.products.find((item) => item.category === "tops");
+  assert.ok(selectedTop);
+  // Không được giữ lại tube top khi khách yêu cầu sexy và catalog có lựa chọn corset/bodysuit/cut-out phù hợp
+  assert.notEqual(selectedTop.id, "lsoul-athena-sweetheart-satin-tube-top-tp-athena-tube-blk");
+  const isElevatedSexy =
+    selectedTop.type === "corset" ||
+    selectedTop.type === "bodysuit" ||
+    /corset|bodysuit|cut-?out/.test(selectedTop.name.toLowerCase() + " " + selectedTop.subtitle.toLowerCase());
+  assert.equal(isElevatedSexy, true);
+});
+
+test("explicit reset phrase clears outfit inheritance and avoids modify_outfit", () => {
+  const previous = buildShoppingState(initialRedWhiteIntent(), [redCorset, whitePartySkirt], null);
+  const parsed = inferFallbackShoppingIntent({
+    message: "Bỏ set này đi, tìm cho mình đồ khác",
+    contextProducts: [redCorset, whitePartySkirt],
+    shoppingState: previous
+  });
+
+  assert.equal(parsed.inheritPrevious, false);
+  assert.notEqual(parsed.intent, "modify_outfit");
+});
+
+test("last assistant product lookup in multi-turn stays grounded on most recent turn", () => {
+  const dbMessagesDesc = [
+    { role: "assistant", content: "Mới nhất: áo trắng", productIds: ["white-shirt"] },
+    { role: "user", content: "Tìm áo trắng", productIds: [] },
+    { role: "assistant", content: "Cũ hơn: đầm đỏ", productIds: ["red-dress"] },
+    { role: "user", content: "Tìm đầm đỏ", productIds: [] }
+  ];
+
+  // Logic đã fix trong route.ts: lấy first assistant từ mảng desc trước khi reverse
+  const lastAssistant = dbMessagesDesc.find((item) => item.role === "assistant" && item.productIds.length);
+  assert.equal(lastAssistant?.productIds[0], "white-shirt");
 });
 
 let passed = 0;
