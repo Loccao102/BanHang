@@ -2,15 +2,71 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { SlidersHorizontal, Sparkles, X } from "lucide-react";
+import { SlidersHorizontal, X } from "lucide-react";
 import { ProductCard } from "@/components/product-card";
 import { useStore } from "@/components/store-provider";
-import { categoryLabels, typeLabels } from "@/lib/products";
+import { formatPrice, typeLabels } from "@/lib/products";
+import type { ClothingType, ColorFamily, Product } from "@/lib/products";
 import { calculateProductSearchScore, getPersonalizedRecommendations } from "@/lib/product-search";
+
+const shopCategoryOptions = [
+  ["tops", "Áo"],
+  ["pants", "Quần"],
+  ["skirts", "Chân váy"],
+  ["outerwear", "Áo khoác"],
+  ["dress", "Đầm"],
+  ["set", "Set đồ"]
+] as const;
+
+const colorOptions: Array<{ value: ColorFamily; label: string; hex: string }> = [
+  { value: "black", label: "Đen", hex: "#111111" },
+  { value: "white", label: "Trắng", hex: "#ffffff" },
+  { value: "navy", label: "Xanh navy", hex: "#1f2a44" },
+  { value: "beige", label: "Be", hex: "#e7dccb" },
+  { value: "blue", label: "Xanh", hex: "#4f78a8" },
+  { value: "brown", label: "Nâu", hex: "#704214" },
+  { value: "red", label: "Đỏ", hex: "#a12b3a" },
+  { value: "green", label: "Xanh lá", hex: "#58705d" },
+  { value: "gray", label: "Xám", hex: "#8a8a8a" },
+  { value: "pink", label: "Hồng", hex: "#d68ca3" }
+];
+
+function normalizeCategory(value: string | null) {
+  // Old links used ?category=bottoms. The shop now splits this into Quần and Chân váy,
+  // so fall back to the full catalog instead of silently choosing one side.
+  return value === "bottoms" ? "all" : value ?? "all";
+}
+
+function shopCategoryForProduct(product: Product) {
+  if (product.category === "bottoms") {
+    return product.type === "skirt" ? "skirts" : "pants";
+  }
+  return product.category;
+}
+
+function matchesCategory(product: Product, selectedCategory: string) {
+  if (selectedCategory === "all") return true;
+  return shopCategoryForProduct(product) === selectedCategory;
+}
+
+function matchesType(product: Product, selectedType: string) {
+  return selectedType === "all" || product.type === selectedType;
+}
+
+function groupProducts(items: Product[]) {
+  const groups = new Map<string, Product[]>();
+  for (const product of items) {
+    const key = product.groupCode?.trim() || product.id;
+    const current = groups.get(key);
+    if (current) current.push(product);
+    else groups.set(key, [product]);
+  }
+  return Array.from(groups.entries()).map(([key, variants]) => ({ key, variants }));
+}
 
 export function ShopClient() {
   const searchParams = useSearchParams();
-  const initialCategory = searchParams.get("category") ?? "all";
+  const initialCategory = normalizeCategory(searchParams.get("category"));
   const saleOnly = searchParams.get("sale") === "1";
   const initialQuery = searchParams.get("q") ?? "";
 
@@ -18,43 +74,57 @@ export function ShopClient() {
   const [category, setCategory] = useState(initialCategory);
   const [productType, setProductType] = useState("all");
   const [color, setColor] = useState("all");
-  const [price, setPrice] = useState("all");
+  const [priceCeiling, setPriceCeiling] = useState<number | null>(null);
   const [stockOnly, setStockOnly] = useState(true);
   const [sort, setSort] = useState(searchParams.get("sort") === "new" ? "new" : "featured");
   const [mobileFilters, setMobileFilters] = useState(false);
   const { catalog, wishlist } = useStore();
 
-  // Only expose filter values that can actually lead to an in-stock product.
-  // This keeps the left sidebar aligned with the live catalog instead of the
-  // static enum lists in products.ts.
   const availableFilterProducts = useMemo(
     () => catalog.filter((product) => product.active !== false && product.stock > 0),
     [catalog]
   );
-  const availableCategories = useMemo(
-    () => new Set(availableFilterProducts.map((product) => product.category)),
+
+  const catalogMaxPrice = useMemo(
+    () => availableFilterProducts.reduce((max, product) => Math.max(max, product.price), 0),
     [availableFilterProducts]
   );
-  const availableTypes = useMemo(
-    () => new Set(availableFilterProducts.map((product) => product.type)),
-    [availableFilterProducts]
-  );
-  const availableColors = useMemo(
-    () => new Set(availableFilterProducts.map((product) => product.colorFamily)),
-    [availableFilterProducts]
-  );
-  const availablePrices = useMemo(() => {
+  const effectivePriceCeiling = priceCeiling ?? catalogMaxPrice;
+
+  // Faceted filtering: every facet respects the selections in the other facets.
+  // This prevents combinations that can never return a product.
+  const availableCategories = useMemo(() => {
     const values = new Set<string>();
     for (const product of availableFilterProducts) {
-      if (product.price < 500000) values.add("under500");
-      else if (product.price <= 700000) values.add("500to700");
-      else values.add("over700");
+      if (!matchesType(product, productType)) continue;
+      if (color !== "all" && product.colorFamily !== color) continue;
+      values.add(shopCategoryForProduct(product));
     }
     return values;
-  }, [availableFilterProducts]);
+  }, [availableFilterProducts, productType, color]);
+
+  const availableTypes = useMemo(() => {
+    const values = new Set<ClothingType>();
+    for (const product of availableFilterProducts) {
+      if (!matchesCategory(product, category)) continue;
+      if (color !== "all" && product.colorFamily !== color) continue;
+      values.add(product.type);
+    }
+    return values;
+  }, [availableFilterProducts, category, color]);
+
+  const availableColors = useMemo(() => {
+    const values = new Set<ColorFamily>();
+    for (const product of availableFilterProducts) {
+      if (!matchesCategory(product, category)) continue;
+      if (!matchesType(product, productType)) continue;
+      values.add(product.colorFamily);
+    }
+    return values;
+  }, [availableFilterProducts, category, productType]);
 
   useEffect(() => {
-    const nextCategory = searchParams.get("category") ?? "all";
+    const nextCategory = normalizeCategory(searchParams.get("category"));
     setCategory(nextCategory);
 
     const nextQuery = searchParams.get("q") ?? "";
@@ -66,54 +136,79 @@ export function ShopClient() {
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    if (category !== "all" && !availableCategories.has(category)) setCategory("all");
+    if (productType !== "all" && !availableTypes.has(productType as ClothingType)) setProductType("all");
+    if (color !== "all" && !availableColors.has(color as ColorFamily)) setColor("all");
+  }, [category, productType, color, availableCategories, availableTypes, availableColors]);
+
   const filtered = useMemo(() => {
     const rawQuery = query.trim();
-    let result = catalog.filter((product) => {
-      const searchScore = !rawQuery ? 1 : calculateProductSearchScore(product, rawQuery);
-      const matchText = searchScore > 0;
-      const matchCategory = category === "all" || product.category === category;
-      const matchType = productType === "all" || product.type === productType;
-      const matchColor = color === "all" || product.colorFamily === color;
+    const base = catalog.filter((product) => {
+      const matchCategory = matchesCategory(product, category);
+      const matchType = matchesType(product, productType);
       const matchSale = !saleOnly || Boolean(product.oldPrice);
       const matchStock = !stockOnly || product.stock > 0;
-      const matchPrice = price === "all" || (price === "under500" && product.price < 500000) || (price === "500to700" && product.price >= 500000 && product.price <= 700000) || (price === "over700" && product.price > 700000);
-      return product.active !== false && matchText && matchCategory && matchType && matchColor && matchSale && matchStock && matchPrice;
+      const matchPrice = !effectivePriceCeiling || product.price <= effectivePriceCeiling;
+      return product.active !== false && matchCategory && matchType && matchSale && matchStock && matchPrice;
     });
 
+    let result = groupProducts(base)
+      .filter(({ variants }) => !rawQuery || variants.some((product) => calculateProductSearchScore(product, rawQuery) > 0))
+      .filter(({ variants }) => color === "all" || variants.some((product) => product.colorFamily === color))
+      .map(({ key, variants }) => {
+        const preferredVariants = color === "all"
+          ? variants
+          : variants.filter((product) => product.colorFamily === color);
+
+        let product = preferredVariants[0] ?? variants[0];
+        if (rawQuery) {
+          product = [...preferredVariants]
+            .sort((a, b) => calculateProductSearchScore(b, rawQuery) - calculateProductSearchScore(a, rawQuery))[0] ?? product;
+        }
+
+        return { key, product, variants };
+      });
+
     if (rawQuery && sort === "featured") {
-      result = result.toSorted((a, b) => calculateProductSearchScore(b, rawQuery) - calculateProductSearchScore(a, rawQuery));
-    } else if (sort === "foryou") {
-      const personalizedSet = new Set(getPersonalizedRecommendations(catalog, wishlist, 20).map((p) => p.id));
       result = result.toSorted((a, b) => {
-        const aFav = personalizedSet.has(a.id) ? 1 : 0;
-        const bFav = personalizedSet.has(b.id) ? 1 : 0;
+        const scoreA = Math.max(...a.variants.map((product) => calculateProductSearchScore(product, rawQuery)));
+        const scoreB = Math.max(...b.variants.map((product) => calculateProductSearchScore(product, rawQuery)));
+        return scoreB - scoreA;
+      });
+    } else if (sort === "foryou") {
+      const personalizedSet = new Set(getPersonalizedRecommendations(catalog, wishlist, 40).map((product) => product.id));
+      result = result.toSorted((a, b) => {
+        const aFav = a.variants.some((product) => personalizedSet.has(product.id)) ? 1 : 0;
+        const bFav = b.variants.some((product) => personalizedSet.has(product.id)) ? 1 : 0;
         return bFav - aFav;
       });
     } else if (sort === "price-low") {
-      result = result.toSorted((a, b) => a.price - b.price);
+      result = result.toSorted((a, b) => a.product.price - b.product.price);
     } else if (sort === "price-high") {
-      result = result.toSorted((a, b) => b.price - a.price);
+      result = result.toSorted((a, b) => b.product.price - a.product.price);
     } else if (sort === "new") {
-      result = result.toSorted((a, b) => Number(b.isNew) - Number(a.isNew));
+      result = result.toSorted((a, b) => Number(b.variants.some((product) => product.isNew)) - Number(a.variants.some((product) => product.isNew)));
     }
 
     return result;
-  }, [catalog, query, category, productType, color, price, stockOnly, sort, saleOnly, wishlist]);
+  }, [catalog, query, category, productType, color, effectivePriceCeiling, stockOnly, sort, saleOnly, wishlist]);
 
-  useEffect(() => {
-    if (category !== "all" && !availableCategories.has(category as never)) setCategory("all");
-    if (productType !== "all" && !availableTypes.has(productType as never)) setProductType("all");
-    if (color !== "all" && !availableColors.has(color as never)) setColor("all");
-    if (price !== "all" && !availablePrices.has(price)) setPrice("all");
-  }, [category, productType, color, price, availableCategories, availableTypes, availableColors, availablePrices]);
+  const fallbackGroups = useMemo(
+    () => groupProducts(catalog.filter((product) => product.active !== false && product.stock > 0)).slice(0, 3),
+    [catalog]
+  );
 
   const resetFilters = () => {
     setQuery("");
     setCategory("all");
     setProductType("all");
     setColor("all");
-    setPrice("all");
+    setPriceCeiling(null);
   };
+
+  const sliderMax = Math.max(catalogMaxPrice, 100000);
+  const sliderValue = Math.min(effectivePriceCeiling || sliderMax, sliderMax);
 
   const filters = (
     <>
@@ -126,40 +221,71 @@ export function ShopClient() {
           placeholder="Tên, SKU, hoặc gu: sexy, đi tiệc, Y2K..."
         />
       </div>
+
       <div className="filterGroup">
         <strong>Danh mục</strong>
         <label><input type="radio" checked={category === "all"} onChange={() => setCategory("all")} /> Tất cả</label>
-        {Object.entries(categoryLabels)
-          .filter(([key]) => availableCategories.has(key as never))
+        {shopCategoryOptions
+          .filter(([key]) => availableCategories.has(key))
           .map(([key, label]) => (
-            <label key={key}><input type="radio" checked={category === key} onChange={() => setCategory(key)} /> {label}</label>
+            <label key={key}>
+              <input type="radio" checked={category === key} onChange={() => setCategory(key)} />
+              {label}
+            </label>
           ))}
       </div>
+
       <div className="filterGroup">
         <strong>Loại sản phẩm</strong>
         <label><input type="radio" checked={productType === "all"} onChange={() => setProductType("all")} /> Tất cả</label>
-        {Object.entries(typeLabels)
-          .filter(([key]) => availableTypes.has(key as never))
+        {(Object.entries(typeLabels) as Array<[ClothingType, string]>)
+          .filter(([key]) => availableTypes.has(key))
           .map(([key, label]) => (
-            <label key={key}><input type="radio" checked={productType === key} onChange={() => setProductType(key)} /> {label}</label>
+            <label key={key}>
+              <input type="radio" checked={productType === key} onChange={() => setProductType(key)} />
+              {label}
+            </label>
           ))}
       </div>
+
       <div className="filterGroup">
         <strong>Màu sắc</strong>
-        {["all","black","white","navy","beige","blue","brown","red","green","gray","pink"]
-          .filter((value) => value === "all" || availableColors.has(value as never))
-          .map((value) => (
-            <label key={value}><input type="radio" checked={color === value} onChange={() => setColor(value)} /> {value === "all" ? "Tất cả" : value}</label>
+        <label><input type="radio" checked={color === "all"} onChange={() => setColor("all")} /> Tất cả</label>
+        {colorOptions
+          .filter((option) => availableColors.has(option.value))
+          .map((option) => (
+            <label key={option.value}>
+              <input type="radio" checked={color === option.value} onChange={() => setColor(option.value)} />
+              <span className="filterColorDot" style={{ backgroundColor: option.hex }} aria-hidden="true" />
+              {option.label}
+            </label>
           ))}
       </div>
+
       <div className="filterGroup">
-        <strong>Giá</strong>
-        {[["all","Tất cả"],["under500","Dưới 500K"],["500to700","500K – 700K"],["over700","Trên 700K"]]
-          .filter(([value]) => value === "all" || availablePrices.has(value))
-          .map(([value,label]) => (
-            <label key={value}><input type="radio" checked={price === value} onChange={() => setPrice(value)} /> {label}</label>
-          ))}
+        <div className="priceFilterHeading">
+          <strong>Khoảng giá</strong>
+          <span>{catalogMaxPrice ? formatPrice(sliderValue) : "—"}</span>
+        </div>
+        <input
+          className="priceRange"
+          type="range"
+          min={0}
+          max={sliderMax}
+          step={50000}
+          value={sliderValue}
+          onChange={(event) => {
+            const next = Number(event.target.value);
+            setPriceCeiling(next >= catalogMaxPrice ? null : next);
+          }}
+          aria-label="Giá tối đa"
+        />
+        <div className="priceRangeLabels">
+          <span>0 ₫</span>
+          <span>{catalogMaxPrice ? formatPrice(catalogMaxPrice) : "—"}</span>
+        </div>
       </div>
+
       <div className="filterGroup">
         <label className="switchLabel">
           <input type="checkbox" checked={stockOnly} onChange={(event) => setStockOnly(event.target.checked)} /> Chỉ hiện sản phẩm còn hàng
@@ -193,10 +319,11 @@ export function ShopClient() {
               </select>
             </div>
           </div>
+
           {filtered.length ? (
             <div className="productGrid shopProductGrid">
-              {filtered.map((product) => (
-                <ProductCard key={product.id} product={product} />
+              {filtered.map(({ key, product, variants }) => (
+                <ProductCard key={key} product={product} colorVariants={variants} />
               ))}
             </div>
           ) : (
@@ -209,14 +336,14 @@ export function ShopClient() {
                 </button>
               </div>
 
-              {catalog.length > 0 && (
+              {fallbackGroups.length > 0 && (
                 <div style={{ textAlign: "left", width: "100%", borderTop: "1px solid var(--line)", paddingTop: "28px" }}>
                   <h4 style={{ fontSize: "14px", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "18px", color: "var(--muted)" }}>
                     Sản phẩm nổi bật đề xuất
                   </h4>
                   <div className="productGrid shopProductGrid">
-                    {catalog.slice(0, 3).map((item) => (
-                      <ProductCard key={item.id} product={item} />
+                    {fallbackGroups.map(({ key, variants }) => (
+                      <ProductCard key={key} product={variants[0]} colorVariants={variants} />
                     ))}
                   </div>
                 </div>
@@ -225,6 +352,7 @@ export function ShopClient() {
           )}
         </section>
       </div>
+
       {mobileFilters ? (
         <div className="filterDrawer">
           <div className="drawerTop">
