@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Minus, Plus, ShoppingBag, Trash2, UserRound } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { useStore } from "@/components/store-provider";
+import { CartVariantControls } from "@/components/cart-variant-controls";
 import { calculateCouponDiscount } from "@/lib/cart";
 import { formatPrice } from "@/lib/products";
 
@@ -55,7 +56,7 @@ export default function CartPage() {
           {cart.map((line) => (
             <div className="cartLine" key={`${line.product.id}-${line.size}`}>
               <div className="cartLineImage"><Image src={line.product.image} alt={line.product.name} fill sizes="92px" /></div>
-              <div><Link href={`/product/${line.product.id}`}><h3>{line.product.name}</h3></Link><p>{line.product.color} · Size {line.size ?? "-"}</p><strong>{formatPrice(line.product.price)}</strong><div className="qty"><button onClick={() => updateQuantity(line.product.id, line.size, line.quantity - 1)} aria-label="Giảm số lượng"><Minus size={14} /></button><span>{line.quantity}</span><button onClick={() => updateQuantity(line.product.id, line.size, line.quantity + 1)} aria-label="Tăng số lượng"><Plus size={14} /></button></div></div>
+              <div><Link href={`/product/${line.product.id}`}><h3>{line.product.name}</h3></Link><p>{line.product.color} · Size {line.size ?? "-"}</p><CartVariantControls line={line} /><strong>{formatPrice(line.product.price)}</strong><div className="qty"><button onClick={() => updateQuantity(line.product.id, line.size, line.quantity - 1)} aria-label="Giảm số lượng"><Minus size={14} /></button><span>{line.quantity}</span><button onClick={() => updateQuantity(line.product.id, line.size, line.quantity + 1)} aria-label="Tăng số lượng"><Plus size={14} /></button></div></div>
               <button className="iconButton" onClick={() => removeFromCart(line.product.id, line.size)} aria-label="Xóa"><Trash2 size={17} /></button>
             </div>
           ))}

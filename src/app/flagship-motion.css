@@ -1557,3 +1557,52 @@ body[data-page="home"] .siteHeader{top:0!important}
 
 
 
+
+
+/* Outfit per-item color variants */
+.outfitColorSelector {
+  margin-top: 2px;
+  padding-top: 10px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.outfitColorOptions {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.outfitColorOption {
+  min-height: 30px;
+  padding: 4px 9px 4px 6px;
+  border: 1px solid #d1d5db;
+  border-radius: 5px;
+  background: #fff;
+  color: #374151;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s, background .15s;
+}
+.outfitColorOption i {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 1px solid rgba(17,24,39,.18);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.35);
+}
+.outfitColorOption:hover {
+  border-color: #111827;
+}
+.outfitColorOption.active {
+  border-color: #111827;
+  box-shadow: 0 0 0 1px #111827;
+  background: #f9fafb;
+}
+.outfitColorSelector + .outfitSizeSelector {
+  margin-top: 0;
+}

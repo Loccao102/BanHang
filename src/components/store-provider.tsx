@@ -32,6 +32,7 @@ type StoreContextValue = {
   addBundleToCart: (items: Array<{ product: Product; size?: string; quantity?: number }>) => void;
   removeFromCart: (productId: string, size?: string) => void;
   updateQuantity: (productId: string, size: string | undefined, quantity: number) => void;
+  updateCartVariant: (productId: string, size: string | undefined, nextProduct: Product, nextSize?: string) => void;
   clearCart: () => void;
   toggleWishlist: (productId: string) => void;
   applyCoupon: (code: string) => Promise<boolean>;
@@ -352,6 +353,33 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       .filter((line) => line.quantity > 0));
   }, []);
 
+  const updateCartVariant = useCallback((productId: string, size: string | undefined, nextProduct: Product, nextSize?: string) => {
+    const limit = sizeStock(nextProduct, nextSize);
+    if (nextProduct.active === false || limit <= 0) {
+      showNotice("Lựa chọn này đã hết hàng", nextProduct.name + (nextSize ? " · Cỡ " + nextSize : ""), "error");
+      return;
+    }
+
+    setCart((current) => {
+      const index = current.findIndex((line) => line.product.id === productId && line.size === size);
+      if (index === -1) return current;
+      const source = current[index];
+      const rest = current.filter((_, itemIndex) => itemIndex !== index);
+      return mergeCart(rest, [{
+        product: nextProduct,
+        size: nextSize,
+        quantity: Math.min(source.quantity, limit)
+      }]);
+    });
+
+    showNotice("Đã cập nhật sản phẩm", nextProduct.color + (nextSize ? " · Cỡ " + nextSize : ""));
+    trackBehavior("cart_variant_update", nextProduct.id, {
+      previousProductId: productId,
+      previousSize: size,
+      size: nextSize
+    });
+  }, [showNotice]);
+
   const toggleWishlist = useCallback((productId: string) => {
     if (!user) {
       showNotice("Yêu cầu đăng nhập", "Vui lòng đăng nhập để lưu sản phẩm vào danh sách yêu thích.");
@@ -500,13 +528,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const value = useMemo(() => ({
     cart, wishlist, orders, catalog, settings, persistenceMode, user, addresses, accountLoading,
     cartCount: cart.reduce((sum, line) => sum + line.quantity, 0),
-    coupon, cartDrawerOpen, notice, addToCart, addBundleToCart, removeFromCart, updateQuantity,
+    coupon, cartDrawerOpen, notice, addToCart, addBundleToCart, removeFromCart, updateQuantity, updateCartVariant,
     clearCart: () => setCart([]), toggleWishlist, applyCoupon, clearCoupon: () => setCoupon(null),
     placeOrder, updateOrderStatus, saveProduct, deleteProduct, adjustStock, toggleProductActive,
     resetCatalog, updateSettings, refreshAccount, logout,
     openCartDrawer: () => setCartDrawerOpen(true), closeCartDrawer: () => setCartDrawerOpen(false),
     dismissNotice: () => setNotice(null)
-  }), [cart, wishlist, orders, catalog, settings, persistenceMode, user, addresses, accountLoading, coupon, cartDrawerOpen, notice, addToCart, addBundleToCart, removeFromCart, updateQuantity, toggleWishlist, applyCoupon, placeOrder, updateOrderStatus, saveProduct, deleteProduct, adjustStock, toggleProductActive, resetCatalog, updateSettings, refreshAccount, logout]);
+  }), [cart, wishlist, orders, catalog, settings, persistenceMode, user, addresses, accountLoading, coupon, cartDrawerOpen, notice, addToCart, addBundleToCart, removeFromCart, updateQuantity, updateCartVariant, toggleWishlist, applyCoupon, placeOrder, updateOrderStatus, saveProduct, deleteProduct, adjustStock, toggleProductActive, resetCatalog, updateSettings, refreshAccount, logout]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }

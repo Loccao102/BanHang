@@ -6,6 +6,7 @@ import { Minus, Plus, ShoppingBag, Trash2, X } from "lucide-react";
 import { useEffect } from "react";
 import { formatPrice } from "@/lib/products";
 import { useStore } from "./store-provider";
+import { CartVariantControls } from "./cart-variant-controls";
 
 export function CartDrawer() {
   const { cart, cartDrawerOpen, closeCartDrawer, updateQuantity, removeFromCart, user } = useStore();
@@ -38,6 +39,7 @@ export function CartDrawer() {
               <div className="drawerCartMeta">
                 <Link href={`/product/${line.product.id}`} onClick={closeCartDrawer}><strong>{line.product.name}</strong></Link>
                 <span>{line.product.color} · Size {line.size ?? "-"}</span>
+                <CartVariantControls line={line} />
                 <b>{formatPrice(line.product.price)}</b>
                 <div className="drawerQty"><button onClick={() => updateQuantity(line.product.id, line.size, line.quantity - 1)}><Minus size={12} /></button><span>{line.quantity}</span><button onClick={() => updateQuantity(line.product.id, line.size, line.quantity + 1)}><Plus size={12} /></button></div>
               </div>

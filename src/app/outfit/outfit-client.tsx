@@ -17,7 +17,7 @@ import {
   Wand2
 } from "lucide-react";
 import { useStore } from "@/components/store-provider";
-import { formatPrice } from "@/lib/products";
+import { formatPrice, type Product } from "@/lib/products";
 import {
   coordinateSmartOutfit,
   CoordinatedOutfit,
@@ -52,47 +52,101 @@ export function OutfitClient() {
     });
   }, [catalog, setType, occasion, style, requiredProductId, salt, includeOuterwear]);
 
-  // Size selections for each item in the current outfit
+  // Variant selections are keyed by the original item id so changing color never
+  // breaks the relationship between the visible card and its cart / try-on action.
+  const [selectedProductIds, setSelectedProductIds] = useState<Record<string, string>>({});
   const [selectedSizes, setSelectedSizes] = useState<Record<string, string>>({});
 
+  function availableSizes(product: Product) {
+    const tracked = product.variants
+      ?.filter((variant) => variant.active !== false && variant.stock > 0)
+      .map((variant) => variant.size) ?? [];
+    if (tracked.length) return Array.from(new Set(tracked));
+    return Array.isArray(product.sizes) ? product.sizes : [];
+  }
+
   useEffect(() => {
+    const initialProducts: Record<string, string> = {};
     const initialSizes: Record<string, string> = {};
-    outfit.items.forEach((item) => {
+    outfit["items"].forEach((item) => {
+      initialProducts[item.product.id] = item.product.id;
       initialSizes[item.product.id] = item.selectedSize;
     });
+    setSelectedProductIds(initialProducts);
     setSelectedSizes(initialSizes);
     setAddedSuccess(false);
     setWishlistSuccess(false);
   }, [outfit.id]);
 
-  function handleSizeChange(productId: string, size: string) {
-    setSelectedSizes((prev) => ({ ...prev, [productId]: size }));
+  function handleSizeChange(baseProductId: string, size: string) {
+    setSelectedSizes((prev) => ({ ...prev, [baseProductId]: size }));
   }
+
+  function handleColorChange(baseProductId: string, nextProductId: string) {
+    const nextProduct = catalog.find((product) => product.id === nextProductId);
+    if (!nextProduct) return;
+
+    const nextSizes = availableSizes(nextProduct);
+    setSelectedProductIds((prev) => ({ ...prev, [baseProductId]: nextProduct.id }));
+    setSelectedSizes((prev) => ({
+      ...prev,
+      [baseProductId]: prev[baseProductId] && nextSizes.includes(prev[baseProductId])
+        ? prev[baseProductId]
+        : (nextSizes[0] ?? "")
+    }));
+  }
+
+  const selectedItems = useMemo(() => outfit["items"].map((item) => {
+    const baseProductId = item.product.id;
+    const selectedId = selectedProductIds[baseProductId] ?? baseProductId;
+    const product = catalog.find((candidate) => candidate.id === selectedId) ?? item.product;
+    const sizes = availableSizes(product);
+    const requestedSize = selectedSizes[baseProductId] ?? item.selectedSize;
+    const selectedSize = sizes.includes(requestedSize) ? requestedSize : (sizes[0] ?? requestedSize);
+
+    return {
+      ...item,
+      baseProductId,
+      product,
+      availableSizes: sizes,
+      selectedSize
+    };
+  }), [outfit, catalog, selectedProductIds, selectedSizes]);
+
+  const selectedTotal = useMemo(
+    () => selectedItems.reduce((sum, item) => sum + item.product.price, 0),
+    [selectedItems]
+  );
+  const selectedOriginalTotal = useMemo(
+    () => selectedItems.reduce((sum, item) => sum + (item.product.oldPrice ?? item.product.price), 0),
+    [selectedItems]
+  );
+  const hasSelectedDiscount = selectedOriginalTotal > selectedTotal;
 
   // Check if all items in current set are already favorited
   const allInWishlist = useMemo(() => {
     return (
-      outfit.items.length > 0 &&
-      outfit.items.every((it) => wishlist.includes(it.product.id))
+      selectedItems.length > 0 &&
+      selectedItems.every((it) => wishlist.includes(it.product.id))
     );
-  }, [outfit.items, wishlist]);
+  }, [selectedItems, wishlist]);
 
   // Toggle favorite for all items in the set
   function handleToggleWishlistAll() {
     if (!user) {
-      toggleWishlist(outfit.items[0]?.product.id);
+      toggleWishlist(selectedItems[0]?.product.id);
       return;
     }
 
     if (allInWishlist) {
-      outfit.items.forEach((it) => {
+      selectedItems.forEach((it) => {
         if (wishlist.includes(it.product.id)) {
           toggleWishlist(it.product.id);
         }
       });
       setWishlistSuccess(false);
     } else {
-      outfit.items.forEach((it) => {
+      selectedItems.forEach((it) => {
         if (!wishlist.includes(it.product.id)) {
           toggleWishlist(it.product.id);
         }
@@ -123,7 +177,7 @@ export function OutfitClient() {
     };
   }
 
-  const setProductIds = outfit.items.map((it) => it.product.id);
+  const setProductIds = selectedItems.map((it) => it.product.id);
 
   // Generate next coordinated set on click
   function handleGenerateNext(chosenType?: OutfitSetType) {
@@ -139,9 +193,9 @@ export function OutfitClient() {
 
   // Add the entire coordinated set to cart in one click
   function handleAddFullSetToCart() {
-    const bundle = outfit.items.map((item) => ({
+    const bundle = selectedItems.map((item) => ({
       product: item.product,
-      size: selectedSizes[item.product.id] || item.selectedSize,
+      size: item.selectedSize,
       quantity: 1
     }));
     addBundleToCart(bundle);
@@ -324,13 +378,16 @@ export function OutfitClient() {
               </div>
             </div>
 
-            <div className={`outfitItemCardsGrid count-${outfit.items.length}`}>
-              {outfit.items.map((item, idx) => {
+            <div className={`outfitItemCardsGrid count-${selectedItems.length}`}>
+              {selectedItems.map((item, idx) => {
                 const inWishlist = wishlist.includes(item.product.id);
-                const currentSize = selectedSizes[item.product.id] || item.selectedSize;
+                const currentSize = item.selectedSize;
+                const colorVariants = item.product.groupCode
+                  ? catalog.filter((product) => product.active !== false && product.groupCode === item.product.groupCode)
+                  : [item.product];
 
                 return (
-                  <div key={item.product.id} className="outfitCardItem">
+                  <div key={item.baseProductId} className="outfitCardItem">
                     <div className="outfitCardRoleBadge">
                       <span>{item.roleName}</span>
                     </div>
@@ -368,6 +425,26 @@ export function OutfitClient() {
                         )}
                       </div>
 
+                      {/* Color Selector for this specific item in the set */}
+                      <div className="outfitColorSelector">
+                        <span className="sizeLabel">Chọn màu:</span>
+                        <div className="outfitColorOptions">
+                          {colorVariants.map((variant) => (
+                            <button
+                              key={variant.id}
+                              type="button"
+                              className={"outfitColorOption " + (item.product.id === variant.id ? "active" : "")}
+                              onClick={() => handleColorChange(item.baseProductId, variant.id)}
+                              aria-label={"Chọn màu " + variant.color}
+                              title={variant.color}
+                            >
+                              <i style={variant.colorHex ? { backgroundColor: variant.colorHex } : undefined} />
+                              <span>{variant.color}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
                       {/* Size Selector for this specific item in the set */}
                       <div className="outfitSizeSelector">
                         <span className="sizeLabel">Chọn size:</span>
@@ -377,7 +454,7 @@ export function OutfitClient() {
                               key={s}
                               type="button"
                               className={`sizeOptionBtn ${currentSize === s ? "active" : ""}`}
-                              onClick={() => handleSizeChange(item.product.id, s)}
+                              onClick={() => handleSizeChange(item.baseProductId, s)}
                             >
                               {s}
                             </button>
@@ -441,17 +518,17 @@ export function OutfitClient() {
             <div className="outfitPricingSummary">
               <div className="priceRow">
                 <span>Số lượng món:</span>
-                <strong>{outfit.items.length} món trong set</strong>
+                <strong>{selectedItems.length} món trong set</strong>
               </div>
-              {outfit.originalPrice && (
+              {hasSelectedDiscount && (
                 <div className="priceRow strikethrough">
                   <span>Giá gốc tổng cộng:</span>
-                  <span className="oldPriceVal">{formatPrice(outfit.originalPrice)}</span>
+                  <span className="oldPriceVal">{formatPrice(selectedOriginalTotal)}</span>
                 </div>
               )}
               <div className="priceRow total">
                 <span>Tổng giá trọn set:</span>
-                <strong className="finalPrice">{formatPrice(outfit.totalPrice)}</strong>
+                <strong className="finalPrice">{formatPrice(selectedTotal)}</strong>
               </div>
             </div>
 
@@ -468,7 +545,7 @@ export function OutfitClient() {
                   </>
                 ) : (
                   <>
-                    <ShoppingBag size={18} /> Thêm cả set vào giỏ ({outfit.items.length} món)
+                    <ShoppingBag size={18} /> Thêm cả set vào giỏ ({selectedItems.length} món)
                   </>
                 )}
               </button>
@@ -479,7 +556,7 @@ export function OutfitClient() {
                 title="Cho cả set đồ này vào phòng thử đồ AI"
               >
                 <Sparkles size={18} />
-                <span>Cho vào phòng thử đồ ({outfit.items.length} món)</span>
+                <span>Cho vào phòng thử đồ ({selectedItems.length} món)</span>
               </Link>
 
               <button
@@ -498,7 +575,7 @@ export function OutfitClient() {
                     ? "Đã lưu trọn set vào yêu thích!"
                     : allInWishlist
                     ? "Đã lưu trọn set vào yêu thích"
-                    : `Yêu thích cả set (${outfit.items.length} món)`}
+                    : `Yêu thích cả set (${selectedItems.length} món)`}
                 </span>
               </button>
 
