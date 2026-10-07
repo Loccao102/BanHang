@@ -8,7 +8,7 @@ import { fromProductRow } from "@/lib/server/product-db";
 import { runHuggingFaceFashn, imageSourceToDataUri, tryReadLocalFile } from "@/lib/server/huggingface-fashn";
 import { runIdmVton } from "@/lib/server/idm-vton";
 import { runGeminiTryOn } from "@/lib/server/gemini-tryon";
-import { upscaleImage, localUpscale, withTimeout } from "@/lib/server/upscale";
+import { upscaleImage, withTimeout } from "@/lib/server/upscale";
 import { isValidOutfit, sortOutfitProducts } from "@/lib/wardrobe";
 
 export const runtime = "nodejs";
@@ -382,23 +382,19 @@ export async function POST(request: Request) {
     }
 
       // --- Làm nét ảnh kết quả (không bắt buộc; lỗi thì giữ ảnh gốc) ---
-      // TRYON_UPSCALE: "2"/"4" = siêu phân giải Real-ESRGAN (tốn quota HF),
-      //                "sharp"  = phóng Lanczos + unsharp tại chỗ (miễn phí, tức thì),
-      //                "off"/"0" = tắt.
+      // Production đang dùng TRYON_UPSCALE=2, vì vậy chỉ giữ Real-ESRGAN.
+      // Bỏ nhánh Sharp native để tránh đóng gói binary không dùng vào Vercel Function.
       const upscaleSetting = (process.env.TRYON_UPSCALE ?? "2").trim().toLowerCase();
       const upscaleFactor = Number(upscaleSetting);
       const useEsrgan = Number.isFinite(upscaleFactor) && upscaleFactor > 1;
-      const useLocal = upscaleSetting === "sharp" || upscaleSetting === "local";
 
-      if (useEsrgan || useLocal) {
+      if (useEsrgan) {
         try {
-          const enhanced = useLocal
-            ? await localUpscale(currentImage, 2)
-            : await withTimeout(upscaleImage(currentImage, upscaleFactor), 90_000);
+          const enhanced = await withTimeout(upscaleImage(currentImage, upscaleFactor), 90_000);
           if (enhanced && enhanced !== currentImage) {
             currentImage = enhanced;
             steps[steps.length - 1].output = enhanced;
-            console.log(`[try-on] đã làm nét (${useLocal ? "sharp 2x" : `siêu phân giải ${upscaleFactor}x`})`);
+            console.log(`[try-on] đã làm nét (siêu phân giải ${upscaleFactor}x)`);
           } else {
             console.warn("[try-on] không làm nét được, giữ ảnh gốc");
           }
