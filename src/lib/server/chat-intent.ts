@@ -623,9 +623,21 @@ export async function analyzeShoppingIntent(args: {
   contextProducts: Product[];
   shoppingState?: ShoppingState | null;
 }): Promise<ShoppingIntent | null> {
+  const fallbackIntent = inferFallbackShoppingIntent(args);
   const rawKey = process.env.GEMINI_API_KEY ?? "";
   const key = rawKey.replace(/^["']|["']$/g, "").trim();
-  if (!key) return inferFallbackShoppingIntent(args);
+  if (!key) return fallbackIntent;
+
+  // Most commerce turns are structurally simple enough to parse deterministically.
+  // Avoid a full LLM round-trip for these high-confidence cases; reserve the model
+  // for genuinely ambiguous natural-language turns.
+  const deterministicIntent =
+    ["coupon", "order", "checkout", "try_on", "add_to_cart", "add_outfit_to_cart", "size_advice", "policy"].includes(fallbackIntent.intent) ||
+    fallbackIntent.items.length > 0 ||
+    Boolean(fallbackIntent.budgetMax || fallbackIntent.occasion || fallbackIntent.style) ||
+    Boolean(args.shoppingState?.outfit && fallbackIntent.inheritPrevious);
+
+  if (deterministicIntent) return fallbackIntent;
 
   const history = args.history.slice(-8)
     .map((item) => `${item.role === "user" ? "Khách" : "LSOUL"}: ${item.text.slice(0, 700)}`)
@@ -724,7 +736,7 @@ Các field không có thông tin thì bỏ hẳn, riêng items luôn là array v
     { model: primaryModel, thinkingBudget: 0 },
     { model: "gemini-flash-lite-latest", thinkingBudget: 0 },
     { model: "gemini-3.1-flash-lite-preview", thinkingBudget: 0 }
-  ];
+  ].filter((config, index, all) => all.findIndex((item) => item.model === config.model) === index);
 
   for (const config of configs) {
     const controller = new AbortController();
@@ -771,7 +783,7 @@ Các field không có thông tin thì bỏ hẳn, riêng items luôn là array v
     }
   }
 
-  return inferFallbackShoppingIntent(args);
+  return fallbackIntent;
 }
 
 function normalized(value: string) {
