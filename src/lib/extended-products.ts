@@ -30,6 +30,42 @@ type Seed = {
   colorTemperature?: Product["colorTemperature"];
 };
 
+function inferCoverage(item: Seed) {
+  if (item.category === "outerwear") return 5;
+
+  if (item.category === "bottoms") {
+    if (/maxi|floor|ankle/i.test(item.lengthClass)) return 5;
+    if (/midi/i.test(item.lengthClass)) return 4;
+    if (/knee/i.test(item.lengthClass)) return 3;
+    return 2;
+  }
+
+  if (item.category === "dress") {
+    let score =
+      /maxi|floor/i.test(item.lengthClass) ? 5 :
+      /midi/i.test(item.lengthClass) ? 4 :
+      /mini/i.test(item.lengthClass) ? 2 : 3;
+    if (/strapless|sweetheart|plunge|halter/i.test(item.neckline ?? "")) score -= 1;
+    if (/long/i.test(item.sleeveLength ?? "")) score += 1;
+    return Math.max(1, Math.min(5, score));
+  }
+
+  if (item.category === "tops") {
+    let score =
+      item.type === "shirt" || item.type === "blouse" || item.type === "knit-top" ? 4 :
+      item.type === "bodysuit" ? 3 :
+      item.type === "corset" ? 2 :
+      item.type === "crop-top" ? 3 : 3;
+
+    if (/crop|cropped/i.test(item.lengthClass)) score -= 1;
+    if (/strapless|tube|sweetheart|plunge|halter/i.test(item.neckline ?? "")) score -= 1;
+    if (/long/i.test(item.sleeveLength ?? "")) score += 1;
+    return Math.max(1, Math.min(5, score));
+  }
+
+  return 3;
+}
+
 function makeProduct(item: Seed): Product {
   const id = `lsoul-${slug(item.name)}-${item.sku.toLowerCase()}`;
   const styleKeywords = Array.from(new Set([
@@ -91,7 +127,7 @@ function makeProduct(item: Seed): Product {
     formality: item.occasion.some((value) => /tiệc|sự kiện|event|gala/i.test(value)) ? 5 : 3,
     warmth: item.category === "outerwear" ? 5 : 2,
     stretch: /co giãn|knit|len|thun/i.test(`${item.material} ${item.fit}`) ? 4 : 2,
-    coverage: item.lengthClass === "maxi" ? 5 : item.lengthClass === "midi" ? 4 : 2,
+    coverage: inferCoverage(item),
     colorTemperature: item.colorTemperature ?? "neutral",
     waistRise: item.waistRise ?? (item.category === "bottoms" ? "high" : "not-applicable"),
     recommendedUndertones:
