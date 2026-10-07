@@ -248,10 +248,20 @@ export async function retrieveProductsHybrid(args: {
     args.affinityScores ?? new Map()
   );
 
+  const hasHardConstraints = args.intent.items.some((item) =>
+    item.role !== "any" ||
+    Boolean(item.category) ||
+    Boolean(item.types?.length) ||
+    Boolean(item.colorFamily) ||
+    Boolean(item.lengthClass) ||
+    Boolean(item.minCoverage)
+  );
+
   if (
     candidates.length <= 1 ||
     !args.db ||
     !apiKey() ||
+    hasHardConstraints ||
     ["modify_outfit", "add_to_cart", "add_outfit_to_cart", "try_on", "open_product"].includes(args.intent.intent)
   ) {
     return candidates.slice(0, limit);
