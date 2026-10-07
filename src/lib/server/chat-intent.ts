@@ -192,26 +192,36 @@ function applyCoverageLanguage(
   const relativeModesty = /\b(?:kin hon|it ho hon|bot ho|do ho hon|che kin hon)\b/.test(text);
   if (!absoluteModesty && !relativeModesty) return intent;
 
-  const explicitRoles = new Set<Exclude<OutfitRole, "any">>();
-  const rolePatterns: Array<[RegExp, Exclude<OutfitRole, "any">]> = [
-    [/\b(?:ao|top|corset|bodysuit|croptop|crop top|blouse|shirt|so mi)\b[^.!?;]{0,90}\b(?:khong qua ho|khong ho qua|kin dao|it ho|kin hon|bot ho|do ho hon|che kin|lich su)\b/, "top"],
-    [/\b(?:chan vay|skirt|quan|pants|trousers|jeans|shorts)\b[^.!?;]{0,90}\b(?:khong qua ho|khong ho qua|kin dao|it ho|kin hon|bot ho|do ho hon|che kin|lich su)\b/, "bottom"],
-    [/\b(?:dam|dress|vay lien)\b[^.!?;]{0,90}\b(?:khong qua ho|khong ho qua|kin dao|it ho|kin hon|bot ho|do ho hon|che kin|lich su)\b/, "dress"]
-  ];
-  for (const [pattern, role] of rolePatterns) {
-    if (pattern.test(text)) explicitRoles.add(role);
+  const targetRoles = new Set<Exclude<OutfitRole, "any">>();
+
+  // Relative language belongs to the garment mentioned closest before the phrase.
+  // Example: "giữ chân váy đó, đổi áo ... kín hơn" must modify only the top.
+  if (relativeModesty) {
+    const relativeMatch = text.match(/\b(?:kin hon|it ho hon|bot ho|do ho hon|che kin hon)\b/);
+    const beforeRelative = relativeMatch?.index === undefined ? text : text.slice(0, relativeMatch.index);
+    const roleMentions: Array<[RegExp, Exclude<OutfitRole, "any">]> = [
+      [/\b(?:ao|top|corset|bodysuit|croptop|crop top|blouse|shirt|so mi)\b/g, "top"],
+      [/\b(?:chan vay|vay|skirt|quan|pants|trousers|jeans|shorts)\b/g, "bottom"],
+      [/\b(?:dam|dress|vay lien)\b/g, "dress"]
+    ];
+
+    let nearest: { index: number; role: Exclude<OutfitRole, "any"> } | undefined;
+    for (const [pattern, role] of roleMentions) {
+      for (const match of beforeRelative.matchAll(pattern)) {
+        if (match.index === undefined) continue;
+        if (!nearest || match.index > nearest.index) nearest = { index: match.index, role };
+      }
+    }
+    if (nearest) targetRoles.add(nearest.role);
   }
 
-  const targetRoles = explicitRoles.size
-    ? explicitRoles
-    : new Set(
-        intent.items
-          .filter((item) => !item.keepPrevious)
-          .map(inferConstraintRole)
-          .filter((role): role is Exclude<OutfitRole, "any"> =>
-            Boolean(role && ["top", "bottom", "dress", "set"].includes(role))
-          )
-      );
+  if (!targetRoles.size) {
+    for (const item of intent.items) {
+      if (item.keepPrevious) continue;
+      const role = inferConstraintRole(item);
+      if (role && role !== "any" && ["top", "bottom", "dress", "set"].includes(role)) targetRoles.add(role);
+    }
+  }
 
   if (!targetRoles.size) {
     for (const product of contextProducts) {
