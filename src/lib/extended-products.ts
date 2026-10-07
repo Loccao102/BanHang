@@ -197,7 +197,7 @@ const data: Seed[] = [
     "color": "Đỏ rượu",
     "colorFamily": "red",
     "colorHex": "#7A1C2E",
-    "image": "/products/dress-noir-slip-red.jpg",
+    "image": "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791366031/lsoul/products/dress-noir-slip-red.jpg",
     "style": [
       "glam",
       "sexy",
@@ -1067,7 +1067,7 @@ const data: Seed[] = [
     "color": "Trắng",
     "colorFamily": "white",
     "colorHex": "#FFFFFF",
-    "image": "/products/shirt-poplin-luxe-white.jpg",
+    "image": "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791366022/lsoul/products/shirt-poplin-luxe-white.jpg",
     "style": [
       "công sở",
       "minimal",
@@ -1097,7 +1097,7 @@ const data: Seed[] = [
     "color": "Xanh pastel",
     "colorFamily": "blue",
     "colorHex": "#BFDBFE",
-    "image": "/products/shirt-poplin-luxe-blue.jpg",
+    "image": "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791366021/lsoul/products/shirt-poplin-luxe-blue.jpg",
     "style": [
       "công sở",
       "minimal",
@@ -1127,7 +1127,7 @@ const data: Seed[] = [
     "color": "Đen",
     "colorFamily": "black",
     "colorHex": "#111111",
-    "image": "/products/shirt-poplin-luxe-black.jpg",
+    "image": "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791366020/lsoul/products/shirt-poplin-luxe-black.jpg",
     "style": [
       "chic",
       "minimal",
@@ -1217,7 +1217,7 @@ const data: Seed[] = [
     "color": "Đen",
     "colorFamily": "black",
     "colorHex": "#111111",
-    "image": "/products/skirt-satin-slit-black.jpg",
+    "image": "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791366029/lsoul/products/skirt-satin-slit-black.jpg",
     "style": [
       "sexy",
       "elegant",
@@ -1246,7 +1246,7 @@ const data: Seed[] = [
     "color": "Be",
     "colorFamily": "beige",
     "colorHex": "#F3ECE2",
-    "image": "/products/skirt-satin-slit-beige.jpg",
+    "image": "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791366029/lsoul/products/skirt-satin-slit-beige.jpg",
     "style": [
       "elegant",
       "nữ tính",
@@ -1591,7 +1591,7 @@ const data: Seed[] = [
     "color": "Xanh",
     "colorFamily": "blue",
     "colorHex": "#1E40AF",
-    "image": "/products/pants-flare-midrise-blue.jpg",
+    "image": "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791366026/lsoul/products/pants-flare-midrise-blue.jpg",
     "style": [
       "Y2K",
       "casual",
@@ -1620,7 +1620,7 @@ const data: Seed[] = [
     "color": "Đen",
     "colorFamily": "black",
     "colorHex": "#1F2937",
-    "image": "/products/pants-flare-midrise-black.jpg",
+    "image": "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791366025/lsoul/products/pants-flare-midrise-black.jpg",
     "style": [
       "Y2K",
       "statement",
@@ -1649,7 +1649,7 @@ const data: Seed[] = [
     "color": "Đen",
     "colorFamily": "black",
     "colorHex": "#111111",
-    "image": "/products/pants-wide-pleat-black.jpg",
+    "image": "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791366023/lsoul/products/pants-wide-pleat-black.jpg",
     "style": [
       "công sở",
       "minimal",
@@ -1678,7 +1678,7 @@ const data: Seed[] = [
     "color": "Be",
     "colorFamily": "beige",
     "colorHex": "#EFECE6",
-    "image": "/products/pants-wide-pleat-beige.jpg",
+    "image": "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791366023/lsoul/products/pants-wide-pleat-beige.jpg",
     "style": [
       "công sở",
       "minimal",
@@ -1707,7 +1707,7 @@ const data: Seed[] = [
     "color": "Nâu",
     "colorFamily": "brown",
     "colorHex": "#58311E",
-    "image": "/products/pants-wide-pleat-brown.jpg",
+    "image": "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791366024/lsoul/products/pants-wide-pleat-brown.jpg",
     "style": [
       "chic",
       "vintage",
