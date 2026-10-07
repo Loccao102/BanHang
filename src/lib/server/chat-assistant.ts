@@ -290,7 +290,7 @@ QUY TẮC MẠCH TRÒ CHUYỆN LIÊN TỤC (MULTI-TURN) VÀ CHỐNG SAI CONTEXT:
     { model: "gemini-flash-lite-latest", thinkingBudget: 0 },
     { model: "gemini-3.1-flash-lite-preview", thinkingBudget: 0 },
     { model: "gemini-3-flash-preview", thinkingBudget: 0 }
-  ];
+  ].filter((config, index, all) => all.findIndex((item) => item.model === config.model) === index);
 
   for (const item of configs) {
     try {
