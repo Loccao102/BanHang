@@ -253,6 +253,19 @@ function applyCoverageLanguage(
   return { ...intent, items };
 }
 
+function styleHintFromMessage(message: string) {
+  const text = normalized(message);
+  return (
+    /\b(?:sexy|goi cam|quyen ru|boc lua|nong bong)\b/.test(text) ? "sexy" :
+    /\by2k\b/.test(text) ? "y2k" :
+    /\b(?:toi gian|minimal)\b/.test(text) ? "minimal" :
+    /\b(?:ca tinh|bold|edgy)\b/.test(text) ? "bold" :
+    /\b(?:nu tinh|feminine|romantic)\b/.test(text) ? "feminine" :
+    /\b(?:sang|glam|luxury|thanh lich|elegant)\b/.test(text) ? "elegant" :
+    undefined
+  );
+}
+
 function contextualizeIntent(
   intent: ShoppingIntent,
   contextProducts: Product[],
@@ -260,6 +273,10 @@ function contextualizeIntent(
   message = ""
 ): ShoppingIntent {
   intent = applyCoverageLanguage(intent, contextProducts, message);
+  const messageStyle = styleHintFromMessage(message);
+  if (messageStyle && !intent.style) {
+    intent = { ...intent, style: messageStyle };
+  }
   const parsedRoles = new Set(intent.items.map(inferConstraintRole));
   const structurallyRequestsOutfit =
     (parsedRoles.has("top") && parsedRoles.has("bottom")) ||
@@ -517,13 +534,7 @@ export function inferFallbackShoppingIntent(args: {
     /\b(?:cafe|di choi|dao pho|casual)\b/.test(text) ? "casual" :
     /\bconcert\b/.test(text) ? "concert" : undefined;
 
-  const style =
-    /\by2k\b/.test(text) ? "y2k" :
-    /\b(?:toi gian|minimal)\b/.test(text) ? "minimal" :
-    /\b(?:ca tinh|bold|edgy)\b/.test(text) ? "bold" :
-    /\b(?:nu tinh|feminine|romantic)\b/.test(text) ? "feminine" :
-    /\b(?:sang|glam|luxury|thanh lich|elegant)\b/.test(text) ? "elegant" :
-    undefined;
+  const style = styleHintFromMessage(args.message);
 
   const asksCoupon = /\b(?:coupon|voucher|ma giam|giam gia|uu dai|khuyen mai|ap ma)\b/.test(text);
   const asksOrder = /\b(?:don hang|order|tracking|van don|dang giao)\b/.test(text);
