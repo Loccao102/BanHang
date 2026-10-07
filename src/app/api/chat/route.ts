@@ -298,12 +298,24 @@ export async function POST(request: Request) {
     return [];
   });
 
-  const responseProducts = Array.from(new Set([...plan.products.map((product) => product.id), ...productIdsFromActions]))
+  const bundleActionForDisplay = plan.actions.find((action) => action.type === "add_bundle");
+  const tryOnActionForDisplay = plan.actions.find((action) => action.type === "open_try_on");
+  const finalizedOutfitIds = bundleActionForDisplay?.type === "add_bundle"
+    ? bundleActionForDisplay.items.map((item) => item.productId)
+    : tryOnActionForDisplay?.type === "open_try_on" && tryOnActionForDisplay.productIds.length > 1
+    ? tryOnActionForDisplay.productIds
+    : [];
+
+  const responseProductIds = finalizedOutfitIds.length
+    ? finalizedOutfitIds
+    : Array.from(new Set([...plan.products.map((product) => product.id), ...productIdsFromActions]));
+
+  const responseProducts = Array.from(new Set(responseProductIds))
     .flatMap((id) => {
       const product = catalogMap.get(id);
       return product ? [product] : [];
     })
-    .slice(0, 6);
+    .slice(0, finalizedOutfitIds.length || 6);
 
   const hardOutfitNoMatch = Boolean(
     intent &&
