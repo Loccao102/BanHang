@@ -738,6 +738,90 @@ test("recommendation evaluation treats coverage like color/type/length hard cons
   assert.equal(scored.hardConstraintPass, false);
 });
 
+
+test("terse 'sexy sexy' follow-up stays a modify-outfit refinement", () => {
+  const previousTop = productionCatalog.find((item) =>
+    item.id === "lsoul-athena-sweetheart-satin-tube-top-tp-athena-tube-blk"
+  );
+  const previousBottom = productionCatalog.find((item) =>
+    item.id === "lsoul-atelier-wide-trousers-black"
+  );
+  assert.ok(previousTop);
+  assert.ok(previousBottom);
+
+  const previous = buildShoppingState(
+    intent({
+      intent: "recommend_outfit",
+      targetScope: "outfit",
+      budgetMax: 3_000_000,
+      items: []
+    }),
+    [previousTop, previousBottom],
+    null
+  );
+
+  const parsed = inferFallbackShoppingIntent({
+    message: "tôi muốn nó sexy sexy cơ",
+    contextProducts: [previousTop, previousBottom],
+    shoppingState: previous
+  });
+
+  assert.equal(parsed.intent, "modify_outfit");
+  assert.equal(parsed.targetScope, "outfit");
+  assert.equal(parsed.inheritPrevious, true);
+  assert.equal(parsed.style, "sexy");
+});
+
+test("style refinement exposes only final outfit products, not retrieval candidates", () => {
+  const previousTop = productionCatalog.find((item) =>
+    item.id === "lsoul-athena-sweetheart-satin-tube-top-tp-athena-tube-blk"
+  );
+  const previousBottom = productionCatalog.find((item) =>
+    item.id === "lsoul-atelier-wide-trousers-black"
+  );
+  assert.ok(previousTop);
+  assert.ok(previousBottom);
+
+  const previous = buildShoppingState(
+    intent({
+      intent: "recommend_outfit",
+      targetScope: "outfit",
+      budgetMax: 3_000_000,
+      items: []
+    }),
+    [previousTop, previousBottom],
+    null
+  );
+  const parsed = inferFallbackShoppingIntent({
+    message: "tôi muốn nó sexy sexy cơ",
+    contextProducts: [previousTop, previousBottom],
+    shoppingState: previous
+  });
+  const merged = applyShoppingState(parsed, previous);
+
+  const candidatePool = productionCatalog.filter((item) => item.stock > 0).slice(0, 5);
+  const plan = buildAgentPlan({
+    message: "tôi muốn nó sexy sexy cơ",
+    found: candidatePool,
+    contextProducts: [previousTop, previousBottom],
+    catalog: productionCatalog,
+    orders: [],
+    coupons: [],
+    loggedIn: false,
+    intent: merged
+  });
+
+  assert.equal(plan.products.length, 2);
+  const bundle = plan.actions.find((action) => action.type === "add_bundle");
+  const tryOn = plan.actions.find((action) => action.type === "open_try_on");
+  assert.ok(bundle && bundle.type === "add_bundle");
+  assert.ok(tryOn && tryOn.type === "open_try_on");
+
+  const plannedIds = plan.products.map((item) => item.id).sort();
+  assert.deepEqual(bundle.items.map((item) => item.productId).sort(), plannedIds);
+  assert.deepEqual(tryOn.productIds.slice().sort(), plannedIds);
+});
+
 let passed = 0;
 for (const item of tests) {
   try {
