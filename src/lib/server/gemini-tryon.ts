@@ -81,8 +81,14 @@ export async function runGeminiTryOn(input: GeminiTryOnInput): Promise<string> {
     const gData = extractBase64(gSource);
     if (gData) {
       garmentParts.push({ inlineData: { mimeType: gData.mimeType, data: gData.base64 } });
+      const length = p.lengthClass || (
+        p.type === "maxi-dress" ? "maxi" :
+        p.type === "midi-dress" ? "midi" :
+        p.type === "mini-dress" ? "mini" :
+        "unspecified"
+      );
       descriptions.push(
-        `- Garment ${i + 1} (${p.category}): "${p.name}", color ${p.color}, fabric ${p.material}, silhouette ${p.silhouette || p.fit || "tailored"}.`
+        `- Garment ${i + 1}: category=${p.category}, type=${p.type}, length=${length}, name="${p.name}", color=${p.color}, fabric=${p.material}, silhouette=${p.silhouette || p.fit || "tailored"}.`
       );
     }
   }
@@ -98,8 +104,11 @@ CRITICAL FITTING RULES:
 2. COORDINATED OUTFIT LAYERING:
    - If an outerwear (blazer/jacket) and a top (corset/tee/shirt) are both selected: The person wears the top underneath, and the outerwear worn open or draped elegantly over the shoulders so that the inner top is naturally visible beneath.
    - If a bottom (skirt/shorts) is selected and the person is wearing long pants: Transform the lower body cleanly to wear the selected skirt/shorts, rendering natural realistic bare legs and knees if wearing a mini skirt or shorts.
-   - If a dress/one-piece is selected: The person wears the dress as a complete look.
-3. PRESERVE GARMENT DETAILS: Accurately replicate the exact color, fabric sheen (satin, tweed, velvet, denim), cuts, and buttons of the reference garment images.
+   - If a dress/one-piece is selected: The person wears ONE continuous dress as a complete look from the neckline/shoulders through the torso and down to the hem. Never split a dress into a separate top + skirt.
+   - MAXI DRESS LENGTH IS A HARD CONSTRAINT: when length=maxi, the hem must reach the ankles or floor exactly as indicated by the reference. Do not crop it to knee, thigh, or mini length. Do not convert it into a skirt.
+   - MIDI DRESS LENGTH IS A HARD CONSTRAINT: when length=midi, the hem must stay below the knee / around mid-calf according to the reference.
+   - Preserve the continuous vertical silhouette of long dresses. Do not invent a horizontal waistband, exposed midriff, separate blouse, or separate skirt unless those elements visibly exist in the garment reference.
+3. PRESERVE GARMENT DETAILS: Accurately replicate the exact color, fabric sheen (satin, tweed, velvet, denim), neckline, waist construction, hem length, cuts, slits, draping, and buttons of the reference garment images. Garment LENGTH has equal priority to color and silhouette.
 4. PHOTOREALISM: Ensure clean, professional studio lighting, realistic fabric folds, natural seams, and seamless shadows. No cartoon, no anime, no visual artifacts, no weird holes or cutout glitches around the collar. Output high resolution fashion editorial quality.`;
 
   const parts: unknown[] = [
