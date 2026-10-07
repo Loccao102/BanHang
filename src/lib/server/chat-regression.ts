@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import type { Product } from "../products";
+import { products as productionCatalog, type Product } from "../products";
 import type { ShoppingIntent } from "./chat-intent";
 import { inferFallbackShoppingIntent, retrieveProductsFromIntent } from "./chat-intent";
 import { applyShoppingState, buildShoppingState, type ShoppingState } from "./chat-state";
@@ -630,6 +630,109 @@ test("generic Vietnamese coupon question never turns 'đang' into coupon code AN
   const couponActions = plan.actions.filter((action) => action.type === "apply_coupon");
   assert.equal(couponActions.some((action) => action.code === "ANG"), false);
   assert.equal(couponActions.some((action) => action.code === "WELCOME15"), true);
+});
+
+
+test("modesty language becomes a hard coverage constraint on the requested outfit", () => {
+  const parsed = inferFallbackShoppingIntent({
+    message: "Mình muốn một set áo đỏ và chân váy trắng để đi tiệc, sang nhưng không quá hở.",
+    contextProducts: []
+  });
+
+  const top = parsed.items.find((item) => item.role === "top");
+  const bottom = parsed.items.find((item) => item.role === "bottom");
+  assert.equal(parsed.intent, "recommend_outfit");
+  assert.equal(top?.colorFamily, "red");
+  assert.equal(bottom?.colorFamily, "white");
+  assert.equal(top?.minCoverage, 3);
+  assert.equal(bottom?.minCoverage, 3);
+});
+
+test("coverage hard constraint rejects revealing red top and selects a covered alternative", () => {
+  const modestRedBlouse = product({
+    id: "red-modest-blouse",
+    name: "Red Covered Blouse",
+    category: "tops",
+    type: "blouse",
+    colorFamily: "red",
+    coverage: 4,
+    style: ["elegant"],
+    occasion: ["đi tiệc"],
+    formality: 4
+  });
+
+  const outfit = coordinateSmartOutfit({
+    catalog: [redCorset, modestRedBlouse, whitePartySkirt],
+    setType: "top_bottom",
+    occasion: "party",
+    preferredTopColor: "red",
+    preferredBottomColor: "white",
+    preferredBottomTypes: ["skirt"],
+    minTopCoverage: 3,
+    minBottomCoverage: 3
+  });
+
+  const top = outfit.items.find((item) => item.role === "top")?.product;
+  assert.equal(top?.id, modestRedBlouse.id);
+  assert.ok(outfit.items.every((item) => (item.product.coverage ?? 0) >= 3));
+});
+
+test("relative 'kín hơn' raises coverage above the current top and persists in state", () => {
+  const previous = buildShoppingState(initialRedWhiteIntent(), [redCorset, whitePartySkirt], null);
+  const parsed = inferFallbackShoppingIntent({
+    message: "Giữ chân váy đó, đổi áo sang corset đỏ nhưng kín hơn một chút.",
+    contextProducts: [redCorset, whitePartySkirt],
+    shoppingState: previous
+  });
+
+  const top = parsed.items.find((item) => item.role === "top");
+  assert.equal(top?.minCoverage, 3);
+
+  const merged = applyShoppingState(parsed, previous);
+  assert.equal(merged.items.find((item) => item.role === "top")?.minCoverage, 3);
+
+  const nextState = buildShoppingState(merged, [], previous);
+  assert.equal(nextState.outfit?.roles.top?.minCoverage, 3);
+});
+
+test("production red-top + white-skirt catalog does not violate 'không quá hở'", () => {
+  const parsed = inferFallbackShoppingIntent({
+    message: "Mình muốn một set áo đỏ và chân váy trắng để đi tiệc, sang nhưng không quá hở.",
+    contextProducts: []
+  });
+  const top = parsed.items.find((item) => item.role === "top");
+  const bottom = parsed.items.find((item) => item.role === "bottom");
+
+  const outfit = coordinateSmartOutfit({
+    catalog: productionCatalog,
+    setType: "top_bottom",
+    occasion: parsed.occasion ?? "all",
+    style: parsed.style ?? "all",
+    preferredTopColor: top?.colorFamily,
+    preferredBottomColor: bottom?.colorFamily,
+    preferredTopTypes: top?.types,
+    preferredBottomTypes: bottom?.types,
+    minTopCoverage: top?.minCoverage,
+    minBottomCoverage: bottom?.minCoverage
+  });
+
+  assert.equal(outfit.items.length, 0);
+});
+
+test("recommendation evaluation treats coverage like color/type/length hard constraints", () => {
+  const scored = evaluateRecommendation(
+    intent({
+      intent: "recommend_outfit",
+      targetScope: "outfit",
+      items: [
+        { role: "top", category: "tops", colorFamily: "red", minCoverage: 3 },
+        { role: "bottom", category: "bottoms", types: ["skirt"], colorFamily: "white", minCoverage: 3 }
+      ]
+    }),
+    [redCorset, whitePartySkirt]
+  );
+
+  assert.equal(scored.hardConstraintPass, false);
 });
 
 let passed = 0;
