@@ -7,6 +7,7 @@ export type ShoppingRoleState = {
   types?: Product["type"][];
   colorFamily?: Product["colorFamily"];
   lengthClass?: "mini" | "midi" | "maxi";
+  minCoverage?: number;
   fixedProductId?: string;
   selectedProductId?: string;
 };
@@ -66,6 +67,7 @@ function stateItem(roleState: ShoppingRoleState): IntentItemConstraint {
     ...(roleState.types?.length ? { types: roleState.types } : {}),
     ...(roleState.colorFamily ? { colorFamily: roleState.colorFamily } : {}),
     ...(roleState.lengthClass ? { lengthClass: roleState.lengthClass } : {}),
+    ...(roleState.minCoverage ? { minCoverage: roleState.minCoverage } : {}),
     ...(roleState.fixedProductId ? { keepPrevious: true } : {})
   };
 }
@@ -96,6 +98,10 @@ export function parseShoppingState(value: unknown): ShoppingState | null {
     const lengthClass = ["mini", "midi", "maxi"].includes(String(item.lengthClass))
       ? item.lengthClass as "mini" | "midi" | "maxi"
       : undefined;
+    const rawCoverage = Number(item.minCoverage);
+    const minCoverage = Number.isFinite(rawCoverage) && rawCoverage >= 1 && rawCoverage <= 5
+      ? Math.round(rawCoverage)
+      : undefined;
 
     roles[role] = {
       role,
@@ -103,6 +109,7 @@ export function parseShoppingState(value: unknown): ShoppingState | null {
       ...(types?.length ? { types } : {}),
       ...(colorFamily ? { colorFamily } : {}),
       ...(lengthClass ? { lengthClass } : {}),
+      ...(minCoverage ? { minCoverage } : {}),
       ...(typeof item.fixedProductId === "string" && item.fixedProductId ? { fixedProductId: item.fixedProductId } : {}),
       ...(typeof item.selectedProductId === "string" && item.selectedProductId ? { selectedProductId: item.selectedProductId } : {})
     };
@@ -170,10 +177,12 @@ export function applyShoppingState(intent: ShoppingIntent, previous: ShoppingSta
       ...(previousItem?.types?.length ? { types: previousItem.types } : {}),
       ...(previousItem?.colorFamily ? { colorFamily: previousItem.colorFamily } : {}),
       ...(previousItem?.lengthClass ? { lengthClass: previousItem.lengthClass } : {}),
+      ...(previousItem?.minCoverage ? { minCoverage: previousItem.minCoverage } : {}),
       ...(item.category ? { category: item.category } : {}),
       ...(item.types?.length ? { types: item.types } : {}),
       ...(item.colorFamily ? { colorFamily: item.colorFamily } : {}),
-      ...(item.lengthClass ? { lengthClass: item.lengthClass } : {})
+      ...(item.lengthClass ? { lengthClass: item.lengthClass } : {}),
+      ...(item.minCoverage ? { minCoverage: item.minCoverage } : {})
     });
   }
 
@@ -237,6 +246,7 @@ export function buildShoppingState(
       ...(item.types?.length ? { types: item.types } : {}),
       ...(item.colorFamily ? { colorFamily: item.colorFamily } : {}),
       ...(item.lengthClass ? { lengthClass: item.lengthClass } : {}),
+      ...(item.minCoverage ? { minCoverage: item.minCoverage } : {}),
       ...(selected ? { selectedProductId: selected.id } : {}),
       ...(item.keepPrevious && previousSelectedId
         ? { fixedProductId: previousSelectedId, selectedProductId: previousSelectedId }
