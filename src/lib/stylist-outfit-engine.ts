@@ -1,7 +1,7 @@
-import { Product, products as seedProducts } from "./products";
+import { Product, storefrontCategory, products as seedProducts } from "./products";
 import { semanticTextScore } from "./server/product-semantic-profile";
 
-export type OutfitSetType = "top_bottom" | "dress_layer" | "coord_set" | "all";
+export type OutfitSetType = "top_bottom" | "top_pants" | "top_skirt" | "dress_layer" | "coord_set" | "all";
 
 export type OutfitItemRole = "top" | "bottom" | "dress" | "outerwear" | "set";
 
@@ -242,7 +242,9 @@ function generateStylistReview(
     const isSkirt = bottom.type === "skirt" || bottom.name.toLowerCase().includes("váy");
     const isTrousers = bottom.type === "trousers" || bottom.type === "flare-pants" || bottom.type === "jeans";
 
-    let title = "Chic & Sắc Sảo: Corset Tôn Dáng Phối Chân Váy";
+    let title = isSkirt
+      ? "Chic & Sắc Sảo: Áo Phối Chân Váy"
+      : "Chic & Sắc Sảo: Áo Phối Quần";
     let reason = `Set đồ kết hợp chuẩn tỷ lệ hình thể với ${top.name} ôm trọn vòng eo quyến rũ, đi cùng ${bottom.name} tạo hiệu ứng kéo dài đôi chân. Gam màu ${colors} mang đậm tinh thần thời trang đương đại LSOUL.`;
     let stylingTip = "Phối cùng boots da cổ cao hoặc giày cao gót quai mảnh, kết hợp túi kẹp nách nhỏ để hoàn thiện diện mạo ấn tượng.";
 
@@ -326,14 +328,23 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
 
   // Filter candidate pools
   const tops = activePool.filter((p) => p.category === "tops" && !excludeSet.has(p.id));
-  const bottoms = activePool.filter((p) => p.category === "bottoms" && !excludeSet.has(p.id));
+  const requestedBottomKind = setTypeChoice === "top_pants"
+    ? "pants"
+    : setTypeChoice === "top_skirt"
+    ? "skirts"
+    : undefined;
+  const bottoms = activePool.filter((p) =>
+    p.category === "bottoms" &&
+    !excludeSet.has(p.id) &&
+    (!requestedBottomKind || storefrontCategory(p) === requestedBottomKind)
+  );
   const dresses = activePool.filter((p) => p.category === "dress" && !excludeSet.has(p.id));
   const sets = activePool.filter((p) => p.category === "set" && !excludeSet.has(p.id));
   const outerwears = activePool.filter((p) => p.category === "outerwear" && !excludeSet.has(p.id));
 
   // Determine actual set architecture to generate
   let chosenType: "top_bottom" | "dress_layer" | "coord_set" = "top_bottom";
-  if (setTypeChoice === "top_bottom") {
+  if (setTypeChoice === "top_bottom" || setTypeChoice === "top_pants" || setTypeChoice === "top_skirt") {
     chosenType = "top_bottom";
   } else if (setTypeChoice === "dress_layer") {
     chosenType = "dress_layer";
@@ -458,7 +469,7 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
       finalScore = selectedPair.score;
       finalItems = [
         { product: selectedPair.top, role: "top", roleName: "Áo / Corset" },
-        { product: selectedPair.bottom, role: "bottom", roleName: "Quần / Chân váy" }
+        { product: selectedPair.bottom, role: "bottom", roleName: storefrontCategory(selectedPair.bottom) === "skirts" ? "Chân váy" : "Quần" }
       ];
 
       // Chỉ thêm áo khoác ngoài khi khách yêu cầu hoặc đang giữ áo khoác của outfit trước.
@@ -590,9 +601,12 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
   else if (finalScore >= 92) matchBadge = "Phối màu đỉnh cao";
   else if (finalScore >= 88) matchBadge = "Thời thượng & Thanh lịch";
 
+  const selectedBottom = finalItems.find((item) => item.role === "bottom")?.product;
   const setTypeName =
     chosenType === "top_bottom"
-      ? "Quần / Chân váy + Áo"
+      ? selectedBottom
+        ? storefrontCategory(selectedBottom) === "skirts" ? "Áo + Chân váy" : "Áo + Quần"
+        : requestedBottomKind === "skirts" ? "Áo + Chân váy" : "Áo + Quần"
       : chosenType === "dress_layer"
       ? "Đầm liền & Áo khoác"
       : "Set đồ đồng bộ (Co-ord)";
