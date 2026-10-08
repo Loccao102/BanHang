@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowRight, Search, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatPrice } from "@/lib/products";
+import { getSearchPreviewProducts } from "@/lib/product-search";
 import { useStore } from "./store-provider";
 
 export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -22,10 +23,7 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
   }, [open, onClose]);
 
   const results = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    const available = catalog.filter((item) => item.active !== false);
-    if (!q) return available.filter((item) => item.featured || item.isNew).slice(0, 6);
-    return available.filter((item) => `${item.name} ${item.subtitle} ${item.color} ${item.material} ${item.sku ?? ""}`.toLowerCase().includes(q)).slice(0, 8);
+    return getSearchPreviewProducts(catalog, query, query.trim() ? 8 : 6);
   }, [catalog, query]);
 
   if (!open) return null;

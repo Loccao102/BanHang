@@ -9,6 +9,7 @@ import { retrieveProductsHybrid } from "@/lib/server/product-vector-search";
 import { applyShoppingState, buildShoppingState, parseShoppingState } from "@/lib/server/chat-state";
 import { getDb } from "@/lib/server/db";
 import { evaluateRecommendation } from "@/lib/server/chat-evaluation";
+import { fastCatalogLookupReply } from "@/lib/server/chat-fast-reply";
 
 export const runtime = "nodejs";
 
@@ -335,7 +336,10 @@ export async function POST(request: Request) {
       ].filter(Boolean).join(" ")
     : "";
 
-  const aiText = hardOutfitNoMatch
+  const fastReply = hardOutfitNoMatch
+    ? null
+    : fastCatalogLookupReply(message, intent, responseProducts, Boolean(body.image));
+  const aiText = hardOutfitNoMatch || fastReply
     ? null
     : await askGemini({
         message,
@@ -347,7 +351,7 @@ export async function POST(request: Request) {
       });
   const baseReply = hardOutfitNoMatch
     ? noMatchReply
-    : aiText ?? fallbackReply(message, responseProducts, Boolean(orderContext), plan.notes);
+    : fastReply ?? aiText ?? fallbackReply(message, responseProducts, Boolean(orderContext), plan.notes);
 
   // Câu trả lời của model có thể bỏ sót món trong set đã phối, gây lệch với số thẻ sản phẩm
   // hiển thị bên dưới. Bổ sung danh sách chuẩn (tên + tổng tiền) khi thiếu món.

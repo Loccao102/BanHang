@@ -9,6 +9,8 @@ import { semanticTextScore } from "./product-semantic-profile";
 import { coordinateSmartOutfit, outfitSelectionKey } from "../stylist-outfit-engine";
 import { buildAgentPlan } from "./chat-agent";
 import { canReadPaymentStatus, canSimulatePayment } from "./payment-access";
+import { getSearchPreviewProducts } from "../product-search";
+import { fastCatalogLookupReply } from "./chat-fast-reply";
 
 function product(overrides: Partial<Product> & Pick<Product, "id" | "category" | "type" | "colorFamily">): Product {
   const colorLabels: Record<Product["colorFamily"], string> = {
@@ -20,6 +22,7 @@ function product(overrides: Partial<Product> & Pick<Product, "id" | "category" |
   return {
     id: overrides.id,
     sku: overrides.id.toUpperCase(),
+    groupCode: overrides.groupCode,
     name: overrides.name ?? overrides.id,
     subtitle: overrides.subtitle ?? "Regression fixture",
     category: overrides.category,
@@ -1126,6 +1129,32 @@ test("simulated QR payment is never allowed in production or for customers", () 
   assert.equal(canSimulatePayment(admin, { ...order, payment: "cod" }, "development"), false);
 });
 
+
+test("quick search matches accent-insensitive shop results and groups colors", () => {
+  const blue = product({ id: "shirt-blue", name: "Sơ mi Oxford", category: "tops", type: "shirt", colorFamily: "blue", color: "Xanh", groupCode: "oxford" });
+  const white = product({ id: "shirt-white", name: "Sơ mi Oxford", category: "tops", type: "shirt", colorFamily: "white", color: "Trắng", groupCode: "oxford" });
+  const other = product({ id: "pants", name: "Quần Âu", category: "bottoms", type: "trousers", colorFamily: "black", color: "Đen" });
+  const sold = product({ id: "shirt-sold", name: "Sơ mi bán hết", category: "tops", type: "shirt", colorFamily: "white", stock: 0 });
+  const found = getSearchPreviewProducts([blue, other, white, sold], "so mi trang");
+  assert.equal(found[0]?.id, "shirt-white");
+  assert.equal(found.filter((item) => item.groupCode === "oxford").length, 1);
+  assert.ok(found.every((item) => item.id !== sold.id));
+  const all = getSearchPreviewProducts([blue, other, white, sold], "so mi");
+  assert.equal(all.filter((item) => item.groupCode === "oxford").length, 1);
+  assert.ok(all.every((item) => item.id !== sold.id));
+});
+
+test("plain product lookup replies without LLM but outfit conversations do not", () => {
+  const intent = inferFallbackShoppingIntent({ message: "Tìm áo corset màu đỏ", contextProducts: [] });
+  assert.equal(intent.intent, "search_products");
+  const response = fastCatalogLookupReply("Tìm áo corset màu đỏ", intent, [redCorset]);
+  assert.ok(response?.includes(redCorset.name));
+  assert.ok(response?.includes("đ"));
+  assert.equal(fastCatalogLookupReply("Tìm áo corset màu đỏ", intent, [redCorset], true), null);
+  assert.equal(fastCatalogLookupReply("Tìm áo corset màu đỏ", { ...intent, inheritPrevious: true }, [redCorset]), null);
+  const outfit = inferFallbackShoppingIntent({ message: "Phối áo đỏ với chân váy trắng", contextProducts: [] });
+  assert.equal(fastCatalogLookupReply("Phối áo đỏ với chân váy trắng", outfit, [redCorset]), null);
+});
 let passed = 0;
 for (const item of tests) {
   try {
