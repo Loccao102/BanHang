@@ -437,6 +437,8 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
     for (const t of topList) {
       for (const b of bottomList) {
         if (t.id === b.id) continue;
+        // An explicitly requested garment mode must also hold for locked products.
+        if (requestedBottomKind && storefrontCategory(b) !== requestedBottomKind) continue;
         if (options?.minTopCoverage && (t.coverage ?? 0) < options.minTopCoverage) continue;
         if (options?.minBottomCoverage && (b.coverage ?? 0) < options.minBottomCoverage) continue;
         if (options?.budget && t.price + b.price > options.budget) continue;
