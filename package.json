@@ -13,6 +13,7 @@
     "lint": "tsc --noEmit",
     "test:e2e": "node scripts/e2e-test.mjs",
     "test:chat": "tsx src/lib/server/chat-regression.ts",
+    "test:quality": "tsx src/lib/server/quality-regression.ts",
     "test:webhook": "node scripts/test-sepay-webhook.mjs",
     "images:audit": "node scripts/audit-product-images.mjs",
     "images:plan": "tsx scripts/generate-missing-images.ts --list",
