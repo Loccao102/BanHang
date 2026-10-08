@@ -16,3 +16,14 @@ export function canSimulatePayment(
     order.paymentStatus !== "paid" &&
     order.status !== "cancelled";
 }
+
+/** Admin may record cash collection for completed COD orders, never for QR. */
+export function canRecordCodCollection(
+  order: { payment: string; paymentStatus: string; status: string },
+  requestedStatus?: string
+): boolean {
+  return order.payment === "cod" &&
+    order.paymentStatus !== "paid" &&
+    order.status !== "cancelled" &&
+    (requestedStatus ?? order.status) === "completed";
+}
