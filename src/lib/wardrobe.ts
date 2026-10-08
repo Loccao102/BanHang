@@ -1,4 +1,4 @@
-import { storefrontCategory, type Product } from "./products";
+import type { Product } from "./products";
 
 export type WardrobeGroup = "tops" | "pants" | "skirts" | "dresses" | "outerwear" | "sets";
 export type OutfitSlot = "top" | "bottom" | "outerwear" | "one-piece";
@@ -23,7 +23,7 @@ export const wardrobeGroupDescriptions: Record<WardrobeGroup, string> = {
 
 export function wardrobeGroup(product: Product): WardrobeGroup {
   if (product.category === "tops") return "tops";
-  if (product.category === "bottoms") return storefrontCategory(product);
+  if (product.category === "bottoms") return product.type === "skirt" ? "skirts" : "pants";
   if (product.category === "outerwear") return "outerwear";
   if (product.category === "dress") return "dresses";
   return "sets";
