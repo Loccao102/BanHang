@@ -135,3 +135,37 @@ export const typeLabels: Record<ClothingType, string> = {
   "bodycon-dress": "Đầm ôm",
   set: "Set đồ"
 };
+
+/**
+ * Display taxonomy shared by storefront, admin and AI tools.
+ * Database records intentionally retain the legacy `bottoms` category so no
+ * product migration is required; the garment type distinguishes pants/skirts.
+ */
+export type StorefrontCategory = Exclude<ProductCategory, "bottoms"> | "pants" | "skirts";
+
+export const storefrontCategoryLabels: Record<StorefrontCategory, string> = {
+  tops: "Áo",
+  pants: "Quần",
+  skirts: "Chân váy",
+  outerwear: "Áo khoác",
+  dress: "Đầm",
+  set: "Set đồ"
+};
+
+export const pantsTypes: ClothingType[] = ["jeans", "trousers", "flare-pants", "shorts"];
+
+export function storefrontCategory(product: Pick<Product, "category" | "type">): StorefrontCategory {
+  if (product.category === "bottoms") return product.type === "skirt" ? "skirts" : "pants";
+  return product.category;
+}
+
+export function typesForStorefrontCategory(category: StorefrontCategory): ClothingType[] {
+  switch (category) {
+    case "pants": return pantsTypes;
+    case "skirts": return ["skirt"];
+    case "tops": return ["corset", "crop-top", "bodysuit", "blouse", "shirt", "knit-top"];
+    case "outerwear": return ["blazer", "jacket", "cardigan"];
+    case "dress": return ["mini-dress", "midi-dress", "maxi-dress", "bodycon-dress"];
+    case "set": return ["set"];
+  }
+}
