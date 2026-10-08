@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/server/db";
+import { getCurrentUser } from "@/lib/server/auth";
+import { canReadPaymentStatus, canSimulatePayment } from "@/lib/server/payment-access";
 
 export const runtime = "nodejs";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) return NextResponse.json({ error: "Vui lòng đăng nhập." }, { status: 401 });
   const db = getDb();
   if (!db) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
 
@@ -12,6 +16,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     where: { id },
     select: {
       id: true,
+      userId: true,
       payment: true,
       paymentStatus: true,
       status: true,
@@ -22,6 +27,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   });
 
   if (!order) return NextResponse.json({ error: "Không tìm thấy đơn hàng." }, { status: 404 });
+  if (!canReadPaymentStatus(currentUser, order.userId)) {
+    return NextResponse.json({ error: "Không có quyền xem thanh toán này." }, { status: 403 });
+  }
 
   const latestTransaction = await db.paymentTransaction.findFirst({
     where: { orderId: id },
@@ -52,30 +60,26 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 }
 
 export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const db = getDb();
-  if (!db) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
-
-  const { getCurrentUser } = await import("@/lib/server/auth");
+  // Never create fake, self-attested payments in production.
+  if (process.env.NODE_ENV !== "development") return NextResponse.json({ error: "Not found" }, { status: 404 });
   const currentUser = await getCurrentUser();
   if (!currentUser) return NextResponse.json({ error: "Vui lòng đăng nhập." }, { status: 401 });
+  const db = getDb();
+  if (!db) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
 
   const { id } = await params;
   const order = await db.order.findUnique({ where: { id } });
   if (!order) return NextResponse.json({ error: "Không tìm thấy đơn hàng." }, { status: 404 });
 
-  if (order.userId !== currentUser.id && currentUser.role !== "admin") {
-    return NextResponse.json({ error: "Không có quyền xác nhận đơn hàng này." }, { status: 403 });
-  }
-
-  if (order.paymentStatus === "paid") {
-    return NextResponse.json({ success: true, paymentStatus: "paid", status: order.status, orderId: order.id });
+  if (!canSimulatePayment(currentUser, order, process.env.NODE_ENV)) {
+    return NextResponse.json({ error: "Chỉ admin mới được giả lập thanh toán QR tại môi trường development." }, { status: 403 });
   }
 
   const updated = await db.$transaction(async (tx) => {
     await tx.paymentTransaction.create({
       data: {
-        provider: "vietqr_manual",
-        providerTransactionId: `manual_${Date.now()}_${id}`,
+        provider: "development_simulation",
+        providerTransactionId: `dev_${Date.now()}_${id}`,
         orderId: order.id,
         amount: order.total,
         transferType: "in",
@@ -90,7 +94,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       where: { id: order.id },
       data: {
         paymentStatus: "paid",
-        paymentProvider: "vietqr",
+        paymentProvider: "development_simulation",
         paidAt: new Date(),
         status: order.status === "processing" ? "confirmed" : order.status
       }

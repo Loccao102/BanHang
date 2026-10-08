@@ -48,6 +48,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       trackingCode?: string;
     };
 
+    if (body.paymentStatus === "paid") {
+      return NextResponse.json({ error: "Thanh toán thành công chỉ được ghi nhận bởi giao dịch đã xác minh." }, { status: 409 });
+    }
+
     const current = await db.order.findUnique({ where: { id }, include: { items: true } });
     if (!current) return NextResponse.json({ error: "Không tìm thấy đơn hàng." }, { status: 404 });
 
@@ -55,19 +59,30 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ error: "Đơn đã hủy không thể mở lại để tránh sai lệch tồn kho." }, { status: 409 });
     }
 
-    await db.$transaction(async (tx) => {
+    const restocked = await db.$transaction(async (tx) => {
+      // Atomically claim the cancellation before returning stock. Two concurrent
+      // requests must never restock the same line twice.
+      let claimedCancellation = false;
       if (body.status === "cancelled" && current.status !== "cancelled") {
-        for (const item of current.items) {
-          if (item.variantId) {
-            await tx.productVariant.updateMany({
-              where: { id: item.variantId },
-              data: { stock: { increment: item.quantity }, active: true }
+        const claim = await tx.order.updateMany({
+          where: { id, status: { not: "cancelled" } },
+          data: { status: "cancelled" }
+        });
+        claimedCancellation = claim.count === 1;
+        if (claimedCancellation) {
+          const lines = await tx.orderItem.findMany({ where: { orderId: id } });
+          for (const item of lines) {
+            if (item.variantId) {
+              await tx.productVariant.updateMany({
+                where: { id: item.variantId },
+                data: { stock: { increment: item.quantity } }
+              });
+            }
+            await tx.product.updateMany({
+              where: { id: item.productId },
+              data: { stock: { increment: item.quantity } }
             });
           }
-          await tx.product.updateMany({
-            where: { id: item.productId },
-            data: { stock: { increment: item.quantity } }
-          });
         }
       }
 
@@ -80,9 +95,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
           ...(body.trackingCode !== undefined ? { trackingCode: body.trackingCode.trim() || null } : {})
         }
       });
-    });
+      return claimedCancellation;
+    }, { isolationLevel: "Serializable" });
 
-    return NextResponse.json({ saved: true, restocked: body.status === "cancelled" && current.status !== "cancelled" });
+    return NextResponse.json({ saved: true, restocked });
   } catch {
     return NextResponse.json({ error: "Không có quyền truy cập." }, { status: 403 });
   }

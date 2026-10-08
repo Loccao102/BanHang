@@ -8,6 +8,7 @@ import { evaluateRecommendation } from "./chat-evaluation";
 import { semanticTextScore } from "./product-semantic-profile";
 import { coordinateSmartOutfit, outfitSelectionKey } from "../stylist-outfit-engine";
 import { buildAgentPlan } from "./chat-agent";
+import { canReadPaymentStatus, canSimulatePayment } from "./payment-access";
 
 function product(overrides: Partial<Product> & Pick<Product, "id" | "category" | "type" | "colorFamily">): Product {
   const colorLabels: Record<Product["colorFamily"], string> = {
@@ -1104,6 +1105,25 @@ test("stylist accessory tips follow occasion without changing products", () => {
   assert.match(day.stylingTip, /sneaker/);
   assert.match(office.stylingTip, /loafer/);
   assert.notEqual(day.stylingTip, office.stylingTip);
+});
+
+test("payment data is visible only to its owner or an admin", () => {
+  assert.equal(canReadPaymentStatus(null, "owner"), false);
+  assert.equal(canReadPaymentStatus({ id: "stranger", role: "user" }, "owner"), false);
+  assert.equal(canReadPaymentStatus({ id: "owner", role: "user" }, "owner"), true);
+  assert.equal(canReadPaymentStatus({ id: "admin", role: "admin" }, "owner"), true);
+  assert.equal(canReadPaymentStatus({ id: "owner", role: "user" }, null), false);
+});
+
+test("simulated QR payment is never allowed in production or for customers", () => {
+  const order = { payment: "qr", paymentStatus: "pending", status: "processing" };
+  const admin = { id: "admin", role: "admin" };
+  assert.equal(canSimulatePayment(admin, order, "production"), false);
+  assert.equal(canSimulatePayment({ id: "owner", role: "user" }, order, "development"), false);
+  assert.equal(canSimulatePayment(admin, order, "development"), true);
+  assert.equal(canSimulatePayment(admin, { ...order, paymentStatus: "paid" }, "development"), false);
+  assert.equal(canSimulatePayment(admin, { ...order, status: "cancelled" }, "development"), false);
+  assert.equal(canSimulatePayment(admin, { ...order, payment: "cod" }, "development"), false);
 });
 
 let passed = 0;
