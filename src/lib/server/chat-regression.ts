@@ -926,6 +926,15 @@ test("outfit tab Áo + Chân váy never contains pants", () => {
   assert.equal(outfit.setTypeName, "Áo + Chân váy");
 });
 
+test("locked skirt cannot be silently substituted into pants mode", () => {
+  const outfit = coordinateSmartOutfit({
+    catalog,
+    setType: "top_pants",
+    fixedBottomProductId: whitePartySkirt.id
+  });
+  assert.equal(outfit.items.length, 0);
+});
+
 test("no skirt found means Áo + Chân váy remains empty, never substitutes pants", () => {
   const outfit = coordinateSmartOutfit({ catalog: [redCorset, whiteTrousers], setType: "top_skirt" });
   assert.equal(outfit.items.length, 0);
