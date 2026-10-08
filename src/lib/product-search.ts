@@ -103,3 +103,29 @@ export function getPersonalizedRecommendations(
 
   return scored.slice(0, limit);
 }
+
+
+/**
+ * Same accent-insensitive scoring and variant grouping as the shop search.
+ * Pick one matching color variant per product family, not one card per color.
+ */
+export function getSearchPreviewProducts(catalog: Product[], query: string, limit = 8): Product[] {
+  const q = query.trim();
+  const families = new Map<string, { product: Product; score: number; priority: number }>();
+  for (const product of catalog) {
+    if (product.active === false || product.stock <= 0) continue;
+    const score = calculateProductSearchScore(product, q);
+    if (q && score <= 0) continue;
+    const family = product.groupCode || product.id;
+    const priority = Number(Boolean(product.featured)) * 2 + Number(Boolean(product.isNew));
+    const previous = families.get(family);
+    if (!previous || score > previous.score || (score === previous.score && priority > previous.priority)) {
+      families.set(family, { product, score, priority });
+    }
+  }
+
+  return [...families.values()]
+    .sort((a, b) => q ? b.score - a.score || b.priority - a.priority : b.priority - a.priority)
+    .slice(0, limit)
+    .map((entry) => entry.product);
+}
