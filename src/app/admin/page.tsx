@@ -34,12 +34,14 @@ import {
 import { useStore } from "@/components/store-provider";
 import type { OrderStatus } from "@/lib/cart";
 import {
-  categoryLabels,
   formatPrice,
+  storefrontCategory,
+  storefrontCategoryLabels,
+  typesForStorefrontCategory,
   typeLabels,
   type ClothingType,
   type Product,
-  type ProductCategory
+  type StorefrontCategory
 } from "@/lib/products";
 
 type Tab = "overview" | "products" | "orders" | "settings";
@@ -158,7 +160,7 @@ function AdminContent() {
     return catalog.filter((product) => {
       const matchQuery =
         !q || `${product.name} ${product.sku ?? ""} ${product.color}`.toLowerCase().includes(q);
-      const matchCat = categoryFilter === "all" || product.category === categoryFilter;
+      const matchCat = categoryFilter === "all" || storefrontCategory(product) === categoryFilter;
       return matchQuery && matchCat;
     });
   }, [catalog, query, categoryFilter]);
@@ -634,7 +636,7 @@ function AdminContent() {
                 onChange={(e) => setCategoryFilter(e.target.value)}
               >
                 <option value="all">Tất cả danh mục</option>
-                {Object.entries(categoryLabels).map(([val, label]) => (
+                {Object.entries(storefrontCategoryLabels).map(([val, label]) => (
                   <option key={val} value={val}>
                     {label}
                   </option>
@@ -687,7 +689,7 @@ function AdminContent() {
                     <td>
                       <code className="antSkuBadge">{product.sku ?? "—"}</code>
                     </td>
-                    <td>{categoryLabels[product.category] ?? product.category}</td>
+                    <td>{storefrontCategoryLabels[storefrontCategory(product)]}</td>
                     <td>{typeLabels[product.type] ?? product.type}</td>
                     <td>
                       <strong className="antPrice">
@@ -1062,15 +1064,22 @@ function AdminContent() {
                       <span className="antFormLabel">Danh mục</span>
                       <select
                         className="antInput"
-                        value={editing.category}
-                        onChange={(event) =>
+                        value={storefrontCategory(editing)}
+                        onChange={(event) => {
+                          const nextCategory = event.target.value as StorefrontCategory;
+                          const allowedTypes = typesForStorefrontCategory(nextCategory);
+                          const nextType = allowedTypes.includes(editing.type) ? editing.type : allowedTypes[0];
                           setEditing({
                             ...editing,
-                            category: event.target.value as ProductCategory
-                          })
-                        }
+                            category: nextCategory === "pants" || nextCategory === "skirts" ? "bottoms" : nextCategory,
+                            type: nextType,
+                            tryOnCategory: nextCategory === "pants" || nextCategory === "skirts"
+                              ? "bottoms"
+                              : nextCategory === "dress" || nextCategory === "set" ? "one-pieces" : "tops"
+                          });
+                        }}
                       >
-                        {Object.entries(categoryLabels).map(([val, label]) => (
+                        {Object.entries(storefrontCategoryLabels).map(([val, label]) => (
                           <option key={val} value={val}>
                             {label}
                           </option>
@@ -1089,7 +1098,9 @@ function AdminContent() {
                           })
                         }
                       >
-                        {Object.entries(typeLabels).map(([val, label]) => (
+                        {Object.entries(typeLabels)
+                          .filter(([val]) => typesForStorefrontCategory(storefrontCategory(editing)).includes(val as ClothingType))
+                          .map(([val, label]) => (
                           <option key={val} value={val}>
                             {label}
                           </option>
@@ -1509,7 +1520,7 @@ function AdminContent() {
                       >
                         <option value="">Chưa chọn</option>
                         <option value="tops">tops (Áo / Corset)</option>
-                        <option value="bottoms">bottoms (Quần / Chân váy)</option>
+                        <option value="bottoms">bottoms (Vùng thử AI cho quần và chân váy)</option>
                         <option value="one-pieces">one-pieces (Đầm / Liền thân)</option>
                       </select>
                     </label>
