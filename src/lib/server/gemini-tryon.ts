@@ -22,6 +22,53 @@ function extractBase64(source: string): { mimeType: string; base64: string } | n
 }
 
 /**
+ * Gemini requires garment image bytes. Load known product CDN URLs instead of
+ * silently skipping the garment reference, which can distort dress lengths.
+ * Restrict hosts and disallow redirects to avoid fetching arbitrary URLs.
+ */
+export async function loadGarmentReferenceImage(
+  source: string,
+  fetchImage: typeof fetch = fetch
+): Promise<{ mimeType: string; base64: string } | null> {
+  const inline = extractBase64(source);
+  if (inline) return inline;
+
+  let url: URL;
+  try {
+    url = new URL(source);
+  } catch {
+    return null;
+  }
+
+  const allowedHosts = new Set([
+    "res.cloudinary.com", "images.unsplash.com", "huggingface.co", "cdn.shopify.com"
+  ]);
+  if (url.protocol !== "https:" || !allowedHosts.has(url.hostname)) return null;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+  try {
+    const response = await fetchImage(url.toString(), {
+      signal: controller.signal,
+      redirect: "error",
+      headers: { Accept: "image/jpeg, image/png, image/webp" }
+    });
+    if (!response.ok) return null;
+    const mimeType = (response.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
+    if (!["image/jpeg", "image/png", "image/webp"].includes(mimeType)) return null;
+    const contentLength = Number(response.headers.get("content-length") || 0);
+    if (contentLength > 8 * 1024 * 1024) return null;
+    const bytes = Buffer.from(await response.arrayBuffer());
+    if (!bytes.length || bytes.length > 8 * 1024 * 1024) return null;
+    return { mimeType, base64: bytes.toString("base64") };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/**
  * Đọc kích thước ảnh JPEG trực tiếp từ header (không cần thư viện giải mã ảnh)
  * để yêu cầu Gemini trả kết quả đúng tỷ lệ với ảnh người dùng.
  */
@@ -78,8 +125,11 @@ export async function runGeminiTryOn(input: GeminiTryOnInput): Promise<string> {
   for (let i = 0; i < input.products.length; i++) {
     const p = input.products[i];
     const gSource = p.tryOnImage || p.image;
-    const gData = extractBase64(gSource);
-    if (gData) {
+    const gData = await loadGarmentReferenceImage(gSource);
+    if (!gData) {
+      throw new Error(`Không tải được ảnh tham chiếu cho ${p.name}. Hãy thử công cụ thử đồ dự phòng.`);
+    }
+    {
       garmentParts.push({ inlineData: { mimeType: gData.mimeType, data: gData.base64 } });
       const length = p.lengthClass || (
         p.type === "maxi-dress" ? "maxi" :
