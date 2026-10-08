@@ -1,3 +1,4 @@
+import { pantsTypes } from "@/lib/products";
 import type {
   ClothingType,
   ColorFamily,
@@ -467,8 +468,10 @@ function fallbackItemConstraints(text: string) {
     const types: ClothingType[] = [];
     if (/\b(?:chan vay|skirt|vay)\b/.test(seg)) types.push("skirt");
     else if (/\bjeans?\b/.test(seg)) types.push("jeans");
-    else if (/\bshorts?\b/.test(seg)) types.push("shorts");
-    else if (/\b(?:quan|pants|trousers)\b/.test(seg)) types.push("trousers");
+    else if (/\b(?:quan loe|flare)\b/.test(seg)) types.push("flare-pants");
+    else if (/\b(?:shorts?|quan short|quan dui)\b/.test(seg)) types.push("shorts");
+    else if (/\b(?:quan tay|quan au|trousers)\b/.test(seg)) types.push("trousers");
+    else if (/\b(?:quan|pants)\b/.test(seg)) types.push(...pantsTypes);
     const lengthClass = fallbackLength(text);
     const color = fallbackColor(seg);
     items.push({
@@ -663,7 +666,7 @@ Các intent hợp lệ:
 
 QUY TẮC HIỂU NGÔN NGỮ:
 1. Tự hiểu tiếng Việt tự nhiên, tiếng Anh, từ đồng nghĩa và ngữ cảnh; KHÔNG dựa vào exact keyword.
-2. "áo đỏ + váy đen" nghĩa là role top màu red + role bottom type skirt màu black. Khi có một chiếc áo riêng đi cùng "váy", hiểu "váy" là chân váy/bottom trừ khi ngữ cảnh nói rõ đầm liền.
+2. "áo đỏ + váy đen" nghĩa là role top màu red + role bottom type skirt màu black. Khi có một chiếc áo riêng đi cùng "váy", hiểu "váy" là chân váy/bottom trừ khi ngữ cảnh nói rõ đầm liền. "Áo + quần" phải giới hạn bottom vào jeans/trousers/flare-pants/shorts và tuyệt đối không lấy skirt; "áo + chân váy" phải giới hạn bottom vào skirt và không lấy quần/đầm liền.
 3. "đầm/váy liền/dress" là role dress.
 4. "dạ hội", "gala", "tiệc tối", "party", "event sang" map occasion=party.
 5. Chỉ đưa constraint vào items khi khách NÓI RÕ constraint đó hoặc đang giữ lại constraint từ context. Không tự biến suy luận stylist (ví dụ đi tiệc => corset) thành hard constraint.
