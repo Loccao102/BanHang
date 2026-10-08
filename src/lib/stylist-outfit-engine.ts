@@ -26,6 +26,18 @@ export type CoordinatedOutfit = {
   savings?: number;
 };
 
+// The same core outfit should not be suggested again until fresh options run out.
+// Ignore optional outerwear so an old top + bottom pair does not appear "new" with a jacket.
+export function outfitSelectionKey(
+  items: ReadonlyArray<{ product: Pick<Product, "id">; role: OutfitItemRole }>
+): string {
+  return items
+    .filter((item) => item.role !== "outerwear")
+    .map((item) => `${item.role}:${item.product.id}`)
+    .sort()
+    .join("|");
+}
+
 // Color Harmony Pairings
 const harmoniousColorMap: Record<string, string[]> = {
   black: ["black", "white", "beige", "blue", "gray", "red", "brown"],
@@ -308,6 +320,7 @@ export type GenerateOutfitOptions = {
   fixedSetProductId?: string;
   requiredProductId?: string;
   excludeIds?: string[];
+  excludeOutfitKeys?: string[];
   variantSalt?: number;
   /**
    * Chỉ thêm lớp áo khoác ngoài khi người dùng YÊU CẦU rõ ràng.
@@ -324,6 +337,7 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
   const occasionChoice = options?.occasion || "all";
   const styleChoice = options?.style || "all";
   const excludeSet = new Set(options?.excludeIds || []);
+  const seenOutfits = new Set(options?.excludeOutfitKeys || []);
   const salt = (options?.variantSalt ?? 0) % 9973;
 
   // Filter candidate pools
@@ -463,9 +477,36 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
 
     scoredPairs.sort((a, b) => b.rankScore - a.rankScore || b.score - a.score);
 
-    // Pick from top tier with salt variation
-    const topTier = scoredPairs.slice(0, Math.min(8, scoredPairs.length));
-    const selectedPair = topTier[salt % (topTier.length || 1)] || scoredPairs[0];
+    // Widen the pool from 8 to up to 100 genuinely compatible pairs.
+    // A relative score floor keeps variety high without pairing arbitrary clothes.
+    const bestRankScore = scoredPairs[0]?.rankScore ?? 0;
+    const qualityPool = scoredPairs
+      .filter((pair) => pair.rankScore >= bestRankScore - 60)
+      .slice(0, 100);
+
+    const pairKey = (pair: { top: Product; bottom: Product }) =>
+      outfitSelectionKey([
+        { product: pair.top, role: "top" },
+        { product: pair.bottom, role: "bottom" }
+      ]);
+    const unseenPairs = qualityPool.filter((pair) => !seenOutfits.has(pairKey(pair)));
+
+    // When possible, also change both individual garments from recent suggestions.
+    const recentProducts = new Set(
+      (options?.excludeOutfitKeys || []).slice(-4).flatMap((key) =>
+        key.split("|").map((part) => part.slice(part.indexOf(":") + 1))
+      )
+    );
+    const variedPairs = unseenPairs.filter((pair) =>
+      !recentProducts.has(pair.top.id) && !recentProducts.has(pair.bottom.id)
+    );
+    const selectionPool = variedPairs.length > 0
+      ? variedPairs
+      : unseenPairs.length > 0
+      ? unseenPairs
+      : qualityPool;
+    // Only allow repeats after the eligible pool is exhausted.
+    const selectedPair = selectionPool[salt % (selectionPool.length || 1)];
 
     if (selectedPair) {
       finalScore = selectedPair.score;
@@ -524,7 +565,9 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
       const bScore = evaluateOccasionPreference(b, occasionChoice) + evaluateStylePreference(b, styleChoice);
       return bScore - aScore || (b.formality ?? 3) - (a.formality ?? 3);
     });
-    const dress = rankedDresses[salt % (rankedDresses.length || 1)];
+    const unseenDresses = rankedDresses.filter((p) => !seenOutfits.has(`dress:${p.id}`));
+    const dressPool = unseenDresses.length > 0 ? unseenDresses : rankedDresses;
+    const dress = dressPool[salt % (dressPool.length || 1)];
 
     if (dress) {
       finalItems = [{ product: dress, role: "dress", roleName: "Đầm thiết kế" }];
@@ -558,7 +601,9 @@ export function coordinateSmartOutfit(options?: GenerateOutfitOptions): Coordina
     const candidateSets = (sets.length > 0 ? sets : activePool.filter((p) => p.category === "set"))
       .filter((p) => !options?.minSetCoverage || (p.coverage ?? 0) >= options.minSetCoverage)
       .filter((p) => !options?.budget || p.price <= options.budget);
-    const setItem = fixedSet || candidateSets[salt % (candidateSets.length || 1)] || candidateSets[0];
+    const unseenSets = candidateSets.filter((p) => !seenOutfits.has(`set:${p.id}`));
+    const setPool = unseenSets.length > 0 ? unseenSets : candidateSets;
+    const setItem = fixedSet || setPool[salt % (setPool.length || 1)] || setPool[0];
 
     if (setItem && (!options?.budget || setItem.price <= options.budget)) {
       finalItems = [{ product: setItem, role: "set", roleName: "Set trang phục đồng bộ" }];
