@@ -409,8 +409,8 @@ export default function CheckoutPage() {
               {checkingPayment ? "Đang kiểm tra giao dịch..." : "Kiểm tra thanh toán ngay"}
             </button>
 
-            {/* Test Simulation Button for Local / Dev testing */}
-            <button
+            {/* This simulator must never appear on production checkout. */}
+            {process.env.NODE_ENV === "development" && user?.role === "admin" ? <button
               type="button"
               className="qrSimulateBtn"
               onClick={() => void simulatePayment(pendingQrOrder.id)}
@@ -419,7 +419,7 @@ export default function CheckoutPage() {
             >
               <Sparkles size={14} />
               {simulating ? "Đang ghi nhận..." : "⚡ Giả lập thanh toán thành công (Dành cho thử nghiệm)"}
-            </button>
+            </button> : null}
 
             <button
               type="button"
