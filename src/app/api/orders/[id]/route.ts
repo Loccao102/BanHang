@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { OrderStatus, PaymentStatus } from "@/lib/cart";
 import { requireAdmin } from "@/lib/server/auth";
 import { getDb } from "@/lib/server/db";
+import { canRecordCodCollection } from "@/lib/server/payment-access";
 
 export const runtime = "nodejs";
 
@@ -48,12 +49,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       trackingCode?: string;
     };
 
-    if (body.paymentStatus === "paid") {
-      return NextResponse.json({ error: "Thanh toán thành công chỉ được ghi nhận bởi giao dịch đã xác minh." }, { status: 409 });
-    }
-
     const current = await db.order.findUnique({ where: { id }, include: { items: true } });
     if (!current) return NextResponse.json({ error: "Không tìm thấy đơn hàng." }, { status: 404 });
+    if (body.paymentStatus === "paid" && !canRecordCodCollection(current, body.status)) {
+      return NextResponse.json({
+        error: "Chuyển khoản QR cần webhook đã xác minh; COD chỉ được ghi nhận sau khi hoàn thành giao hàng."
+      }, { status: 409 });
+    }
 
     if (current.status === "cancelled" && body.status && body.status !== "cancelled") {
       return NextResponse.json({ error: "Đơn đã hủy không thể mở lại để tránh sai lệch tồn kho." }, { status: 409 });
@@ -91,6 +93,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         data: {
           ...(body.status ? { status: body.status } : {}),
           ...(body.paymentStatus ? { paymentStatus: body.paymentStatus } : {}),
+          ...(body.paymentStatus === "paid" && current.payment === "cod"
+            ? { paidAt: new Date(), paymentProvider: "cod_collected" }
+            : {}),
           ...(body.shippingCarrier !== undefined ? { shippingCarrier: body.shippingCarrier.trim() || null } : {}),
           ...(body.trackingCode !== undefined ? { trackingCode: body.trackingCode.trim() || null } : {})
         }
