@@ -260,6 +260,8 @@ export function OutfitClient() {
             type="button"
             className={`archTabBtn ${setType === "top_skirt" ? "active" : ""}`}
             onClick={() => handleGenerateNext("top_skirt")}
+            disabled={requiredProduct?.category === "bottoms" && requiredProduct.type !== "skirt"}
+            title={requiredProduct?.category === "bottoms" && requiredProduct.type !== "skirt" ? "Bỏ khóa quần để phối với chân váy" : undefined}
           >
             <Layers size={16} />
             <span>Áo + Chân váy</span>
