@@ -5,18 +5,11 @@ import { useSearchParams } from "next/navigation";
 import { SlidersHorizontal, X } from "lucide-react";
 import { ProductCard } from "@/components/product-card";
 import { useStore } from "@/components/store-provider";
-import { formatPrice, typeLabels } from "@/lib/products";
+import { formatPrice, storefrontCategory, storefrontCategoryLabels, typeLabels } from "@/lib/products";
 import type { ClothingType, ColorFamily, Product } from "@/lib/products";
 import { calculateProductSearchScore, getPersonalizedRecommendations } from "@/lib/product-search";
 
-const shopCategoryOptions = [
-  ["tops", "Áo"],
-  ["pants", "Quần"],
-  ["skirts", "Chân váy"],
-  ["outerwear", "Áo khoác"],
-  ["dress", "Đầm"],
-  ["set", "Set đồ"]
-] as const;
+const shopCategoryOptions = Object.entries(storefrontCategoryLabels);
 
 const colorOptions: Array<{ value: ColorFamily; label: string; hex: string }> = [
   { value: "black", label: "Đen", hex: "#111111" },
@@ -37,16 +30,9 @@ function normalizeCategory(value: string | null) {
   return value === "bottoms" ? "all" : value ?? "all";
 }
 
-function shopCategoryForProduct(product: Product) {
-  if (product.category === "bottoms") {
-    return product.type === "skirt" ? "skirts" : "pants";
-  }
-  return product.category;
-}
-
 function matchesCategory(product: Product, selectedCategory: string) {
   if (selectedCategory === "all") return true;
-  return shopCategoryForProduct(product) === selectedCategory;
+  return storefrontCategory(product) === selectedCategory;
 }
 
 function matchesType(product: Product, selectedType: string) {
@@ -98,7 +84,7 @@ export function ShopClient() {
     for (const product of availableFilterProducts) {
       if (!matchesType(product, productType)) continue;
       if (color !== "all" && product.colorFamily !== color) continue;
-      values.add(shopCategoryForProduct(product));
+      values.add(storefrontCategory(product));
     }
     return values;
   }, [availableFilterProducts, productType, color]);

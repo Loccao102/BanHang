@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { products as productionCatalog, type Product } from "../products";
+import { pantsTypes, storefrontCategory, products as productionCatalog, type Product } from "../products";
+import { outfitLabel, wardrobeGroup, normalizeOutfitSelection } from "../wardrobe";
 import type { ShoppingIntent } from "./chat-intent";
 import { inferFallbackShoppingIntent, retrieveProductsFromIntent } from "./chat-intent";
 import { applyShoppingState, buildShoppingState, type ShoppingState } from "./chat-state";
@@ -893,6 +894,62 @@ test("last assistant product lookup in multi-turn stays grounded on most recent 
   // Logic đã fix trong route.ts: lấy first assistant từ mảng desc trước khi reverse
   const lastAssistant = dbMessagesDesc.find((item) => item.role === "assistant" && item.productIds.length);
   assert.equal(lastAssistant?.productIds[0], "white-shirt");
+});
+
+test("catalog treats pants and skirts as distinct product categories", () => {
+  assert.equal(storefrontCategory(whiteTrousers), "pants");
+  assert.equal(storefrontCategory(whitePartySkirt), "skirts");
+  assert.equal(storefrontCategory(redDress), "dress");
+  assert.deepEqual(pantsTypes, ["jeans", "trousers", "flare-pants", "shorts"]);
+});
+
+test("fitting room keeps pants and skirts in separate wardrobes", () => {
+  assert.equal(wardrobeGroup(whiteTrousers), "pants");
+  assert.equal(wardrobeGroup(whitePartySkirt), "skirts");
+  assert.equal(outfitLabel([redCorset, whiteTrousers]), "áo + quần");
+  assert.equal(outfitLabel([redCorset, whitePartySkirt]), "áo + chân váy");
+  const replaced = normalizeOutfitSelection([redCorset.id, whiteTrousers.id], whitePartySkirt, catalog);
+  assert.deepEqual(replaced, [redCorset.id, whitePartySkirt.id]);
+});
+
+test("outfit tab Áo + Quần never contains a skirt", () => {
+  const outfit = coordinateSmartOutfit({ catalog, setType: "top_pants", preferredTopColor: "red" });
+  assert.equal(outfit.items.length, 2);
+  assert.equal(outfit.items.find((item) => item.role === "bottom")?.product.type, "trousers");
+  assert.equal(outfit.setTypeName, "Áo + Quần");
+});
+
+test("outfit tab Áo + Chân váy never contains pants", () => {
+  const outfit = coordinateSmartOutfit({ catalog, setType: "top_skirt", preferredTopColor: "red" });
+  assert.equal(outfit.items.length, 2);
+  assert.equal(outfit.items.find((item) => item.role === "bottom")?.product.type, "skirt");
+  assert.equal(outfit.setTypeName, "Áo + Chân váy");
+});
+
+test("locked skirt cannot be silently substituted into pants mode", () => {
+  const outfit = coordinateSmartOutfit({
+    catalog,
+    setType: "top_pants",
+    fixedBottomProductId: whitePartySkirt.id
+  });
+  assert.equal(outfit.items.length, 0);
+});
+
+test("no skirt found means Áo + Chân váy remains empty, never substitutes pants", () => {
+  const outfit = coordinateSmartOutfit({ catalog: [redCorset, whiteTrousers], setType: "top_skirt" });
+  assert.equal(outfit.items.length, 0);
+});
+
+test("chat fallback distinguishes áo with quần from áo with chân váy", () => {
+  const pantsIntent = inferFallbackShoppingIntent({ message: "Phối áo đỏ với quần trắng", contextProducts: [] });
+  const pantsConstraint = pantsIntent.items.find((item) => item.role === "bottom");
+  assert.ok(pantsConstraint);
+  assert.ok(pantsConstraint.types?.every((type) => pantsTypes.includes(type)));
+  assert.equal(pantsConstraint.types?.includes("skirt"), false);
+
+  const skirtIntent = inferFallbackShoppingIntent({ message: "Phối áo đỏ với chân váy trắng", contextProducts: [] });
+  const skirtConstraint = skirtIntent.items.find((item) => item.role === "bottom");
+  assert.deepEqual(skirtConstraint?.types, ["skirt"]);
 });
 
 let passed = 0;

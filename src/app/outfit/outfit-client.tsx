@@ -248,11 +248,23 @@ export function OutfitClient() {
           </button>
           <button
             type="button"
-            className={`archTabBtn ${setType === "top_bottom" ? "active" : ""}`}
-            onClick={() => handleGenerateNext("top_bottom")}
+            className={`archTabBtn ${setType === "top_pants" ? "active" : ""}`}
+            onClick={() => handleGenerateNext("top_pants")}
+            disabled={requiredProduct?.category === "bottoms" && requiredProduct.type === "skirt"}
+            title={requiredProduct?.category === "bottoms" && requiredProduct.type === "skirt" ? "Bỏ khóa chân váy để phối với quần" : undefined}
           >
             <Layers size={16} />
-            <span>Quần / Chân váy + Áo</span>
+            <span>Áo + Quần</span>
+          </button>
+          <button
+            type="button"
+            className={`archTabBtn ${setType === "top_skirt" ? "active" : ""}`}
+            onClick={() => handleGenerateNext("top_skirt")}
+            disabled={requiredProduct?.category === "bottoms" && requiredProduct.type !== "skirt"}
+            title={requiredProduct?.category === "bottoms" && requiredProduct.type !== "skirt" ? "Bỏ khóa quần để phối với chân váy" : undefined}
+          >
+            <Layers size={16} />
+            <span>Áo + Chân váy</span>
           </button>
           <button
             type="button"
@@ -313,7 +325,7 @@ export function OutfitClient() {
 
           <div className="outfitFilterGroup">
             <span className="filterLabel">Áo khoác ngoài:</span>
-            <label className="outfitCheckbox" title="Mặc định chỉ phối đúng áo + quần/chân váy bạn chọn. Bật nếu muốn thêm lớp khoác ngoài.">
+            <label className="outfitCheckbox" title="Mặc định chỉ phối áo + quần hoặc áo + chân váy theo tab bạn chọn. Bật nếu muốn thêm lớp khoác ngoài.">
               <input
                 type="checkbox"
                 checked={includeOuterwear}

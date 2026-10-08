@@ -11,6 +11,8 @@ const nav = [
   ["Mới về", "/shop?sort=new"],
   ["Đầm", "/shop?category=dress"],
   ["Áo & Corset", "/shop?category=tops"],
+  ["Quần", "/shop?category=pants"],
+  ["Chân váy", "/shop?category=skirts"],
   ["Set đồ", "/shop?category=set"],
   ["Áo khoác", "/shop?category=outerwear"],
   ["Phối đồ AI", "/outfit"],
@@ -22,7 +24,7 @@ const nav = [
 const megaGroups = [
   {
     title: "Mua sắm",
-    links: [["Mới về", "/shop?sort=new"], ["Đầm", "/shop?category=dress"], ["Áo / corset", "/shop?category=tops"], ["Quần & chân váy", "/shop?category=bottoms"], ["Áo khoác", "/shop?category=outerwear"], ["Đang giảm giá", "/shop?sale=1"]]
+    links: [["Mới về", "/shop?sort=new"], ["Đầm", "/shop?category=dress"], ["Áo / corset", "/shop?category=tops"], ["Quần", "/shop?category=pants"], ["Chân váy", "/shop?category=skirts"], ["Áo khoác", "/shop?category=outerwear"], ["Đang giảm giá", "/shop?sale=1"]]
   },
   {
     title: "Khám phá",
