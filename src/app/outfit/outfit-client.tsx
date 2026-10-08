@@ -21,6 +21,7 @@ import { formatPrice, type Product } from "@/lib/products";
 import {
   coordinateSmartOutfit,
   outfitSelectionKey,
+  reviewSelectedOutfit,
   CoordinatedOutfit,
   OutfitSetType
 } from "@/lib/stylist-outfit-engine";
@@ -125,6 +126,10 @@ export function OutfitClient() {
     [selectedItems]
   );
   const hasSelectedDiscount = selectedOriginalTotal > selectedTotal;
+  const selectedReview = useMemo(
+    () => reviewSelectedOutfit(outfit, selectedItems.map((item) => item.product), occasion, style),
+    [outfit, selectedItems, occasion, style]
+  );
 
   // Check if all items in current set are already favorited
   const allInWishlist = useMemo(() => {
@@ -366,11 +371,11 @@ export function OutfitClient() {
               <div className="outfitCanvasMeta">
                 <div className="outfitTypeTag">
                   <span className="dot" />
-                  <span>{outfit.setTypeName}</span>
+                  <span>{selectedReview.setTypeName}</span>
                 </div>
                 <div className="outfitMatchBadge">
                   <Sparkles size={14} />
-                  <span>{outfit.matchBadge} ({outfit.score}/100)</span>
+                  <span>{selectedReview.matchBadge} ({selectedReview.score}/100)</span>
                 </div>
               </div>
 
@@ -520,19 +525,19 @@ export function OutfitClient() {
             </div>
 
             <div className="stylistOutfitTitle">
-              <h4>{outfit.title}</h4>
+              <h4>{selectedReview.title}</h4>
             </div>
 
             {/* AI Review Explanation */}
             <div className="stylistExplanationCard">
               <div className="cardSubtitle">VÌ SAO SET ĐỒ NÀY HỢP NHAU:</div>
-              <p className="explanationText">{outfit.reason}</p>
+              <p className="explanationText">{selectedReview.reason}</p>
             </div>
 
             {/* Styling Accessories Tip */}
             <div className="stylistTipCard">
               <div className="cardSubtitle">MẸO PHỐI PHỤ KIỆN & GIÀY:</div>
-              <p className="tipText">{outfit.stylingTip}</p>
+              <p className="tipText">{selectedReview.stylingTip}</p>
             </div>
 
             {/* Outfit Pricing Summary */}
