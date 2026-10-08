@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
-import type { Product } from "@/lib/products";
+import { storefrontCategory, typesForStorefrontCategory, type Product } from "@/lib/products";
 import { requireAdmin } from "@/lib/server/auth";
 import { getDb } from "@/lib/server/db";
 import { toProductRow } from "@/lib/server/product-db";
@@ -71,6 +71,13 @@ export async function POST(request: Request) {
     .map(([, label]) => label);
   if (missing.length) {
     return NextResponse.json({ error: `Thiếu thông tin bắt buộc: ${missing.join(", ")}.` }, { status: 400 });
+  }
+
+  const displayCategory = storefrontCategory(product);
+  if (!typesForStorefrontCategory(displayCategory).includes(product.type)) {
+    return NextResponse.json({
+      error: "Danh mục và loại sản phẩm không khớp. Quần chỉ được chọn loại quần, chân váy chỉ được chọn loại chân váy."
+    }, { status: 400 });
   }
 
   if (!Number.isFinite(Number(product.price)) || Number(product.price) < 0) {
