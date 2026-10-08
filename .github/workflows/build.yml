@@ -34,6 +34,7 @@ jobs:
         run: PGPASSWORD=lsoul_ci psql -h localhost -U lsoul -d lsoul_test -c 'CREATE EXTENSION IF NOT EXISTS vector;'
       - run: npm run db:setup
       - run: npm run test:chat
+      - run: npm run test:quality
       - run: npm run lint
       - run: npm run build
       - name: Validate Docker Compose
