@@ -235,63 +235,160 @@ function evaluateStylePreference(product: Product, requested: string) {
   return score;
 }
 
-// Generate human-like natural Vietnamese stylist commentary
+// Keep stylist comments grounded in the actual garments rather than a universal
+// "tôn dáng / quyến rũ" sales pitch. This is lightweight, deterministic copy;
+ // no LLM call (and no additional latency) is needed for the styling room.
+function topDescription(top: Product): string {
+  switch (top.type) {
+    case "corset":
+      return "thiết kế corset tạo điểm nhấn có cấu trúc cho phần thân trên";
+    case "crop-top":
+      return "áo crop-top mang lại tỷ lệ trẻ trung, gọn gàng";
+    case "bodysuit":
+      return "bodysuit giữ đường nét phần áo gọn gàng";
+    case "shirt":
+      return top.volume === "voluminous"
+        ? "sơ mi dáng rộng tạo cảm giác thoải mái, phóng khoáng"
+        : "sơ mi mang đến đường nét chỉn chu";
+    case "blouse":
+      return "áo blouse đem lại cảm giác nhẹ nhàng";
+    case "knit-top":
+      return "áo dệt kim làm tổng thể mềm mại hơn";
+    default:
+      return "thiết kế phần áo tạo điểm nhấn cho tổng thể";
+  }
+}
+
+function bottomDescription(bottom: Product): string {
+  switch (bottom.type) {
+    case "skirt":
+      if (bottom.lengthClass === "mini") return "chân váy ngắn giữ vẻ trẻ trung, năng động";
+      if (bottom.lengthClass === "midi") return "chân váy midi tạo nét thanh lịch";
+      if (bottom.lengthClass === "maxi") return "chân váy dài tạo cảm giác mềm mại, thướt tha";
+      return "chân váy tạo điểm nhấn riêng cho phần dưới";
+    case "trousers":
+      return "quần âu giữ tổng thể gọn và chỉn chu";
+    case "flare-pants":
+      return "quần ống loe tạo đường nét nổi bật ở phần dưới";
+    case "jeans":
+      return "quần jeans mang lại sắc thái gần gũi, linh hoạt";
+    case "shorts":
+      return "quần short làm set đồ gọn nhẹ, năng động";
+    default:
+      return "phần dưới cân bằng tổng thể trang phục";
+  }
+}
+
+function pairingColorDescription(a: Product, b: Product): string {
+  const colors = new Set([a.colorFamily, b.colorFamily]);
+  if (colors.size === 1) {
+    return "Hai món cùng nhóm màu nên tổng thể có sự đồng điệu.";
+  }
+  if (colors.has("black") && colors.has("white")) {
+    return "Cặp màu đen – trắng tạo tương phản rõ ràng và dễ ứng dụng.";
+  }
+  if ((harmoniousColorMap[a.colorFamily] || []).includes(b.colorFamily)) {
+    return `Màu ${a.color} đi cùng ${b.color} tạo sự hài hòa, không quá nhiều chi tiết.`;
+  }
+  return `Hai sắc ${a.color} và ${b.color} tạo tương phản nổi bật.`;
+}
+
+function accessoryAdvice(occasion: string, style: string, bottomType?: Product["type"]): string {
+  if (occasion === "work") {
+    return "Đi làm có thể phối cùng loafer hoặc giày bệt và túi dáng đứng.";
+  }
+  if (occasion === "casual") {
+    return "Dạo phố có thể thêm sneaker hoặc sandal và một chiếc túi đeo chéo.";
+  }
+  if (occasion === "party") {
+    return "Đi tiệc, thử giày có chi tiết ánh kim và một món trang sức làm điểm nhấn.";
+  }
+  if (occasion === "date") {
+    return "Đi hẹn hò, chọn túi nhỏ và đôi giày thoải mái để tổng thể không quá cầu kỳ.";
+  }
+  if (style === "minimal") {
+    return "Ưu tiên giày và túi màu trung tính để giữ bảng màu gọn gàng.";
+  }
+  if (style === "y2k" || style === "bold") {
+    return "Thử túi đeo vai nhỏ và phụ kiện kim loại nếu muốn thêm nét cá tính.";
+  }
+  if (style === "glam") {
+    return "Một đôi giày có điểm nhấn và túi nhỏ sẽ hợp với tinh thần glam.";
+  }
+  return bottomType === "skirt"
+    ? "Có thể thử loafer cho vẻ preppy hoặc boots để set cá tính hơn."
+    : "Thử sneaker cho ngày thường hoặc loafer để set trông chỉn chu hơn.";
+}
+
+// Generate a concise Vietnamese explanation from actual product metadata.
 function generateStylistReview(
   setType: "top_bottom" | "dress_layer" | "coord_set",
   items: Product[],
   occasion: string,
   style: string
 ): { title: string; reason: string; stylingTip: string } {
-  const names = items.map((i) => i.name).join(" và ");
-  const colors = Array.from(new Set(items.map((i) => i.color))).join(" phối ");
-
   if (setType === "top_bottom") {
-    const top = items.find((i) => i.category === "tops") || items[0];
-    const bottom = items.find((i) => i.category === "bottoms") || items[1];
-    const outer = items.find((i) => i.category === "outerwear");
+    const top = items.find((item) => item.category === "tops") || items[0];
+    const bottom = items.find((item) => item.category === "bottoms") || items[1];
+    const outer = items.find((item) => item.category === "outerwear");
+    const isSkirt = bottom.type === "skirt";
 
-    const isCorset = top.type === "corset" || top.name.toLowerCase().includes("corset");
-    const isSkirt = bottom.type === "skirt" || bottom.name.toLowerCase().includes("váy");
-    const isTrousers = bottom.type === "trousers" || bottom.type === "flare-pants" || bottom.type === "jeans";
+    const title = outer
+      ? `Phối Layer: Áo + ${isSkirt ? "Chân Váy" : "Quần"} + Áo Khoác`
+      : top.type === "corset"
+      ? `Corset + ${isSkirt ? "Chân Váy" : "Quần"}`
+      : top.type === "shirt"
+      ? `Sơ Mi + ${isSkirt ? "Chân Váy" : "Quần"}`
+      : `Gợi Ý Phối Áo + ${isSkirt ? "Chân Váy" : "Quần"}`;
 
-    let title = isSkirt
-      ? "Chic & Sắc Sảo: Áo Phối Chân Váy"
-      : "Chic & Sắc Sảo: Áo Phối Quần";
-    let reason = `Set đồ kết hợp chuẩn tỷ lệ hình thể với ${top.name} ôm trọn vòng eo quyến rũ, đi cùng ${bottom.name} tạo hiệu ứng kéo dài đôi chân. Gam màu ${colors} mang đậm tinh thần thời trang đương đại LSOUL.`;
-    let stylingTip = "Phối cùng boots da cổ cao hoặc giày cao gót quai mảnh, kết hợp túi kẹp nách nhỏ để hoàn thiện diện mạo ấn tượng.";
+    const silhouetteDetail = (top.volume === "voluminous" && bottom.volume === "fitted")
+      ? "Dáng áo rộng và phần dưới gọn tạo sự cân bằng về phom."
+      : (top.volume === "fitted" && bottom.volume === "voluminous")
+      ? "Phần áo gọn kết hợp với phần dưới rộng tạo tương phản về phom."
+      : "";
+    const reason = [
+      `${top.name} có ${topDescription(top)}, kết hợp với ${bottom.name} – ${bottomDescription(bottom)}.`,
+      pairingColorDescription(top, bottom),
+      silhouetteDetail,
+      outer ? `Thêm ${outer.name} như một lớp khoác ngoài khi cần.` : ""
+    ].filter(Boolean).join(" ");
 
-    if (isCorset && isTrousers) {
-      title = "Edgy Elegance: Corset Quyến Rũ & Quần Suông Tôn Chiều Cao";
-      reason = `Sự kết hợp đối lập hoàn hảo giữa phần trên ôm sát đan dây của ${top.name} và phom quần suông dài của ${bottom.name}, đem lại vẻ ngoài quyền lực, sang chảnh tuyệt đối.`;
-      stylingTip = "Mang kèm giày cao gót mũi nhọn cùng thắt lưng kim loại bản nhỏ để nhân đôi sự thu hút.";
-    } else if (outer) {
-      title = "Layering Thời Thượng: Áo Khoác Cùng Bộ Đôi Tôn Dáng";
-      reason = `Bộ ba trang phục được cân bằng khéo léo giữa ${top.name}, ${bottom.name} và lớp áo khoác ${outer.name} khoác ngoài, giữ ấm nhẹ nhưng vẫn khoe trọn đường cong.`;
-      stylingTip = "Bạn có thể khoác hờ áo blazer qua vai khi chụp hình để tạo dáng streetstyle tự nhiên.";
-    }
-
-    return { title, reason, stylingTip };
+    return { title, reason, stylingTip: accessoryAdvice(occasion, style, bottom.type) };
   }
 
   if (setType === "dress_layer") {
-    const dress = items.find((i) => i.category === "dress") || items[0];
-    const outer = items.find((i) => i.category === "outerwear");
-
-    const title = outer ? "Đầm Dạ Tiệc & Áo Khoác Blazer Sang Trọng" : "Váy Đầm Thiết Kế LSOUL Signature";
-    const reason = outer
-      ? `Chiếc đầm ${dress.name} quyến rũ được tôn bật khi khoác cùng ${outer.name}, tạo sự cân bằng tinh tế giữa vẻ gợi cảm nữ tính và phong thái thanh lịch đẳng cấp.`
-      : `Thiết kế ${dress.name} sở hữu phom dáng cắt xẻ sắc sảo, tôn vinh trọn vẹn đường cong của người phụ nữ hiện đại với gam màu ${dress.color} cuốn hút.`;
-    const stylingTip = "Nên kết hợp trang sức ánh bạc hoặc ngọc trai tối giản, giày cao gót mũi nhọn và kiểu tóc búi cao quý phái.";
-
-    return { title, reason, stylingTip };
+    const dress = items.find((item) => item.category === "dress") || items[0];
+    const outer = items.find((item) => item.category === "outerwear");
+    const length = dress.type === "mini-dress" ? "ngắn"
+      : dress.type === "midi-dress" ? "midi"
+      : dress.type === "maxi-dress" ? "dài"
+      : dress.type === "bodycon-dress" ? "ôm"
+      : "";
+    const shapePhrase = length ? ` dáng ${length}` : "";
+    const reason = [
+      `${dress.name} là mẫu đầm${shapePhrase} màu ${dress.color}, có thể mặc như một bộ trang phục hoàn chỉnh.`,
+      outer
+        ? `Kết hợp với ${outer.name} để thêm một lớp khoác. ${pairingColorDescription(dress, outer)}`
+        : "Không cần thêm nhiều lớp áo để hoàn thiện set này."
+    ].join(" ");
+    return {
+      title: outer ? "Đầm Liền + Áo Khoác" : "Gợi Ý Đầm Liền",
+      reason,
+      stylingTip: accessoryAdvice(occasion, style)
+    };
   }
 
-  // coord_set
-  const title = "Co-ord Set: Đồng Bộ Chuẩn Phong Cách LSOUL";
-  const reason = `Set trang phục ${names} đồng nhất về chất liệu và phong cách, giúp bạn tỏa sáng tức thì mà không mất thời gian suy nghĩ cách phối. Từng chi tiết cắt may đều được cân chỉnh để tôn dáng người mặc.`;
-  const stylingTip = "Hoàn hảo cho cả những buổi cafe cuối tuần lẫn tiệc tối năng động. Chỉ cần thêm một đôi sandal quai mảnh là bạn đã sẵn sàng bước ra phố.";
-
-  return { title, reason, stylingTip };
+  const set = items.find((item) => item.category === "set") || items[0];
+  const outer = items.find((item) => item.category === "outerwear");
+  const reason = [
+    `${set.name} là set đồng bộ màu ${set.color}, giúp phối nhanh mà không cần chọn áo và phần dưới riêng lẻ.`,
+    outer ? `Khoác thêm ${outer.name} nếu muốn có thêm một lớp áo.` : ""
+  ].filter(Boolean).join(" ");
+  return {
+    title: outer ? "Set Đồng Bộ + Áo Khoác" : "Set Trang Phục Đồng Bộ",
+    reason,
+    stylingTip: accessoryAdvice(occasion, style)
+  };
 }
 
 export type GenerateOutfitOptions = {
