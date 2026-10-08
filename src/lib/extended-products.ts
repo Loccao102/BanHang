@@ -1992,6 +1992,484 @@ const data: Seed[] = [
     "sleeveLength": "long",
     "colorTemperature": "warm"
   }
+,
+  {
+    "sku": "JK-VINTAGE-MOTO-BLK",
+    "groupCode": "JK-VINTAGE-MOTO",
+    "name": "Vintage Cropped Moto Leather Jacket",
+    "subtitle": "Áo khoác biker da lửng khóa kéo kim loại cá tính và nổi loạn (Đen)",
+    "category": "outerwear",
+    "type": "jacket",
+    "price": 2650000,
+    "color": "Đen",
+    "colorFamily": "black",
+    "colorHex": "#161616",
+    "image": "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791445480/lsoul/products/jacket-biker-leather-black.jpg",
+    "style": [
+      "edgy",
+      "chic",
+      "statement"
+    ],
+    "occasion": [
+      "dạo phố",
+      "hẹn hò",
+      "đi tiệc"
+    ],
+    "material": "Da nhân tạo PU phủ sáp cao cấp lót satin lụa",
+    "fit": "Cropped boxy fit",
+    "silhouette": "structured",
+    "lengthClass": "cropped",
+    "neckline": "lapel",
+    "sleeveLength": "long",
+    "colorTemperature": "neutral"
+  },
+  {
+    "sku": "BZ-TAILORED-BOLERO-GRY",
+    "groupCode": "BZ-TAILORED-BOLERO",
+    "name": "Structured Cropped Bolero Blazer",
+    "subtitle": "Áo blazer lửng độn vai phom may đo sắc sảo quyền lực (Xám khói)",
+    "category": "outerwear",
+    "type": "blazer",
+    "price": 2450000,
+    "color": "Xám khói",
+    "colorFamily": "gray",
+    "colorHex": "#6E7278",
+    "image": "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791445480/lsoul/products/blazer-bolero-cropped-grey.jpg",
+    "style": [
+      "chic",
+      "công sở",
+      "minimal"
+    ],
+    "occasion": [
+      "đi làm",
+      "sự kiện",
+      "hẹn hò"
+    ],
+    "material": "Vải âu phục dạ len pha đệm vai ép form chuẩn",
+    "fit": "Cropped tailored fit",
+    "silhouette": "structured",
+    "lengthClass": "cropped",
+    "neckline": "lapel",
+    "sleeveLength": "long",
+    "colorTemperature": "cool"
+  },
+  {
+    "sku": "JK-TWEED-BOUCLE-PNK",
+    "groupCode": "JK-TWEED-BOUCLE",
+    "name": "Bouclé Tweed Cropped Gold-Button Jacket",
+    "subtitle": "Áo khoác dạ tweed sợi ánh nhũ đính cúc vàng sang trọng tiểu thư (Hồng phấn)",
+    "category": "outerwear",
+    "type": "jacket",
+    "price": 2550000,
+    "color": "Hồng phấn",
+    "colorFamily": "pink",
+    "colorHex": "#F2D0D9",
+    "image": "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791445480/lsoul/products/jacket-boucle-tweed-pink.jpg",
+    "style": [
+      "chic",
+      "romantic",
+      "công sở"
+    ],
+    "occasion": [
+      "đi làm",
+      "hẹn hò",
+      "đi cafe"
+    ],
+    "material": "Vải dạ Bouclé dệt sợi kim tuyến lót lụa habutai",
+    "fit": "Cropped structured fit",
+    "silhouette": "structured",
+    "lengthClass": "cropped",
+    "neckline": "round",
+    "sleeveLength": "long",
+    "colorTemperature": "warm"
+  },
+  {
+    "sku": "JK-Y2K-DENIM-CROP-BLU",
+    "groupCode": "JK-Y2K-DENIM-CROP",
+    "name": "Y2K Distressed Washed Denim Jacket",
+    "subtitle": "Áo khoác denim wash bạc rách gấu phong cách đường phố (Xanh denim)",
+    "category": "outerwear",
+    "type": "jacket",
+    "price": 2150000,
+    "color": "Xanh denim",
+    "colorFamily": "blue",
+    "colorHex": "#5B7C99",
+    "image": "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791445480/lsoul/products/jacket-denim-cropped-blue.jpg",
+    "style": [
+      "edgy",
+      "trendy",
+      "chic"
+    ],
+    "occasion": [
+      "dạo phố",
+      "du lịch",
+      "đi cafe"
+    ],
+    "material": "Denim cotton 100% định lượng cao xử lý enzyme wash",
+    "fit": "Relaxed cropped fit",
+    "silhouette": "relaxed",
+    "lengthClass": "cropped",
+    "neckline": "collar",
+    "sleeveLength": "long",
+    "colorTemperature": "cool"
+  },
+  {
+    "sku": "TP-ORGANZA-PEPLUM-BLK",
+    "groupCode": "TP-ORGANZA-PEPLUM",
+    "name": "Sheer Floral Organza Peplum Blouse",
+    "subtitle": "Áo blouse tơ organza xuyên thấu hoa nhí chiết eo peplum kiêu kỳ (Đen)",
+    "category": "tops",
+    "type": "blouse",
+    "price": 1690000,
+    "color": "Đen",
+    "colorFamily": "black",
+    "colorHex": "#121212",
+    "image": "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791445480/lsoul/products/blouse-organza-peplum-black.jpg",
+    "style": [
+      "romantic",
+      "sexy",
+      "chic"
+    ],
+    "occasion": [
+      "đi tiệc",
+      "hẹn hò",
+      "sự kiện"
+    ],
+    "material": "Tơ organza dệt hoa dập nổi cao cấp",
+    "fit": "Peplum cinched waist",
+    "silhouette": "fitted",
+    "lengthClass": "hip-length",
+    "neckline": "round",
+    "sleeveLength": "long",
+    "colorTemperature": "neutral"
+  },
+  {
+    "sku": "TP-TIERED-RUFFLE-PNK",
+    "groupCode": "TP-TIERED-RUFFLE",
+    "name": "Striped Romantic Tiered Ruffle Blouse",
+    "subtitle": "Áo kiểu tay bèo nhún xếp tầng kẻ sọc tiểu thư Pháp (Hồng phấn)",
+    "category": "tops",
+    "type": "blouse",
+    "price": 1590000,
+    "color": "Hồng phấn",
+    "colorFamily": "pink",
+    "colorHex": "#F5D4DE",
+    "image": "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791445480/lsoul/products/blouse-tiered-ruffle-pink.jpg",
+    "style": [
+      "romantic",
+      "chic",
+      "nữ tính"
+    ],
+    "occasion": [
+      "hẹn hò",
+      "đi làm",
+      "đi cafe"
+    ],
+    "material": "Voan tơ chiffon dệt kẻ sọc chìm mềm rủ",
+    "fit": "Tiered relaxed fit",
+    "silhouette": "relaxed",
+    "lengthClass": "hip-length",
+    "neckline": "v-neck",
+    "sleeveLength": "long",
+    "colorTemperature": "warm"
+  },
+  {
+    "sku": "TP-OFFSHOULDER-SMOCK-RED",
+    "groupCode": "TP-OFFSHOULDER-SMOCK",
+    "name": "Floral Smocked Off-Shoulder Sweetheart Crop Top",
+    "subtitle": "Áo croptop trễ vai nhún chun ngực hoa đỏ quyến rũ tôn xương quai xanh (Đỏ hoa)",
+    "category": "tops",
+    "type": "crop-top",
+    "price": 1450000,
+    "color": "Đỏ hoa",
+    "colorFamily": "red",
+    "colorHex": "#A82030",
+    "image": "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791445480/lsoul/products/top-offshoulder-smocked-red.jpg",
+    "style": [
+      "sexy",
+      "romantic",
+      "trendy"
+    ],
+    "occasion": [
+      "hẹn hò",
+      "du lịch",
+      "dạo phố"
+    ],
+    "material": "Lụa satin dệt in họa tiết hoa nhí",
+    "fit": "Fitted smocked sweetheart",
+    "silhouette": "fitted",
+    "lengthClass": "cropped",
+    "neckline": "sweetheart",
+    "sleeveLength": "short",
+    "colorTemperature": "warm"
+  },
+  {
+    "sku": "TP-STRIPED-KNIT-NVY",
+    "groupCode": "TP-STRIPED-KNIT",
+    "name": "Sailor Striped Ribbed Long Sleeve Knit Top",
+    "subtitle": "Áo len tăm dệt kim cổ tròn kẻ ngang phong cách Parisian Chic thanh lịch (Xanh navy kẻ)",
+    "category": "tops",
+    "type": "knit-top",
+    "price": 1390000,
+    "color": "Xanh navy",
+    "colorFamily": "navy",
+    "colorHex": "#1B2A4A",
+    "image": "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791445480/lsoul/products/top-striped-knit-navy.jpg",
+    "style": [
+      "chic",
+      "minimal",
+      "công sở"
+    ],
+    "occasion": [
+      "đi làm",
+      "đi cafe",
+      "dạo phố"
+    ],
+    "material": "Len cotton dệt kim sợi mảnh co giãn cao cấp",
+    "fit": "Slim fitted silhouette",
+    "silhouette": "fitted",
+    "lengthClass": "hip-length",
+    "neckline": "round",
+    "sleeveLength": "long",
+    "colorTemperature": "cool"
+  },
+  {
+    "sku": "TP-FLORAL-HIGHNECK-BLK",
+    "groupCode": "TP-FLORAL-HIGHNECK",
+    "name": "Victorian Floral Ruffle High-Neck Top",
+    "subtitle": "Áo cổ bèo nhún xếp nếp họa tiết hoa nghệ thuật cổ điển quý phái (Đen hoa)",
+    "category": "tops",
+    "type": "knit-top",
+    "price": 1490000,
+    "color": "Đen",
+    "colorFamily": "black",
+    "colorHex": "#1A1A1A",
+    "image": "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791445480/lsoul/products/top-floral-highneck-black.jpg",
+    "style": [
+      "edgy",
+      "chic",
+      "statement"
+    ],
+    "occasion": [
+      "đi tiệc",
+      "hẹn hò",
+      "sự kiện"
+    ],
+    "material": "Lưới thun mesh dập hoa nhung cao cấp",
+    "fit": "Slim mock neck fit",
+    "silhouette": "fitted",
+    "lengthClass": "hip-length",
+    "neckline": "round",
+    "sleeveLength": "long",
+    "colorTemperature": "neutral"
+  },
+  {
+    "sku": "TP-CAMI-BUTTON-YEL",
+    "groupCode": "TP-CAMI-BUTTON",
+    "name": "Ribbed Button-Front Sweetheart Camisole Top",
+    "subtitle": "Áo hai dây thun tăm cúp ngực ngọt ngào đính cúc bấm sành điệu (Vàng pastel)",
+    "category": "tops",
+    "type": "crop-top",
+    "price": 1190000,
+    "color": "Vàng pastel",
+    "colorFamily": "beige",
+    "colorHex": "#F2E49B",
+    "image": "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791445480/lsoul/products/top-cami-button-yellow.jpg",
+    "style": [
+      "trendy",
+      "chic",
+      "sexy"
+    ],
+    "occasion": [
+      "dạo phố",
+      "đi cafe",
+      "du lịch"
+    ],
+    "material": "Thun len gân modal co giãn 4 chiều mịn mát",
+    "fit": "Fitted camisole",
+    "silhouette": "fitted",
+    "lengthClass": "cropped",
+    "neckline": "sweetheart",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "warm"
+  },
+  {
+    "sku": "PT-PAISLEY-WIDE-RED",
+    "groupCode": "PT-PAISLEY-WIDE",
+    "name": "Bohemian Paisley Silk Wide-Leg Palazzo Pants",
+    "subtitle": "Quần lụa cạp cao ống suông họa tiết paisley thời thượng nổi bật (Đỏ họa tiết)",
+    "category": "bottoms",
+    "type": "trousers",
+    "price": 1950000,
+    "color": "Đỏ",
+    "colorFamily": "red",
+    "colorHex": "#9B2C3B",
+    "image": "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791445480/lsoul/products/pants-paisley-wide-red.jpg",
+    "style": [
+      "statement",
+      "chic",
+      "glam"
+    ],
+    "occasion": [
+      "đi tiệc",
+      "sự kiện",
+      "du lịch"
+    ],
+    "material": "Lụa gấm cát dệt rủ cao cấp chống nhăn",
+    "fit": "High-waist wide-leg palazzo",
+    "silhouette": "relaxed",
+    "lengthClass": "maxi",
+    "waistRise": "high",
+    "colorTemperature": "warm"
+  },
+  {
+    "sku": "PT-FLORAL-BELL-WHT",
+    "groupCode": "PT-FLORAL-BELL",
+    "name": "Monochrome Floral Mid-Rise Flare Bell Trousers",
+    "subtitle": "Quần loe cạp vừa họa tiết hoa đơn sắc tôn trọn đường cong đôi chân (Trắng hoa)",
+    "category": "bottoms",
+    "type": "flare-pants",
+    "price": 1890000,
+    "color": "Trắng",
+    "colorFamily": "white",
+    "colorHex": "#F5F5F5",
+    "image": "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791445480/lsoul/products/pants-floral-bell-white.jpg",
+    "style": [
+      "trendy",
+      "chic",
+      "sexy"
+    ],
+    "occasion": [
+      "dạo phố",
+      "đi tiệc",
+      "hẹn hò"
+    ],
+    "material": "Vải thun dệt tuyết mưa co giãn tôn dáng ôm đùi loe gấu",
+    "fit": "Mid-rise bell bottom flare",
+    "silhouette": "fitted",
+    "lengthClass": "maxi",
+    "waistRise": "mid",
+    "colorTemperature": "neutral"
+  },
+  {
+    "sku": "PT-PATCH-DENIM-BLU",
+    "groupCode": "PT-PATCH-DENIM",
+    "name": "Y2K Distressed Patchwork Wide-Leg Denim Jeans",
+    "subtitle": "Quần jeans ống rộng chắp vá mảng màu wash bạc phong cách street style (Xanh denim)",
+    "category": "bottoms",
+    "type": "jeans",
+    "price": 1990000,
+    "color": "Xanh denim",
+    "colorFamily": "blue",
+    "colorHex": "#5D7B93",
+    "image": "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791445480/lsoul/products/pants-patchwork-denim-blue.jpg",
+    "style": [
+      "edgy",
+      "trendy",
+      "chic"
+    ],
+    "occasion": [
+      "dạo phố",
+      "đi cafe",
+      "du lịch"
+    ],
+    "material": "Denim cotton 100% xử lý stonewash và wash rách thủ công",
+    "fit": "Low-rise wide baggy jeans",
+    "silhouette": "relaxed",
+    "lengthClass": "maxi",
+    "waistRise": "low",
+    "colorTemperature": "cool"
+  },
+  {
+    "sku": "DR-EMERALD-SLIP-GRN",
+    "groupCode": "DR-EMERALD-SLIP",
+    "name": "Emerald Silk Cowl-Neck Bias-Cut Midi Dress",
+    "subtitle": "Đầm lụa hai dây cổ đổ dáng midi xẻ tà quyến rũ màu ngọc lục bảo (Xanh ngọc)",
+    "category": "dress",
+    "type": "midi-dress",
+    "price": 2350000,
+    "color": "Xanh ngọc",
+    "colorFamily": "green",
+    "colorHex": "#238971",
+    "image": "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791445480/lsoul/products/dress-emerald-slip-green.jpg",
+    "style": [
+      "glam",
+      "sexy",
+      "chic"
+    ],
+    "occasion": [
+      "đi tiệc",
+      "hẹn hò",
+      "sự kiện"
+    ],
+    "material": "Lụa satin tơ tằm dệt bóng mượt cắt xéo thớ bias-cut",
+    "fit": "Bias-cut cowl neck drape",
+    "silhouette": "column",
+    "lengthClass": "midi",
+    "neckline": "round",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "cool"
+  },
+  {
+    "sku": "DR-NOIR-COLUMN-BLK",
+    "groupCode": "DR-NOIR-COLUMN",
+    "name": "Noir Column Cutout Backless Evening Dress",
+    "subtitle": "Đầm dạ hội suông dài cổ yếm hở lưng tôn trọn đường cong nữ thần (Đen tuyền)",
+    "category": "dress",
+    "type": "maxi-dress",
+    "price": 2650000,
+    "color": "Đen",
+    "colorFamily": "black",
+    "colorHex": "#101010",
+    "image": "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791445480/lsoul/products/dress-noir-column-black.jpg",
+    "style": [
+      "glam",
+      "statement",
+      "chic"
+    ],
+    "occasion": [
+      "sự kiện",
+      "đi tiệc",
+      "hẹn hò"
+    ],
+    "material": "Vải crepe lụa cao cấp 2 lớp chống nhăn",
+    "fit": "Backless column silhouette",
+    "silhouette": "column",
+    "lengthClass": "maxi",
+    "neckline": "halter",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "neutral"
+  },
+  {
+    "sku": "DR-ROSE-DRAPED-PNK",
+    "groupCode": "DR-ROSE-DRAPED",
+    "name": "Dusty Rose Draped Halter Cocktail Dress",
+    "subtitle": "Đầm cocktail cổ yếm xếp nếp nhún eo thanh lịch kiêu kỳ (Hồng đất)",
+    "category": "dress",
+    "type": "midi-dress",
+    "price": 2450000,
+    "color": "Hồng đất",
+    "colorFamily": "pink",
+    "colorHex": "#B88E8D",
+    "image": "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791445480/lsoul/products/dress-rose-draped-pink.jpg",
+    "style": [
+      "romantic",
+      "chic",
+      "elegant"
+    ],
+    "occasion": [
+      "đi tiệc",
+      "hẹn hò",
+      "tiệc cưới"
+    ],
+    "material": "Chiffon tơ lụa mềm xếp lớp draped thủ công",
+    "fit": "Draped halter silhouette",
+    "silhouette": "a-line",
+    "lengthClass": "midi",
+    "neckline": "halter",
+    "sleeveLength": "sleeveless",
+    "colorTemperature": "warm"
+  }
 ];
 
 export const extendedProducts: Product[] = data.map(makeProduct);
