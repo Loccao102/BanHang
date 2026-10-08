@@ -14,7 +14,7 @@ import {
   type WardrobeGroup
 } from "@/lib/wardrobe";
 
-const groupOrder: WardrobeGroup[] = ["tops", "bottoms", "dresses", "outerwear"];
+const groupOrder: WardrobeGroup[] = ["tops", "pants", "skirts", "dresses", "outerwear", "sets"];
 
 export default function WishlistPage() {
   const { wishlist, catalog, user, accountLoading } = useStore();
@@ -80,7 +80,7 @@ export default function WishlistPage() {
         <div className="wardrobeSelectionSummary">
           <span>BỘ ĐỒ ĐANG CHỌN</span>
           <strong>{outfitLabel(selectedProducts)}</strong>
-          <small>{selectedProducts.length ? selectedProducts.map((product) => product.name).join(" · ") : "Chọn áo + quần/chân váy (+ áo khoác), hoặc chọn một váy/đầm riêng."}</small>
+          <small>{selectedProducts.length ? selectedProducts.map((product) => product.name).join(" · ") : "Chọn áo + quần hoặc áo + chân váy (+ áo khoác), hoặc chọn một đầm liền."}</small>
           <Link className={`btn ${selected.length ? "" : "disabled"}`} href={selected.length ? tryOnHref : "#"}>
             <Sparkles size={15} /> Thử bộ đồ này
           </Link>
