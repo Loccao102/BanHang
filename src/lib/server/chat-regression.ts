@@ -6,7 +6,7 @@ import { inferFallbackShoppingIntent, retrieveProductsFromIntent } from "./chat-
 import { applyShoppingState, buildShoppingState, type ShoppingState } from "./chat-state";
 import { evaluateRecommendation } from "./chat-evaluation";
 import { semanticTextScore } from "./product-semantic-profile";
-import { coordinateSmartOutfit } from "../stylist-outfit-engine";
+import { coordinateSmartOutfit, outfitSelectionKey } from "../stylist-outfit-engine";
 import { buildAgentPlan } from "./chat-agent";
 
 function product(overrides: Partial<Product> & Pick<Product, "id" | "category" | "type" | "colorFamily">): Product {
@@ -950,6 +950,98 @@ test("chat fallback distinguishes áo with quần from áo with chân váy", () 
   const skirtIntent = inferFallbackShoppingIntent({ message: "Phối áo đỏ với chân váy trắng", contextProducts: [] });
   const skirtConstraint = skirtIntent.items.find((item) => item.role === "bottom");
   assert.deepEqual(skirtConstraint?.types, ["skirt"]);
+});
+
+
+test("outfit studio explores many unique pants outfits before repeating a set", () => {
+  const tops = Array.from({ length: 9 }, (_, index) => product({
+    id: `rotation-top-${index}`,
+    category: "tops",
+    type: "shirt",
+    colorFamily: "white",
+    formality: 3
+  }));
+  const pants = Array.from({ length: 9 }, (_, index) => product({
+    id: `rotation-pants-${index}`,
+    category: "bottoms",
+    type: "trousers",
+    colorFamily: "black",
+    formality: 3
+  }));
+  const seen: string[] = [];
+  const selectedTops = new Set<string>();
+  const selectedPants = new Set<string>();
+
+  for (let index = 0; index < 30; index += 1) {
+    const outfit = coordinateSmartOutfit({
+      catalog: [...tops, ...pants],
+      setType: "top_pants",
+      variantSalt: index * 7 + 11,
+      excludeOutfitKeys: seen
+    });
+    const key = outfitSelectionKey(outfit.items);
+    assert.ok(key && !seen.includes(key), `Set repeated at click ${index + 1}: ${key}`);
+    seen.push(key);
+    selectedTops.add(outfit.items.find((item) => item.role === "top")!.product.id);
+    selectedPants.add(outfit.items.find((item) => item.role === "bottom")!.product.id);
+    assert.equal(outfit.setTypeName, "Áo + Quần");
+  }
+
+  assert.equal(seen.length, 30);
+  assert.ok(selectedTops.size >= 6);
+  assert.ok(selectedPants.size >= 6);
+});
+
+test("outfit studio rotates unique dresses and co-ord sets", () => {
+  for (const [category, type, setType] of [
+    ["dress", "midi-dress", "dress_layer"],
+    ["set", "set", "coord_set"]
+  ] as const) {
+    const choices = Array.from({ length: 6 }, (_, index) => product({
+      id: `rotation-${category}-${index}`,
+      category,
+      type,
+      colorFamily: "black"
+    }));
+    const seen: string[] = [];
+
+    for (let index = 0; index < choices.length; index += 1) {
+      const outfit = coordinateSmartOutfit({
+        catalog: choices,
+        setType,
+        variantSalt: index * 3,
+        excludeOutfitKeys: seen
+      });
+      const key = outfitSelectionKey(outfit.items);
+      assert.ok(key && !seen.includes(key));
+      seen.push(key);
+    }
+
+    assert.equal(new Set(seen).size, choices.length);
+    const reset = coordinateSmartOutfit({
+      catalog: choices,
+      setType,
+      excludeOutfitKeys: seen
+    });
+    assert.ok(outfitSelectionKey(reset.items));
+  }
+});
+
+test("outfit selection preserves hard constraints and gracefully repeats if there is only one set", () => {
+  const catalog = [redCorset, whiteTrousers];
+  const first = coordinateSmartOutfit({ catalog, setType: "top_pants" });
+  const onlyKey = outfitSelectionKey(first.items);
+  const repeat = coordinateSmartOutfit({
+    catalog,
+    setType: "top_pants",
+    excludeOutfitKeys: [onlyKey],
+    variantSalt: 47
+  });
+  assert.equal(outfitSelectionKey(repeat.items), onlyKey);
+  assert.equal(outfitSelectionKey([
+    ...first.items,
+    { product: blackCorset, role: "outerwear" }
+  ]), onlyKey);
 });
 
 let passed = 0;
