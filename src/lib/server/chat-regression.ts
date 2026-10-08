@@ -994,7 +994,7 @@ test("outfit studio explores many unique pants outfits before repeating a set", 
 
 test("outfit studio rotates unique dresses and co-ord sets", () => {
   for (const [category, type, setType] of [
-    ["dress", "dress", "dress_layer"],
+    ["dress", "midi-dress", "dress_layer"],
     ["set", "set", "coord_set"]
   ] as const) {
     const choices = Array.from({ length: 6 }, (_, index) => product({
