@@ -281,7 +281,7 @@ export function TryOnClient() {
 
   async function runTryOn() {
     if (!personImage || !outfitReady) {
-      setMessage("Hãy phối đủ áo + quần/chân váy (áo khoác tùy chọn), hoặc chọn một váy/đầm hoàn chỉnh trước khi thử.");
+      setMessage("Hãy chọn áo + quần hoặc áo + chân váy (áo khoác tùy chọn), hoặc chọn một đầm liền trước khi thử.");
       return;
     }
     setLoading(true);
@@ -507,7 +507,7 @@ export function TryOnClient() {
                   </Link>
                 </div>
               ) : null}
-              {(["tops", "bottoms", "dresses", "outerwear"] as WardrobeGroup[]).map((group) => {
+              {(["tops", "pants", "skirts", "dresses", "outerwear", "sets"] as WardrobeGroup[]).map((group) => {
                 const grouped = wishlistProducts.filter((product) => wardrobeGroup(product) === group);
                 if (!grouped.length) return null;
                 return <div className="fittingWardrobeGroup" key={group}>
