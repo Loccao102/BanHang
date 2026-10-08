@@ -391,6 +391,46 @@ function generateStylistReview(
   };
 }
 
+
+/** Reevaluate visible styling copy and score after a manual color-variant change. */
+export function reviewSelectedOutfit(
+  base: CoordinatedOutfit,
+  selectedProducts: Product[],
+  occasion = "all",
+  style = "all"
+): Pick<CoordinatedOutfit, "title" | "reason" | "stylingTip" | "score" | "matchBadge" | "setTypeName"> {
+  const products = base.items.map((item, index) => selectedProducts[index] ?? item.product);
+  const review = products.length
+    ? generateStylistReview(base.setType, products, occasion, style)
+    : { title: base.title, reason: base.reason, stylingTip: base.stylingTip };
+  const top = products.find((p) => p.category === "tops");
+  const bottom = products.find((p) => p.category === "bottoms");
+  let score = base.score;
+
+  if (top && bottom) {
+    const rank = evaluateColorScore(top, bottom) + evaluateSilhouette(top, bottom) +
+      evaluateFormality(top, bottom) + evaluateSharedTags(top, bottom) +
+      evaluateOccasionPreference(top, occasion) + evaluateOccasionPreference(bottom, occasion) +
+      evaluateStylePreference(top, style) + evaluateStylePreference(bottom, style);
+    score = Math.min(99, Math.max(70, 72 + Math.round(rank / 5)));
+    if (products.some((p) => p.category === "outerwear")) score = Math.min(99, score + 2);
+  }
+
+  const matchBadge = score >= 96 ? "Tuyệt đối hợp gu"
+    : score >= 92 ? "Phối màu đỉnh cao"
+    : score >= 88 ? "Thời thượng & Thanh lịch"
+    : "Tôn dáng xuất sắc";
+
+  return {
+    ...review,
+    score,
+    matchBadge,
+    setTypeName: bottom
+      ? storefrontCategory(bottom) === "skirts" ? "Áo + Chân váy" : "Áo + Quần"
+      : base.setTypeName
+  };
+}
+
 export type GenerateOutfitOptions = {
   catalog?: Product[];
   setType?: OutfitSetType;
