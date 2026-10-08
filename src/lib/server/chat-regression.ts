@@ -8,7 +8,7 @@ import { evaluateRecommendation } from "./chat-evaluation";
 import { semanticTextScore } from "./product-semantic-profile";
 import { coordinateSmartOutfit, outfitSelectionKey } from "../stylist-outfit-engine";
 import { buildAgentPlan } from "./chat-agent";
-import { canReadPaymentStatus, canSimulatePayment } from "./payment-access";
+import { canReadPaymentStatus, canSimulatePayment, canRecordCodCollection } from "./payment-access";
 import { getSearchPreviewProducts } from "../product-search";
 import { fastCatalogLookupReply } from "./chat-fast-reply";
 
@@ -1155,6 +1155,17 @@ test("plain product lookup replies without LLM but outfit conversations do not",
   const outfit = inferFallbackShoppingIntent({ message: "Phối áo đỏ với chân váy trắng", contextProducts: [] });
   assert.equal(fastCatalogLookupReply("Phối áo đỏ với chân váy trắng", outfit, [redCorset]), null);
 });
+
+test("admin COD collection is only valid for completed, unpaid deliveries", () => {
+  const order = { payment: "cod", paymentStatus: "cod_pending", status: "processing" };
+  assert.equal(canRecordCodCollection(order), false);
+  assert.equal(canRecordCodCollection(order, "completed"), true);
+  assert.equal(canRecordCodCollection({ ...order, status: "completed" }), true);
+  assert.equal(canRecordCodCollection({ ...order, payment: "qr" }, "completed"), false);
+  assert.equal(canRecordCodCollection({ ...order, status: "cancelled" }, "completed"), false);
+  assert.equal(canRecordCodCollection({ ...order, paymentStatus: "paid" }, "completed"), false);
+});
+
 let passed = 0;
 for (const item of tests) {
   try {
