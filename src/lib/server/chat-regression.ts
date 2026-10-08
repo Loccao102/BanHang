@@ -1044,6 +1044,68 @@ test("outfit selection preserves hard constraints and gracefully repeats if ther
   ]), onlyKey);
 });
 
+test("stylist explanations reflect garment types, not repeated body-shape sales copy", () => {
+  const shirt = product({
+    id: "review-shirt",
+    category: "tops",
+    type: "shirt",
+    colorFamily: "white",
+    volume: "voluminous"
+  });
+  const jeans = product({
+    id: "review-jeans",
+    category: "bottoms",
+    type: "jeans",
+    colorFamily: "blue",
+    volume: "fitted"
+  });
+  const skirt = product({
+    id: "review-skirt",
+    category: "bottoms",
+    type: "skirt",
+    colorFamily: "black",
+    lengthClass: "midi"
+  });
+  const pantsReview = coordinateSmartOutfit({ catalog: [shirt, jeans], setType: "top_pants" });
+  const skirtReview = coordinateSmartOutfit({ catalog: [shirt, skirt], setType: "top_skirt" });
+  assert.match(pantsReview.reason, /sơ mi dáng rộng/);
+  assert.match(pantsReview.reason, /quần jeans/);
+  assert.match(skirtReview.reason, /chân váy midi/);
+  assert.notEqual(pantsReview.reason, skirtReview.reason);
+  for (const review of [pantsReview, skirtReview]) {
+    assert.doesNotMatch(review.reason, /ôm trọn vòng eo|quyến rũ|đường cong của người phụ nữ|cắt xẻ sắc sảo/i);
+  }
+});
+
+test("dress and coordinated-set reviews do not invent body-hugging or cut-out details", () => {
+  const casualDress = product({
+    id: "review-casual-dress",
+    category: "dress",
+    type: "midi-dress",
+    colorFamily: "beige"
+  });
+  const coordSet = product({
+    id: "review-coord-set",
+    category: "set",
+    type: "set",
+    colorFamily: "black"
+  });
+  const dressReview = coordinateSmartOutfit({ catalog: [casualDress], setType: "dress_layer" });
+  const setReview = coordinateSmartOutfit({ catalog: [coordSet], setType: "coord_set" });
+  assert.match(dressReview.reason, /đầm dáng midi/);
+  assert.match(setReview.reason, /set đồng bộ/);
+  assert.doesNotMatch(dressReview.reason, /cắt xẻ|đường cong|quyến rũ/i);
+  assert.doesNotMatch(setReview.reason, /tôn dáng|cắt may/i);
+});
+
+test("stylist accessory tips follow occasion without changing products", () => {
+  const day = coordinateSmartOutfit({ catalog: [redCorset, whiteTrousers], setType: "top_pants", occasion: "casual" });
+  const office = coordinateSmartOutfit({ catalog: [redCorset, whiteTrousers], setType: "top_pants", occasion: "work" });
+  assert.match(day.stylingTip, /sneaker/);
+  assert.match(office.stylingTip, /loafer/);
+  assert.notEqual(day.stylingTip, office.stylingTip);
+});
+
 let passed = 0;
 for (const item of tests) {
   try {
