@@ -421,7 +421,7 @@ export async function POST(request: Request) {
     : withBundle;
 
   // Khi khách chuyển sang tìm kiếm mới độc lập hoặc reset, giải phóng outfit state cũ để tránh dính context
-  const stateContext = (intent?.inheritPrevious || intent?.intent === "modify_outfit" || intent?.intent === "size_advice" || intent?.intent === "add_outfit_to_cart")
+  const stateContext = (isSmallTalk || intent?.inheritPrevious || intent?.intent === "modify_outfit" || intent?.intent === "size_advice" || intent?.intent === "add_outfit_to_cart")
     ? shoppingState
     : null;
   const nextShoppingState = buildShoppingState(intent, responseProducts, stateContext);
