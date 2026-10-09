@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import type { Product } from "../products";
 import { loadGarmentReferenceImage } from "./gemini-tryon";
 import { validateStockAdjustment } from "./inventory-operations";
+import { analyticsDay, isRecognizedPaidOrder, parseAnalyticsDays } from "../admin-analytics";
 import { coordinateSmartOutfit, reviewSelectedOutfit } from "../stylist-outfit-engine";
 
 function garment(id: string, category: Product["category"], type: Product["type"], colorFamily: Product["colorFamily"], color: string): Product {
@@ -14,6 +15,16 @@ function garment(id: string, category: Product["category"], type: Product["type"
 }
 
 async function run() {
+  assert.equal(parseAnalyticsDays("7"), 7);
+  assert.equal(parseAnalyticsDays("30"), 30);
+  assert.equal(parseAnalyticsDays("90"), 90);
+  assert.equal(parseAnalyticsDays("10000"), 30);
+  assert.equal(isRecognizedPaidOrder({ status: "confirmed", paymentStatus: "paid" }), true);
+  assert.equal(isRecognizedPaidOrder({ status: "completed", paymentStatus: "cod_pending" }), false);
+  assert.equal(isRecognizedPaidOrder({ status: "cancelled", paymentStatus: "paid" }), false);
+  assert.equal(analyticsDay(new Date("2026-10-09T23:59:59.000Z")), "2026-10-09");
+  console.log("✓ Admin analytics periods and realized revenue constraints");
+
   assert.deepEqual(validateStockAdjustment(" m ", 2), { size: "M", delta: 2 });
   assert.deepEqual(validateStockAdjustment("XL", -1), { size: "XL", delta: -1 });
   for (const invalid of [0, -1001, 2.5, NaN, "3"]) assert.equal(validateStockAdjustment("S", invalid), null);
