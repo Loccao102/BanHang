@@ -11,6 +11,8 @@ import { buildAgentPlan } from "./chat-agent";
 import { canReadPaymentStatus, canSimulatePayment, canRecordCodCollection } from "./payment-access";
 import { getSearchPreviewProducts } from "../product-search";
 import { fastCatalogLookupReply } from "./chat-fast-reply";
+import { socialChatReply } from "./chat-social";
+import { retrieveProducts } from "./chat-assistant";
 
 function product(overrides: Partial<Product> & Pick<Product, "id" | "category" | "type" | "colorFamily">): Product {
   const colorLabels: Record<Product["colorFamily"], string> = {
@@ -1164,6 +1166,46 @@ test("admin COD collection is only valid for completed, unpaid deliveries", () =
   assert.equal(canRecordCodCollection({ ...order, payment: "qr" }, "completed"), false);
   assert.equal(canRecordCodCollection({ ...order, status: "cancelled" }, "completed"), false);
   assert.equal(canRecordCodCollection({ ...order, paymentStatus: "paid" }, "completed"), false);
+});
+
+
+test("greetings and social turns never trigger product recommendations", () => {
+  for (const message of [
+    "chào người anh em", "Chào shop ơi!", "xin chào", "hello", "hi shop!",
+    "ê shop ơi", "chào buổi sáng", "cảm ơn shop nhé", "bye"
+  ]) {
+    const response = socialChatReply(message);
+    assert.ok(response, `Missing social response: ${message}`);
+    assert.doesNotMatch(response!, /\b(?:corset|giá|mua hàng|đơn hàng|chân váy|quần|sản phẩm)\b/i);
+    assert.equal(retrieveProductsFromIntent(
+      inferFallbackShoppingIntent({ message, contextProducts: [] }),
+      productionCatalog
+    ).length, 0, `Should not retrieve products for: ${message}`);
+  }
+  assert.match(socialChatReply("chào người anh em")!, /người anh em/i);
+  assert.equal(socialChatReply("hello", true), null);
+});
+
+test("greeting plus purchase intent still follows normal shopping recommendations", () => {
+  for (const message of [
+    "Chào shop, mình muốn tìm áo đỏ",
+    "hi, cho mình xem chân váy trắng",
+    "hello shop có áo corset không?",
+    "ê shop ơi có váy không"
+  ]) {
+    assert.equal(socialChatReply(message), null, message);
+  }
+  assert.equal(socialChatReply("chào người anh em", true), null);
+});
+
+test("general intent and legacy greeting lookup cannot inject featured items", () => {
+  const general = inferFallbackShoppingIntent({ message: "chào người anh em", contextProducts: [] });
+  assert.equal(general.intent, "general");
+  assert.equal(retrieveProductsFromIntent(general, productionCatalog).length, 0);
+  assert.equal(retrieveProducts("chào người anh em", productionCatalog).length, 0);
+  assert.equal(retrieveProducts("hello", productionCatalog).length, 0);
+  const purchase = inferFallbackShoppingIntent({ message: "tìm áo corset đỏ", contextProducts: [] });
+  assert.ok(retrieveProductsFromIntent(purchase, productionCatalog).length > 0);
 });
 
 let passed = 0;
