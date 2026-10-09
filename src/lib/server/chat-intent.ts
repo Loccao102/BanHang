@@ -848,6 +848,11 @@ export function retrieveProductsFromIntent(
   contextProducts: Product[] = [],
   affinityScores: Map<string, number> = new Map()
 ) {
+  // General conversation without product constraints must never auto-select
+  // featured/new items. A follow-up that *does* include constraints still runs.
+  if (intent.intent === "general" && !intent.items.length && !intent.budgetMax &&
+      !intent.occasion && !intent.style) return [];
+
   const operationalIntent = ["size_advice", "coupon", "order", "checkout", "policy"].includes(intent.intent);
   if (operationalIntent && intent.items.length === 0) {
     return contextProducts.slice(0, limit);
