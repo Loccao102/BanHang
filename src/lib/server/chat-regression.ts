@@ -11,6 +11,7 @@ import { buildAgentPlan } from "./chat-agent";
 import { canReadPaymentStatus, canSimulatePayment, canRecordCodCollection } from "./payment-access";
 import { getSearchPreviewProducts } from "../product-search";
 import { fastCatalogLookupReply } from "./chat-fast-reply";
+import { allowedOrderStatuses, canTransitionOrderStatus, isOrderStatus } from "../order-workflow";
 import { socialChatReply } from "./chat-social";
 import { retrieveProducts } from "./chat-assistant";
 
@@ -1206,6 +1207,20 @@ test("general intent and legacy greeting lookup cannot inject featured items", (
   assert.equal(retrieveProducts("hello", productionCatalog).length, 0);
   const purchase = inferFallbackShoppingIntent({ message: "tìm áo corset đỏ", contextProducts: [] });
   assert.ok(retrieveProductsFromIntent(purchase, productionCatalog).length > 0);
+});
+
+test("admin fulfillment enforces forward-only order transitions", () => {
+  assert.deepEqual(allowedOrderStatuses("processing"), ["processing", "confirmed", "cancelled"]);
+  assert.deepEqual(allowedOrderStatuses("confirmed"), ["confirmed", "shipping", "cancelled"]);
+  assert.deepEqual(allowedOrderStatuses("shipping"), ["shipping", "completed", "cancelled"]);
+  assert.deepEqual(allowedOrderStatuses("completed"), ["completed"]);
+  assert.deepEqual(allowedOrderStatuses("cancelled"), ["cancelled"]);
+  assert.equal(canTransitionOrderStatus("processing", "completed"), false);
+  assert.equal(canTransitionOrderStatus("shipping", "processing"), false);
+  assert.equal(canTransitionOrderStatus("completed", "cancelled"), false);
+  assert.equal(canTransitionOrderStatus("confirmed", "shipping"), true);
+  assert.equal(isOrderStatus("unknown"), false);
+  assert.equal(isOrderStatus("paid"), false);
 });
 
 let passed = 0;
