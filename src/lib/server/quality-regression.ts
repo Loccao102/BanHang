@@ -3,6 +3,7 @@ import type { Product } from "../products";
 import { loadGarmentReferenceImage } from "./gemini-tryon";
 import { validateStockAdjustment } from "./inventory-operations";
 import { analyticsDay, isRecognizedPaidOrder, parseAnalyticsDays } from "../admin-analytics";
+import { couponDateOrNull, validateCouponRules } from "./coupon-admin-rules";
 import { coordinateSmartOutfit, reviewSelectedOutfit } from "../stylist-outfit-engine";
 
 function garment(id: string, category: Product["category"], type: Product["type"], colorFamily: Product["colorFamily"], color: string): Product {
@@ -15,6 +16,19 @@ function garment(id: string, category: Product["category"], type: Product["type"
 }
 
 async function run() {
+  const coupon = {
+    type: "percentage" as const, value: 20, minOrder: 100_000,
+    maxDiscount: 50_000, usageLimit: 100, usedCount: 10,
+    startsAt: new Date("2026-10-01T00:00:00Z"), endsAt: new Date("2026-12-01T00:00:00Z")
+  };
+  assert.equal(validateCouponRules(coupon), null);
+  assert.match(validateCouponRules({ ...coupon, value: 150 })!, /100%/);
+  assert.match(validateCouponRules({ ...coupon, endsAt: new Date("2026-09-01T00:00:00Z") })!, /sau ngày bắt đầu/);
+  assert.match(validateCouponRules({ ...coupon, usageLimit: 5 })!, /đã sử dụng/);
+  assert.match(validateCouponRules({ ...coupon, minOrder: NaN })!, /số nguyên/);
+  assert.match(validateCouponRules({ ...coupon, startsAt: couponDateOrNull("invalid") })!, /không hợp lệ/);
+  console.log("✓ Coupon controls reject invalid discounts, dates and usage limits");
+
   assert.equal(parseAnalyticsDays("7"), 7);
   assert.equal(parseAnalyticsDays("30"), 30);
   assert.equal(parseAnalyticsDays("90"), 90);
