@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import type { Product } from "../products";
 import { loadGarmentReferenceImage } from "./gemini-tryon";
+import { validateStockAdjustment } from "./inventory-operations";
 import { coordinateSmartOutfit, reviewSelectedOutfit } from "../stylist-outfit-engine";
 
 function garment(id: string, category: Product["category"], type: Product["type"], colorFamily: Product["colorFamily"], color: string): Product {
@@ -13,6 +14,12 @@ function garment(id: string, category: Product["category"], type: Product["type"
 }
 
 async function run() {
+  assert.deepEqual(validateStockAdjustment(" m ", 2), { size: "M", delta: 2 });
+  assert.deepEqual(validateStockAdjustment("XL", -1), { size: "XL", delta: -1 });
+  for (const invalid of [0, -1001, 2.5, NaN, "3"]) assert.equal(validateStockAdjustment("S", invalid), null);
+  assert.equal(validateStockAdjustment("", 1), null);
+  console.log("✓ Admin inventory adjustments validate size and safe integers");
+
   let fetchCount = 0;
   const mockFetch: typeof fetch = async () => {
     fetchCount += 1;
