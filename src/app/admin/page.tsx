@@ -33,6 +33,7 @@ import {
 } from "@ant-design/icons";
 import { useStore } from "@/components/store-provider";
 import type { OrderStatus } from "@/lib/cart";
+import { allowedOrderStatuses } from "@/lib/order-workflow";
 import {
   formatPrice,
   storefrontCategory,
@@ -142,6 +143,8 @@ function AdminContent() {
   const [promo, setPromo] = useState(settings.promoText);
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [orderQuery, setOrderQuery] = useState("");
+  const [orderStatusFilter, setOrderStatusFilter] = useState<OrderStatus | "all">("all");
   const [stockFilter, setStockFilter] = useState<"all" | "low" | "out">("all");
   const [sizeSelection, setSizeSelection] = useState<Record<string, string>>({});
   const [stockBusy, setStockBusy] = useState<string | null>(null);
@@ -170,6 +173,14 @@ function AdminContent() {
       return matchQuery && matchCat && matchStock;
     });
   }, [catalog, query, categoryFilter, stockFilter]);
+
+  const visibleOrders = useMemo(() => {
+    const q = orderQuery.toLowerCase().trim();
+    return orders.filter((order) =>
+      (orderStatusFilter === "all" || order.status === orderStatusFilter) &&
+      (!q || `${order.id} ${order.customer.name} ${order.customer.phone} ${order.customer.city}`.toLowerCase().includes(q))
+    );
+  }, [orders, orderQuery, orderStatusFilter]);
 
   const stock = catalog.reduce((sum, item) => sum + item.stock, 0);
   const inventoryValue = catalog.reduce((sum, item) => sum + item.price * item.stock, 0);
@@ -815,16 +826,26 @@ function AdminContent() {
               <div className="antCardEyebrow">QUẢN LÝ ĐƠN HÀNG</div>
               <h2 className="antCardTitle">
                 Danh sách đơn hàng{" "}
-                <span className="antCountTag">{orders.length}</span>
+                <span className="antCountTag">{visibleOrders.length}/{orders.length}</span>
               </h2>
             </div>
-            <span className="antCardSubtitle">
-              Đơn hàng khách đặt qua website sẽ được đồng bộ và cập nhật trạng thái tức thời.
-            </span>
+            <div className="antToolbarRight">
+              <input className="antInput" value={orderQuery}
+                aria-label="Tìm mã đơn hoặc khách hàng" placeholder="Mã đơn, khách hàng, SĐT..."
+                onChange={(event) => setOrderQuery(event.target.value)} />
+              <select className="antSelect" aria-label="Lọc trạng thái đơn"
+                value={orderStatusFilter}
+                onChange={(event) => setOrderStatusFilter(event.target.value as typeof orderStatusFilter)}>
+                <option value="all">Tất cả trạng thái</option>
+                {Object.entries(statusLabel).map(([status, label]) => (
+                  <option key={status} value={status}>{label}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="antCardBody">
-            {orders.length ? (
+            {visibleOrders.length ? (
               <div className="antOrdersTableContainer">
                 <table className="antTable">
                   <thead>
@@ -839,7 +860,7 @@ function AdminContent() {
                     </tr>
                   </thead>
                   <tbody>
-                    {orders.map((order) => (
+                    {visibleOrders.map((order) => (
                       <tr key={order.id}>
                         <td>
                           <Link
@@ -893,7 +914,7 @@ function AdminContent() {
                                 )
                               }
                             >
-                              {Object.entries(statusLabel).map(([val, label]) => (
+                              {Object.entries(statusLabel).filter(([val]) => allowedOrderStatuses(order.status).includes(val as OrderStatus)).map(([val, label]) => (
                                 <option key={val} value={val}>
                                   {label}
                                 </option>
@@ -917,10 +938,8 @@ function AdminContent() {
             ) : (
               <div className="antEmptyState large">
                 <ShoppingOutlined style={{ fontSize: 44, color: "#8c8c8c" }} />
-                <h3>Chưa có đơn hàng nào</h3>
-                <p>
-                  Khi khách hàng hoàn tất giỏ hàng và thanh toán trên website, đơn hàng sẽ ngay lập tức hiển thị tại đây.
-                </p>
+                <h3>{orders.length ? "Không tìm thấy đơn phù hợp" : "Chưa có đơn hàng nào"}</h3>
+                <p>{orders.length ? "Thử đổi từ khóa hoặc bộ lọc trạng thái." : "Đơn mới sẽ xuất hiện tại đây khi khách thanh toán."}</p>
               </div>
             )}
           </div>
