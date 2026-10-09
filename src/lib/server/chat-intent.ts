@@ -7,6 +7,7 @@ import type {
 } from "@/lib/products";
 import type { ShoppingState } from "@/lib/server/chat-state";
 import { semanticTextScore } from "@/lib/server/product-semantic-profile";
+import { socialChatReply } from "@/lib/server/chat-social";
 
 export type ShoppingIntentName =
   | "search_products"
@@ -532,6 +533,18 @@ export function inferFallbackShoppingIntent(args: {
   contextProducts?: Product[];
   shoppingState?: ShoppingState | null;
 }): ShoppingIntent {
+  // Treat standalone greetings/pleasantries as social even when words such as
+  // "sáng" might otherwise be misread as a style or product attribute.
+  if (socialChatReply(args.message)) {
+    return {
+      intent: "general",
+      confidence: 1,
+      inheritPrevious: false,
+      targetScope: "single",
+      includeOuterwear: false,
+      items: []
+    };
+  }
   const text = normalized(args.message);
   const hasOutfitState = Boolean(args.shoppingState?.outfit);
   const items = fallbackItemConstraints(text);
@@ -627,6 +640,7 @@ export async function analyzeShoppingIntent(args: {
   shoppingState?: ShoppingState | null;
 }): Promise<ShoppingIntent | null> {
   const fallbackIntent = inferFallbackShoppingIntent(args);
+  if (socialChatReply(args.message)) return fallbackIntent;
   const rawKey = process.env.GEMINI_API_KEY ?? "";
   const key = rawKey.replace(/^["']|["']$/g, "").trim();
   if (!key) return fallbackIntent;
@@ -848,6 +862,11 @@ export function retrieveProductsFromIntent(
   contextProducts: Product[] = [],
   affinityScores: Map<string, number> = new Map()
 ) {
+  // General conversation without product constraints must never auto-select
+  // featured/new items. A follow-up that *does* include constraints still runs.
+  if (intent.intent === "general" && !intent.items.length && !intent.budgetMax &&
+      !intent.occasion && !intent.style) return [];
+
   const operationalIntent = ["size_advice", "coupon", "order", "checkout", "policy"].includes(intent.intent);
   if (operationalIntent && intent.items.length === 0) {
     return contextProducts.slice(0, limit);
