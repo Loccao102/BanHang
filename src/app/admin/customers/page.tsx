@@ -25,6 +25,7 @@ type CustomerRow = {
   phone?: string | null;
   createdAt: string;
   orderCount: number;
+  paidOrderCount: number;
   wishlistCount: number;
   addressCount: number;
   lifetimeValue: number;
@@ -36,29 +37,45 @@ export default function AdminCustomersPage() {
   const [customers, setCustomers] = useState<CustomerRow[]>([]);
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [segment, setSegment] = useState<"all" | "purchased" | "no-orders" | "no-payment">("all");
+  const [sort, setSort] = useState<"recent" | "ltv" | "orders">("recent");
 
-  useEffect(() => {
+  async function loadCustomers() {
     if (user?.role !== "admin") return;
     setLoading(true);
-    void fetch("/api/admin/customers", { cache: "no-store" })
-      .then((response) => (response.ok ? response.json() : { customers: [] }))
-      .then((data: { customers: CustomerRow[] }) => {
-        setCustomers(data.customers);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, [user]);
+    setError("");
+    try {
+      const response = await fetch("/api/admin/customers", { cache: "no-store" });
+      if (!response.ok) throw new Error("Không thể tải danh sách khách hàng.");
+      const data = await response.json() as { customers: CustomerRow[] };
+      setCustomers(data.customers);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Lỗi kết nối CRM.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (user?.role === "admin") void loadCustomers();
+  }, [user?.role]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return customers.filter(
-      (customer) =>
-        !q ||
-        `${customer.name} ${customer.email} ${customer.phone ?? ""}`
-          .toLowerCase()
-          .includes(q)
-    );
-  }, [customers, query]);
+    const matches = customers.filter((customer) => {
+      const matchesQuery = !q || `${customer.name} ${customer.email} ${customer.phone ?? ""}`.toLowerCase().includes(q);
+      const matchesSegment = segment === "all" ||
+        (segment === "purchased" && customer.paidOrderCount > 0) ||
+        (segment === "no-orders" && customer.orderCount === 0) ||
+        (segment === "no-payment" && customer.orderCount > 0 && customer.paidOrderCount === 0);
+      return matchesQuery && matchesSegment;
+    });
+    return matches.sort((a, b) => sort === "ltv"
+      ? b.lifetimeValue - a.lifetimeValue
+      : sort === "orders" ? b.orderCount - a.orderCount
+      : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [customers, query, segment, sort]);
 
   if (accountLoading) {
     return (
@@ -127,7 +144,7 @@ export default function AdminCustomersPage() {
           <div className="antStatValue">{customers.length}</div>
           <div className="antStatFooter">
             <span className="antTag antTagSuccess">
-              <CheckCircleOutlined /> Đã kích hoạt tài khoản
+              <CheckCircleOutlined /> Tài khoản đã đăng ký
             </span>
           </div>
         </div>
@@ -172,6 +189,8 @@ export default function AdminCustomersPage() {
         </div>
       </div>
 
+      {error && <p role="alert" style={{ color: "#cf1322", margin: "0 0 16px" }}>{error}</p>}
+
       {/* Main Customers Table Card */}
       <div className="antCard">
         <div className="antCardHead antToolbar">
@@ -184,12 +203,26 @@ export default function AdminCustomersPage() {
           <div className="antToolbarRight">
             <div className="antSearchInput">
               <SearchOutlined className="antSearchIcon" />
-              <input
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Tìm tên, email, số điện thoại..."
-              />
+              <input value={query} onChange={(event) => setQuery(event.target.value)}
+                placeholder="Tìm tên, email, số điện thoại..." />
             </div>
+            <select className="antSelect" value={segment} aria-label="Lọc nhóm khách"
+              onChange={(event) => setSegment(event.target.value as typeof segment)}>
+              <option value="all">Tất cả khách</option>
+              <option value="purchased">Đã thanh toán</option>
+              <option value="no-payment">Có đơn, chưa thanh toán</option>
+              <option value="no-orders">Chưa đặt đơn</option>
+            </select>
+            <select className="antSelect" value={sort} aria-label="Sắp xếp khách"
+              onChange={(event) => setSort(event.target.value as typeof sort)}>
+              <option value="recent">Mới đăng ký</option>
+              <option value="ltv">Chi tiêu cao nhất</option>
+              <option value="orders">Nhiều đơn nhất</option>
+            </select>
+            <button type="button" className="antBtn antBtnDefault" disabled={loading}
+              onClick={() => void loadCustomers()}>
+              {loading ? "Đang tải..." : "Làm mới"}
+            </button>
           </div>
         </div>
 
@@ -202,11 +235,16 @@ export default function AdminCustomersPage() {
                 <th>Số đơn đặt</th>
                 <th>Mục yêu thích</th>
                 <th>Tổng chi tiêu (LTV)</th>
-                <th>Đơn gần nhất</th>
+                <th>Lần thanh toán gần nhất</th>
                 <th style={{ textAlign: "right" }}>Thao tác</th>
               </tr>
             </thead>
             <tbody>
+              {filtered.length === 0 && (
+                <tr><td colSpan={7} style={{ textAlign: "center", padding: 24 }}>
+                  Không có khách hàng phù hợp với bộ lọc.
+                </td></tr>
+              )}
               {filtered.map((customer) => (
                 <tr key={customer.id}>
                   <td>

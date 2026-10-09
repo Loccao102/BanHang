@@ -54,6 +54,8 @@ export default function AdminMarketingPage() {
   const [posts, setPosts] = useState<SocialRow[]>([]);
   const [editing, setEditing] = useState<CouponRow | null>(null);
   const [message, setMessage] = useState("");
+  const [messageError, setMessageError] = useState(false);
+  const [actionBusy, setActionBusy] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function load() {
@@ -73,11 +75,11 @@ export default function AdminMarketingPage() {
 
   async function saveCoupon(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (actionBusy) return;
     const form = event.currentTarget;
     const data = new FormData(form);
-    const code = String(data.get("code") ?? "").toUpperCase();
     const payload = {
-      code,
+      code: String(data.get("code") ?? "").toUpperCase(),
       type: data.get("type"),
       value: Number(data.get("value")),
       minOrder: Number(data.get("minOrder")),
@@ -85,49 +87,63 @@ export default function AdminMarketingPage() {
       usageLimit: Number(data.get("usageLimit")) || null,
       startsAt: data.get("startsAt") || null,
       endsAt: data.get("endsAt") || null,
-      active: true
+      active: editing?.active ?? true
     };
-    const response = await fetch(
-      editing ? `/api/admin/coupons/${editing.code}` : "/api/admin/coupons",
-      {
+    setActionBusy(true);
+    setMessage("");
+    try {
+      const response = await fetch(editing ? `/api/admin/coupons/${encodeURIComponent(editing.code)}` : "/api/admin/coupons", {
         method: editing ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
-      }
-    );
-    const result = await response.json();
-    setMessage(
-      response.ok ? "Coupon đã được lưu thành công." : result.error ?? "Không thể lưu coupon."
-    );
-    if (response.ok) {
+      });
+      const result = await response.json().catch(() => ({})) as { error?: string };
+      if (!response.ok) throw new Error(result.error ?? "Không thể lưu coupon.");
+      setMessageError(false);
+      setMessage("Đã lưu mã giảm giá thành công.");
       setEditing(null);
       form.reset();
       await load();
+    } catch (error) {
+      setMessageError(true);
+      setMessage(error instanceof Error ? error.message : "Mất kết nối tới máy chủ.");
+    } finally {
+      setActionBusy(false);
+    }
+  }
+
+  async function performCouponAction(url: string, method: "PATCH" | "DELETE", body?: object) {
+    if (actionBusy) return;
+    setActionBusy(true);
+    try {
+      const response = await fetch(url, {
+        method,
+        ...(body ? { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) } : {})
+      });
+      const result = await response.json().catch(() => ({})) as { error?: string };
+      if (!response.ok) throw new Error(result.error ?? "Không thể thực hiện thao tác.");
+      setMessageError(false);
+      setMessage("Thao tác đã được ghi nhận.");
+      await load();
+    } catch (error) {
+      setMessageError(true);
+      setMessage(error instanceof Error ? error.message : "Mất kết nối máy chủ.");
+    } finally {
+      setActionBusy(false);
     }
   }
 
   async function toggleCoupon(coupon: CouponRow) {
-    await fetch(`/api/admin/coupons/${coupon.code}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ active: !coupon.active })
-    });
-    await load();
+    await performCouponAction(`/api/admin/coupons/${encodeURIComponent(coupon.code)}`, "PATCH", { active: !coupon.active });
   }
 
   async function removeCoupon(coupon: CouponRow) {
-    if (!window.confirm(`Xác nhận xóa vĩnh viễn mã ${coupon.code}?`)) return;
-    await fetch(`/api/admin/coupons/${coupon.code}`, { method: "DELETE" });
-    await load();
+    if (!window.confirm(`Xác nhận xóa hoặc vô hiệu hóa mã ${coupon.code}?`)) return;
+    await performCouponAction(`/api/admin/coupons/${encodeURIComponent(coupon.code)}`, "DELETE");
   }
 
   async function moderate(id: string, status: "approved" | "rejected") {
-    await fetch(`/api/admin/social/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status })
-    });
-    await load();
+    await performCouponAction(`/api/admin/social/${encodeURIComponent(id)}`, "PATCH", { status });
   }
 
   if (accountLoading) {
@@ -187,8 +203,8 @@ export default function AdminMarketingPage() {
       </div>
 
       {message && (
-        <div className="antAlertInfo" style={{ marginBottom: 20 }}>
-          <CheckCircleOutlined style={{ color: "#1677ff", marginRight: 8 }} />
+        <div className="antAlertInfo" role="status" style={{ marginBottom: 20, color: messageError ? "#cf1322" : undefined }}>
+          <CheckCircleOutlined style={{ color: messageError ? "#cf1322" : "#1677ff", marginRight: 8 }} />
           <span>{message}</span>
         </div>
       )}
@@ -284,7 +300,7 @@ export default function AdminMarketingPage() {
               </div>
 
               <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
-                <button type="submit" className="antBtn antBtnPrimary">
+                <button type="submit" className="antBtn antBtnPrimary" disabled={actionBusy}>
                   <SaveOutlined /> {editing ? "Cập nhật coupon" : "Tạo mã coupon"}
                 </button>
                 {editing && (
