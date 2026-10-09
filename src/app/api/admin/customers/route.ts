@@ -12,7 +12,7 @@ export async function GET() {
       where: { role: "customer" },
       include: {
         _count: { select: { orders: true, wishlist: true, addresses: true } },
-        orders: { where: { OR: [{ paymentStatus: "paid" }, { payment: "cod", status: "completed" }] }, select: { total: true, createdAt: true }, orderBy: { createdAt: "desc" } }
+        orders: { where: { paymentStatus: "paid", status: { not: "cancelled" } }, select: { total: true, createdAt: true }, orderBy: { createdAt: "desc" } }
       },
       orderBy: { createdAt: "desc" }
     });
@@ -25,6 +25,7 @@ export async function GET() {
         phone: user.phone,
         createdAt: user.createdAt.toISOString(),
         orderCount: user._count.orders,
+        paidOrderCount: user.orders.length,
         wishlistCount: user._count.wishlist,
         addressCount: user._count.addresses,
         lifetimeValue: user.orders.reduce((sum, order) => sum + order.total, 0),
