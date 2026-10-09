@@ -110,7 +110,7 @@ function AdminContent() {
     accountLoading,
     saveProduct,
     deleteProduct,
-    adjustStock,
+    adjustVariantStock,
     toggleProductActive,
     updateOrderStatus,
     resetCatalog,
@@ -142,6 +142,9 @@ function AdminContent() {
   const [promo, setPromo] = useState(settings.promoText);
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [stockFilter, setStockFilter] = useState<"all" | "low" | "out">("all");
+  const [sizeSelection, setSizeSelection] = useState<Record<string, string>>({});
+  const [stockBusy, setStockBusy] = useState<string | null>(null);
 
   const [uploadingField, setUploadingField] = useState<string | null>(null);
 
@@ -161,9 +164,12 @@ function AdminContent() {
       const matchQuery =
         !q || `${product.name} ${product.sku ?? ""} ${product.color}`.toLowerCase().includes(q);
       const matchCat = categoryFilter === "all" || storefrontCategory(product) === categoryFilter;
-      return matchQuery && matchCat;
+      const matchStock = stockFilter === "all" ||
+        (stockFilter === "low" && product.stock > 0 && product.stock <= 8) ||
+        (stockFilter === "out" && product.stock <= 0);
+      return matchQuery && matchCat && matchStock;
     });
-  }, [catalog, query, categoryFilter]);
+  }, [catalog, query, categoryFilter, stockFilter]);
 
   const stock = catalog.reduce((sum, item) => sum + item.stock, 0);
   const inventoryValue = catalog.reduce((sum, item) => sum + item.price * item.stock, 0);
@@ -274,6 +280,14 @@ function AdminContent() {
       images: nextImages,
       image: indexToRemove === 0 ? nextImages[0] || "" : editing.image
     });
+  }
+
+  async function adjustSizeStock(product: Product, delta: number) {
+    const size = sizeSelection[product.id] || product.variants?.[0]?.size || product.sizes[0];
+    if (!size || stockBusy) return;
+    setStockBusy(product.id);
+    try { await adjustVariantStock(product.id, size, delta); }
+    finally { setStockBusy(null); }
   }
 
   function openNewProduct() {
@@ -643,6 +657,16 @@ function AdminContent() {
                 ))}
               </select>
 
+              <select
+                className="antSelect"
+                aria-label="Lọc tồn kho"
+                value={stockFilter}
+                onChange={(event) => setStockFilter(event.target.value as typeof stockFilter)}
+              >
+                <option value="all">Tất cả tồn kho</option>
+                <option value="low">Sắp hết (1–8)</option>
+                <option value="out">Hết hàng (0)</option>
+              </select>
               <button className="antBtn antBtnPrimary" onClick={openNewProduct}>
                 <PlusOutlined /> Thêm mới
               </button>
@@ -702,30 +726,31 @@ function AdminContent() {
                       )}
                     </td>
                     <td>
-                      <div className="antStockStepper">
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", maxWidth: 210 }}>
+                        <strong className={product.stock <= 3 ? "danger" : ""} title="Tổng số hàng còn lại">{product.stock} tổng</strong>
+                        <select
+                          className="antSelect"
+                          aria-label={`Chọn size ${product.name}`}
+                          style={{ minWidth: 68, maxWidth: 86 }}
+                          value={sizeSelection[product.id] || product.variants?.[0]?.size || product.sizes[0] || ""}
+                          onChange={(event) => setSizeSelection((prev) => ({ ...prev, [product.id]: event.target.value }))}
+                        >
+                          {(product.variants?.length ? product.variants : product.sizes.map((size) => ({ size, stock: 0 }))).map((variant) => (
+                            <option key={variant.size} value={variant.size}>{variant.size}: {variant.stock}</option>
+                          ))}
+                        </select>
                         <button
-                          type="button"
-                          className="antStepBtn"
-                          onClick={() => adjustStock(product.id, -1)}
-                          title="Giảm 1"
-                        >
-                          <MinusOutlined />
-                        </button>
-                        <span
-                          className={`antStockNumber ${
-                            product.stock <= 3 ? "danger" : ""
-                          }`}
-                        >
-                          {product.stock}
-                        </span>
+                          type="button" className="antStepBtn"
+                          disabled={stockBusy === product.id || !(product.variants?.length || product.sizes.length)}
+                          onClick={() => void adjustSizeStock(product, -1)}
+                          title="Giảm 1 sản phẩm cho size đang chọn"
+                        ><MinusOutlined /></button>
                         <button
-                          type="button"
-                          className="antStepBtn"
-                          onClick={() => adjustStock(product.id, 1)}
-                          title="Tăng 1"
-                        >
-                          <PlusOutlined />
-                        </button>
+                          type="button" className="antStepBtn"
+                          disabled={stockBusy === product.id || !(product.variants?.length || product.sizes.length)}
+                          onClick={() => void adjustSizeStock(product, 1)}
+                          title="Tăng 1 sản phẩm cho size đang chọn"
+                        ><PlusOutlined /></button>
                       </div>
                     </td>
                     <td>
