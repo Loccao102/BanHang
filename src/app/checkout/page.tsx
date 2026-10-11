@@ -39,6 +39,16 @@ export default function CheckoutPage() {
   const [checkingPayment, setCheckingPayment] = useState(false);
   const [simulating, setSimulating] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [paymentGateway, setPaymentGateway] = useState<string>("sepay");
+
+  useEffect(() => {
+    fetch("/api/payments/config")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.activeProvider) setPaymentGateway(data.activeProvider);
+      })
+      .catch(() => {});
+  }, []);
 
   // Voucher state in checkout
   const [couponInput, setCouponInput] = useState("");
@@ -326,7 +336,7 @@ export default function CheckoutPage() {
 
           <div className="qrPulseBadge">
             <div className="qrPulseDot" />
-            <span>Đang lắng nghe giao dịch chuyển khoản từ ngân hàng...</span>
+            <span>Đang lắng nghe giao dịch chuyển khoản VietQR qua {paymentGateway === "payos" ? "PayOS" : "SePay"}...</span>
           </div>
 
           <div className="qrImageFrame">
@@ -519,7 +529,7 @@ export default function CheckoutPage() {
 
           {payment === "qr" ? (
             <div className="notice" style={{ marginTop: 12 }}>
-              💡 Khi bấm <strong>"Tiếp tục thanh toán QR"</strong>, hệ thống sẽ tạo đơn và hiển thị mã VietQR chính xác số tiền cùng mã đơn hàng của bạn. Bạn chỉ cần quét mã bằng app ngân hàng là đơn hàng sẽ tự động xác nhận thành công.
+              💡 Khi bấm <strong>"Tiếp tục thanh toán QR"</strong>, hệ thống sẽ tạo đơn và hiển thị mã VietQR chính xác số tiền cùng mã đơn hàng của bạn ({paymentGateway === "payos" ? "Xác nhận tự động qua PayOS" : "Xác nhận tự động qua SePay"}). Bạn chỉ cần quét mã bằng app ngân hàng là đơn hàng sẽ tự động xác nhận thành công.
             </div>
           ) : null}
         </div>
