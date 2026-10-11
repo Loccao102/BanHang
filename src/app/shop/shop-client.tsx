@@ -2,9 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { SlidersHorizontal, X } from "lucide-react";
+import { Camera, SlidersHorizontal, X } from "lucide-react";
 import { ProductCard } from "@/components/product-card";
 import { useStore } from "@/components/store-provider";
+import { VisualSearchModal } from "@/components/visual-search-modal";
 import { formatPrice, storefrontCategory, storefrontCategoryLabels, typeLabels } from "@/lib/products";
 import type { ClothingType, ColorFamily, Product } from "@/lib/products";
 import { calculateProductSearchScore, getPersonalizedRecommendations } from "@/lib/product-search";
@@ -64,6 +65,7 @@ export function ShopClient() {
   const [stockOnly, setStockOnly] = useState(true);
   const [sort, setSort] = useState(searchParams.get("sort") === "new" ? "new" : "featured");
   const [mobileFilters, setMobileFilters] = useState(false);
+  const [visualSearchOpen, setVisualSearchOpen] = useState(false);
   const { catalog, wishlist } = useStore();
 
   const availableFilterProducts = useMemo(
@@ -206,6 +208,15 @@ export function ShopClient() {
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Tên, SKU, hoặc gu: sexy, đi tiệc, Y2K..."
         />
+        <button
+          type="button"
+          className="visualSearchTriggerBtn"
+          style={{ marginTop: "0.55rem", width: "100%", justifyContent: "center" }}
+          onClick={() => setVisualSearchOpen(true)}
+        >
+          <Camera size={14} />
+          <span>Tìm bằng hình ảnh AI</span>
+        </button>
       </div>
 
       <div className="filterGroup">
@@ -353,6 +364,8 @@ export function ShopClient() {
           </button>
         </div>
       ) : null}
+
+      <VisualSearchModal open={visualSearchOpen} onClose={() => setVisualSearchOpen(false)} />
     </>
   );
 }

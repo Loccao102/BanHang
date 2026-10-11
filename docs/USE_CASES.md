@@ -42,11 +42,13 @@
 |---|---|---|
 | UC09 | Xem danh sách sản phẩm | Người dùng mua sắm |
 | UC10 | Tìm kiếm sản phẩm | Người dùng mua sắm |
+| UC10.1 | Tìm kiếm sản phẩm bằng hình ảnh AI (Visual Search) | Người dùng mua sắm, Dịch vụ AI Vision |
 | UC11 | Lọc sản phẩm | Người dùng mua sắm |
 | UC12 | Sắp xếp sản phẩm | Người dùng mua sắm |
 | UC13 | Xem chi tiết sản phẩm | Người dùng mua sắm |
 | UC14 | Chọn màu sản phẩm | Người dùng mua sắm |
 | UC15 | Chọn cỡ sản phẩm | Người dùng mua sắm |
+| UC15.1 | Tư vấn chọn cỡ thông minh theo nhân trắc học (Smart Fit) | Người dùng mua sắm, AI Stylist & Fit Engine |
 
 ### G03 – Yêu thích, phối đồ & thử đồ AI
 | Mã | Use Case | Actor |
@@ -102,7 +104,9 @@ Use Case mở rộng của UC20:
 
 ### G02
 - UC10, UC11, UC12 mở rộng UC09.
+- UC10.1 mở rộng UC10 (Tìm kiếm bằng hình ảnh thay cho từ khóa).
 - UC14 và UC15 phát sinh khi xem chi tiết UC13.
+- UC15.1 mở rộng UC15 (Tư vấn chọn cỡ tự động theo nhân trắc học).
 
 ### G03
 - UC20 bao gồm UC18 và UC19.

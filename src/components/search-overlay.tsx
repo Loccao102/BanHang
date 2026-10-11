@@ -2,13 +2,21 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Search, X } from "lucide-react";
+import { ArrowRight, Camera, Search, Sparkles, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatPrice } from "@/lib/products";
 import { getSearchPreviewProducts } from "@/lib/product-search";
 import { useStore } from "./store-provider";
 
-export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function SearchOverlay({
+  open,
+  onClose,
+  onOpenVisualSearch
+}: {
+  open: boolean;
+  onClose: () => void;
+  onOpenVisualSearch?: () => void;
+}) {
   const { catalog } = useStore();
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -32,7 +40,22 @@ export function SearchOverlay({ open, onClose }: { open: boolean; onClose: () =>
     <div className="searchOverlay">
       <div className="searchOverlayTop"><Link className="brand" href="/" onClick={onClose}>LSOUL<span>®</span></Link><button className="iconButton" onClick={onClose} aria-label="Đóng tìm kiếm"><X size={22} /></button></div>
       <div className="searchOverlayInner">
-        <div className="searchBigInput"><Search size={22} /><input ref={inputRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tìm áo, quần, màu, chất liệu..." /><span>ESC</span></div>
+        <div className="searchBigInput">
+          <Search size={22} />
+          <input ref={inputRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Tìm áo, quần, màu, chất liệu..." />
+          {onOpenVisualSearch && (
+            <button
+              type="button"
+              className="searchOverlayCameraBtn"
+              onClick={onOpenVisualSearch}
+              title="Tìm kiếm bằng hình ảnh AI"
+            >
+              <Camera size={18} />
+              <span>Tìm bằng ảnh</span>
+            </button>
+          )}
+          <span>ESC</span>
+        </div>
         <div className="searchOverlayMeta"><span>{query ? `${results.length} kết quả cho “${query}”` : "Đề xuất cho bạn"}</span>{query ? <Link href={`/shop?q=${encodeURIComponent(query)}`} onClick={onClose}>Xem tất cả <ArrowRight size={13} /></Link> : null}</div>
         {results.length ? <div className="searchResultGrid">{results.map((product) => <Link className="searchResultCard" key={product.id} href={`/product/${product.id}`} onClick={onClose}><div className="searchResultImage"><Image src={product.image} alt={product.name} fill sizes="180px" /></div><div><strong>{product.name}</strong><span>{product.color} · {product.fit}</span><b>{formatPrice(product.price)}</b></div></Link>)}</div> : <div className="searchNoResult"><h3>Không tìm thấy món phù hợp.</h3><p>Thử tên sản phẩm, màu sắc hoặc danh mục khác.</p><Link className="btn secondary" href="/shop" onClick={onClose}>Xem toàn bộ collection</Link></div>}
       </div>
