@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowRight,
   Check,
@@ -16,18 +16,36 @@ import {
   Tag,
   UserRound
 } from "lucide-react";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, Suspense, useEffect, useState } from "react";
 import { useStore } from "@/components/store-provider";
 import { OrderTracker } from "@/components/order-tracker";
 import { calculateCouponDiscount, type CouponState, type OrderRecord } from "@/lib/cart";
+import { getBuyNowLine } from "@/lib/checkout";
 import { formatPrice } from "@/lib/products";
 
 type Shipping = { name: string; phone: string; address: string; city: string; note: string };
 type CouponSuggestion = CouponState & { discount: number };
 
 export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div className="emptyState"><p>Đang tải thông tin thanh toán...</p></div>}>
+      <CheckoutContent />
+    </Suspense>
+  );
+}
+
+function CheckoutContent() {
   const router = useRouter();
-  const { cart, coupon, applyCoupon, clearCoupon, placeOrder, user, addresses, accountLoading } = useStore();
+  const searchParams = useSearchParams();
+  const buyNowId = searchParams.get("buyNow");
+  const buyNowSize = searchParams.get("size") ?? "";
+  const checkoutUrl = `/checkout${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
+  const loginUrl = `/login?next=${encodeURIComponent(checkoutUrl)}`;
+  const { cart, catalog, coupon: cartCoupon, applyCoupon, clearCoupon, placeOrder, user, addresses, accountLoading } = useStore();
+  const [buyNowCoupon, setBuyNowCoupon] = useState<CouponState | null>(null);
+  const directLine = buyNowId ? getBuyNowLine(catalog, buyNowId, buyNowSize) : null;
+  const checkoutItems = buyNowId ? (directLine ? [directLine] : []) : cart;
+  const coupon = buyNowId ? buyNowCoupon : cartCoupon;
 
   const [payment, setPayment] = useState<"qr" | "cod">("qr");
   const [completedOrder, setCompletedOrder] = useState<OrderRecord | null>(null);
@@ -58,9 +76,9 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (!accountLoading && !user) {
-      router.push("/login?next=/checkout");
+      router.push(loginUrl);
     }
-  }, [accountLoading, user, router]);
+  }, [accountLoading, user, router, loginUrl]);
 
   useEffect(() => {
     if (!user) return;
@@ -74,7 +92,7 @@ export default function CheckoutPage() {
     }));
   }, [user, addresses]);
 
-  const subtotal = cart.reduce((sum, line) => sum + line.product.price * line.quantity, 0);
+  const subtotal = checkoutItems.reduce((sum, line) => sum + line.product.price * line.quantity, 0);
   const discount = calculateCouponDiscount(coupon, subtotal);
   const isTestOrder = subtotal <= 10000 || Boolean(coupon?.code?.startsWith("TEST"));
   const shipping = (subtotal >= 699000 || isTestOrder) ? 0 : 30000;
@@ -135,7 +153,23 @@ export default function CheckoutPage() {
     setCouponLoading(true);
     setCouponMessage(null);
     try {
-      const success = await applyCoupon(codeToApply);
+      let success: boolean;
+      if (buyNowId) {
+        const response = await fetch("/api/coupons/validate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: codeToApply, subtotal })
+        });
+        if (response.ok) {
+          const data = await response.json() as { coupon: CouponState };
+          setBuyNowCoupon(data.coupon);
+          success = true;
+        } else {
+          success = false;
+        }
+      } else {
+        success = await applyCoupon(codeToApply);
+      }
       if (success) {
         setCouponMessage({ text: `Đã áp dụng mã ${codeToApply.toUpperCase()} thành công!`, type: "success" });
         setCouponInput("");
@@ -223,12 +257,13 @@ export default function CheckoutPage() {
     const draft: OrderRecord = {
       id: "",
       createdAt: new Date().toISOString(),
-      items: cart,
+      items: checkoutItems,
       subtotal,
       shipping,
       discount,
       total,
       payment,
+      checkoutMode: buyNowId ? "buy_now" : "cart",
       status: "processing",
       paymentStatus: payment === "qr" ? "pending" : "cod_pending",
       couponCode: coupon?.code,
@@ -241,7 +276,7 @@ export default function CheckoutPage() {
     };
 
     try {
-      const order = await placeOrder({ ...draft, couponCode: coupon?.code });
+      const order = await placeOrder(draft);
       if (payment === "qr") {
         // DO NOT complete immediately for QR. Transition to VietQR waiting room!
         setPendingQrOrder(order);
