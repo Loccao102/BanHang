@@ -54,6 +54,11 @@ export function retrieveProducts(
   affinityScores: Map<string, number> = new Map()
 ) {
   const text = message.toLowerCase();
+  // Legacy retrieval is only a resilience fallback. It must not recommend
+  // featured products merely because the customer is greeting us.
+  const social = /^(?:(?:xin\s+)?chào|hi|hello|hey|alo|chao)(?:\s+(?:người anh em|anh em|shop|bạn|nha|nhé|ơi|a|em))*[!?.\s]*$/i;
+  if (social.test(message.trim())) return [];
+
   const budget = parseBudget(text);
   const colors = Object.entries(colorKeywords).filter(([word]) => text.includes(word)).map(([, value]) => value);
   const requestedTypes = typeKeywords.filter(([words]) => words.some((word) => text.includes(word))).map(([, type]) => type);

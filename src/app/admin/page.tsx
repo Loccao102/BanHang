@@ -33,13 +33,16 @@ import {
 } from "@ant-design/icons";
 import { useStore } from "@/components/store-provider";
 import type { OrderStatus } from "@/lib/cart";
+import { allowedOrderStatuses } from "@/lib/order-workflow";
 import {
-  categoryLabels,
   formatPrice,
+  storefrontCategory,
+  storefrontCategoryLabels,
+  typesForStorefrontCategory,
   typeLabels,
   type ClothingType,
   type Product,
-  type ProductCategory
+  type StorefrontCategory
 } from "@/lib/products";
 
 type Tab = "overview" | "products" | "orders" | "settings";
@@ -108,7 +111,7 @@ function AdminContent() {
     accountLoading,
     saveProduct,
     deleteProduct,
-    adjustStock,
+    adjustVariantStock,
     toggleProductActive,
     updateOrderStatus,
     resetCatalog,
@@ -140,6 +143,11 @@ function AdminContent() {
   const [promo, setPromo] = useState(settings.promoText);
   const [query, setQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [orderQuery, setOrderQuery] = useState("");
+  const [orderStatusFilter, setOrderStatusFilter] = useState<OrderStatus | "all">("all");
+  const [stockFilter, setStockFilter] = useState<"all" | "low" | "out">("all");
+  const [sizeSelection, setSizeSelection] = useState<Record<string, string>>({});
+  const [stockBusy, setStockBusy] = useState<string | null>(null);
 
   const [uploadingField, setUploadingField] = useState<string | null>(null);
 
@@ -158,10 +166,21 @@ function AdminContent() {
     return catalog.filter((product) => {
       const matchQuery =
         !q || `${product.name} ${product.sku ?? ""} ${product.color}`.toLowerCase().includes(q);
-      const matchCat = categoryFilter === "all" || product.category === categoryFilter;
-      return matchQuery && matchCat;
+      const matchCat = categoryFilter === "all" || storefrontCategory(product) === categoryFilter;
+      const matchStock = stockFilter === "all" ||
+        (stockFilter === "low" && product.stock > 0 && product.stock <= 8) ||
+        (stockFilter === "out" && product.stock <= 0);
+      return matchQuery && matchCat && matchStock;
     });
-  }, [catalog, query, categoryFilter]);
+  }, [catalog, query, categoryFilter, stockFilter]);
+
+  const visibleOrders = useMemo(() => {
+    const q = orderQuery.toLowerCase().trim();
+    return orders.filter((order) =>
+      (orderStatusFilter === "all" || order.status === orderStatusFilter) &&
+      (!q || `${order.id} ${order.customer.name} ${order.customer.phone} ${order.customer.city}`.toLowerCase().includes(q))
+    );
+  }, [orders, orderQuery, orderStatusFilter]);
 
   const stock = catalog.reduce((sum, item) => sum + item.stock, 0);
   const inventoryValue = catalog.reduce((sum, item) => sum + item.price * item.stock, 0);
@@ -272,6 +291,14 @@ function AdminContent() {
       images: nextImages,
       image: indexToRemove === 0 ? nextImages[0] || "" : editing.image
     });
+  }
+
+  async function adjustSizeStock(product: Product, delta: number) {
+    const size = sizeSelection[product.id] || product.variants?.[0]?.size || product.sizes[0];
+    if (!size || stockBusy) return;
+    setStockBusy(product.id);
+    try { await adjustVariantStock(product.id, size, delta); }
+    finally { setStockBusy(null); }
   }
 
   function openNewProduct() {
@@ -634,13 +661,23 @@ function AdminContent() {
                 onChange={(e) => setCategoryFilter(e.target.value)}
               >
                 <option value="all">Tất cả danh mục</option>
-                {Object.entries(categoryLabels).map(([val, label]) => (
+                {Object.entries(storefrontCategoryLabels).map(([val, label]) => (
                   <option key={val} value={val}>
                     {label}
                   </option>
                 ))}
               </select>
 
+              <select
+                className="antSelect"
+                aria-label="Lọc tồn kho"
+                value={stockFilter}
+                onChange={(event) => setStockFilter(event.target.value as typeof stockFilter)}
+              >
+                <option value="all">Tất cả tồn kho</option>
+                <option value="low">Sắp hết (1–8)</option>
+                <option value="out">Hết hàng (0)</option>
+              </select>
               <button className="antBtn antBtnPrimary" onClick={openNewProduct}>
                 <PlusOutlined /> Thêm mới
               </button>
@@ -687,7 +724,7 @@ function AdminContent() {
                     <td>
                       <code className="antSkuBadge">{product.sku ?? "—"}</code>
                     </td>
-                    <td>{categoryLabels[product.category] ?? product.category}</td>
+                    <td>{storefrontCategoryLabels[storefrontCategory(product)]}</td>
                     <td>{typeLabels[product.type] ?? product.type}</td>
                     <td>
                       <strong className="antPrice">
@@ -700,30 +737,31 @@ function AdminContent() {
                       )}
                     </td>
                     <td>
-                      <div className="antStockStepper">
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", maxWidth: 210 }}>
+                        <strong className={product.stock <= 3 ? "danger" : ""} title="Tổng số hàng còn lại">{product.stock} tổng</strong>
+                        <select
+                          className="antSelect"
+                          aria-label={`Chọn size ${product.name}`}
+                          style={{ minWidth: 68, maxWidth: 86 }}
+                          value={sizeSelection[product.id] || product.variants?.[0]?.size || product.sizes[0] || ""}
+                          onChange={(event) => setSizeSelection((prev) => ({ ...prev, [product.id]: event.target.value }))}
+                        >
+                          {(product.variants?.length ? product.variants : product.sizes.map((size) => ({ size, stock: 0 }))).map((variant) => (
+                            <option key={variant.size} value={variant.size}>{variant.size}: {variant.stock}</option>
+                          ))}
+                        </select>
                         <button
-                          type="button"
-                          className="antStepBtn"
-                          onClick={() => adjustStock(product.id, -1)}
-                          title="Giảm 1"
-                        >
-                          <MinusOutlined />
-                        </button>
-                        <span
-                          className={`antStockNumber ${
-                            product.stock <= 3 ? "danger" : ""
-                          }`}
-                        >
-                          {product.stock}
-                        </span>
+                          type="button" className="antStepBtn"
+                          disabled={stockBusy === product.id || !(product.variants?.length || product.sizes.length)}
+                          onClick={() => void adjustSizeStock(product, -1)}
+                          title="Giảm 1 sản phẩm cho size đang chọn"
+                        ><MinusOutlined /></button>
                         <button
-                          type="button"
-                          className="antStepBtn"
-                          onClick={() => adjustStock(product.id, 1)}
-                          title="Tăng 1"
-                        >
-                          <PlusOutlined />
-                        </button>
+                          type="button" className="antStepBtn"
+                          disabled={stockBusy === product.id || !(product.variants?.length || product.sizes.length)}
+                          onClick={() => void adjustSizeStock(product, 1)}
+                          title="Tăng 1 sản phẩm cho size đang chọn"
+                        ><PlusOutlined /></button>
                       </div>
                     </td>
                     <td>
@@ -788,16 +826,26 @@ function AdminContent() {
               <div className="antCardEyebrow">QUẢN LÝ ĐƠN HÀNG</div>
               <h2 className="antCardTitle">
                 Danh sách đơn hàng{" "}
-                <span className="antCountTag">{orders.length}</span>
+                <span className="antCountTag">{visibleOrders.length}/{orders.length}</span>
               </h2>
             </div>
-            <span className="antCardSubtitle">
-              Đơn hàng khách đặt qua website sẽ được đồng bộ và cập nhật trạng thái tức thời.
-            </span>
+            <div className="antToolbarRight">
+              <input className="antInput" value={orderQuery}
+                aria-label="Tìm mã đơn hoặc khách hàng" placeholder="Mã đơn, khách hàng, SĐT..."
+                onChange={(event) => setOrderQuery(event.target.value)} />
+              <select className="antSelect" aria-label="Lọc trạng thái đơn"
+                value={orderStatusFilter}
+                onChange={(event) => setOrderStatusFilter(event.target.value as typeof orderStatusFilter)}>
+                <option value="all">Tất cả trạng thái</option>
+                {Object.entries(statusLabel).map(([status, label]) => (
+                  <option key={status} value={status}>{label}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div className="antCardBody">
-            {orders.length ? (
+            {visibleOrders.length ? (
               <div className="antOrdersTableContainer">
                 <table className="antTable">
                   <thead>
@@ -812,7 +860,7 @@ function AdminContent() {
                     </tr>
                   </thead>
                   <tbody>
-                    {orders.map((order) => (
+                    {visibleOrders.map((order) => (
                       <tr key={order.id}>
                         <td>
                           <Link
@@ -866,7 +914,7 @@ function AdminContent() {
                                 )
                               }
                             >
-                              {Object.entries(statusLabel).map(([val, label]) => (
+                              {Object.entries(statusLabel).filter(([val]) => allowedOrderStatuses(order.status).includes(val as OrderStatus)).map(([val, label]) => (
                                 <option key={val} value={val}>
                                   {label}
                                 </option>
@@ -890,10 +938,8 @@ function AdminContent() {
             ) : (
               <div className="antEmptyState large">
                 <ShoppingOutlined style={{ fontSize: 44, color: "#8c8c8c" }} />
-                <h3>Chưa có đơn hàng nào</h3>
-                <p>
-                  Khi khách hàng hoàn tất giỏ hàng và thanh toán trên website, đơn hàng sẽ ngay lập tức hiển thị tại đây.
-                </p>
+                <h3>{orders.length ? "Không tìm thấy đơn phù hợp" : "Chưa có đơn hàng nào"}</h3>
+                <p>{orders.length ? "Thử đổi từ khóa hoặc bộ lọc trạng thái." : "Đơn mới sẽ xuất hiện tại đây khi khách thanh toán."}</p>
               </div>
             )}
           </div>
@@ -1062,15 +1108,22 @@ function AdminContent() {
                       <span className="antFormLabel">Danh mục</span>
                       <select
                         className="antInput"
-                        value={editing.category}
-                        onChange={(event) =>
+                        value={storefrontCategory(editing)}
+                        onChange={(event) => {
+                          const nextCategory = event.target.value as StorefrontCategory;
+                          const allowedTypes = typesForStorefrontCategory(nextCategory);
+                          const nextType = allowedTypes.includes(editing.type) ? editing.type : allowedTypes[0];
                           setEditing({
                             ...editing,
-                            category: event.target.value as ProductCategory
-                          })
-                        }
+                            category: nextCategory === "pants" || nextCategory === "skirts" ? "bottoms" : nextCategory,
+                            type: nextType,
+                            tryOnCategory: nextCategory === "pants" || nextCategory === "skirts"
+                              ? "bottoms"
+                              : nextCategory === "dress" || nextCategory === "set" ? "one-pieces" : "tops"
+                          });
+                        }}
                       >
-                        {Object.entries(categoryLabels).map(([val, label]) => (
+                        {Object.entries(storefrontCategoryLabels).map(([val, label]) => (
                           <option key={val} value={val}>
                             {label}
                           </option>
@@ -1089,7 +1142,9 @@ function AdminContent() {
                           })
                         }
                       >
-                        {Object.entries(typeLabels).map(([val, label]) => (
+                        {Object.entries(typeLabels)
+                          .filter(([val]) => typesForStorefrontCategory(storefrontCategory(editing)).includes(val as ClothingType))
+                          .map(([val, label]) => (
                           <option key={val} value={val}>
                             {label}
                           </option>
@@ -1509,7 +1564,7 @@ function AdminContent() {
                       >
                         <option value="">Chưa chọn</option>
                         <option value="tops">tops (Áo / Corset)</option>
-                        <option value="bottoms">bottoms (Quần / Chân váy)</option>
+                        <option value="bottoms">bottoms (Vùng thử AI cho quần và chân váy)</option>
                         <option value="one-pieces">one-pieces (Đầm / Liền thân)</option>
                       </select>
                     </label>

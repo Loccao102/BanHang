@@ -63,6 +63,10 @@ services:
       NEXT_PUBLIC_BANK_ACCOUNT: ${NEXT_PUBLIC_BANK_ACCOUNT:-0123456789}
       NEXT_PUBLIC_BANK_ACCOUNT_NAME: ${NEXT_PUBLIC_BANK_ACCOUNT_NAME:-LSOUL}
       SEPAY_WEBHOOK_SECRET: ${SEPAY_WEBHOOK_SECRET:-}
+      PAYMENT_GATEWAY_PROVIDER: ${PAYMENT_GATEWAY_PROVIDER:-auto}
+      PAYOS_CLIENT_ID: ${PAYOS_CLIENT_ID:-}
+      PAYOS_API_KEY: ${PAYOS_API_KEY:-}
+      PAYOS_CHECKSUM_KEY: ${PAYOS_CHECKSUM_KEY:-}
       # Đặt 1 để API quên mật khẩu trả link reset khi chưa có dịch vụ gửi email (demo/đồ án).
       PASSWORD_RESET_EXPOSE_LINK: ${PASSWORD_RESET_EXPOSE_LINK:-0}
       # Ghi đè model Gemini nếu cần (mặc định gemini-flash-latest).
@@ -111,6 +115,10 @@ services:
       NEXT_PUBLIC_BANK_ACCOUNT: ${NEXT_PUBLIC_BANK_ACCOUNT:-0123456789}
       NEXT_PUBLIC_BANK_ACCOUNT_NAME: ${NEXT_PUBLIC_BANK_ACCOUNT_NAME:-LSOUL}
       SEPAY_WEBHOOK_SECRET: ${SEPAY_WEBHOOK_SECRET:-}
+      PAYMENT_GATEWAY_PROVIDER: ${PAYMENT_GATEWAY_PROVIDER:-auto}
+      PAYOS_CLIENT_ID: ${PAYOS_CLIENT_ID:-}
+      PAYOS_API_KEY: ${PAYOS_API_KEY:-}
+      PAYOS_CHECKSUM_KEY: ${PAYOS_CHECKSUM_KEY:-}
       # Đặt 1 để API quên mật khẩu trả link reset khi chưa có dịch vụ gửi email (demo/đồ án).
       PASSWORD_RESET_EXPOSE_LINK: ${PASSWORD_RESET_EXPOSE_LINK:-0}
       # Ghi đè model Gemini nếu cần (mặc định gemini-flash-latest).

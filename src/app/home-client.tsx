@@ -10,7 +10,8 @@ import { useStore } from "@/components/store-provider";
 const categories = [
   { title: "Đầm", subtitle: "Các mẫu đầm LSOUL đã đối chiếu", href: "/shop?category=dress", image: "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791259399/lsoul/home/category-dress-2026.webp" },
   { title: "Đi tiệc", subtitle: "Phom corset và dáng nổi bật", href: "/shop?category=dress", image: "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791259507/lsoul/home/category-party-2026.webp" },
-  { title: "Quần & chân váy", subtitle: "Denim, chân váy và các phom bottom dễ phối", href: "/shop?category=bottoms", image: "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791259594/lsoul/home/category-bottoms-2026.webp" }
+  { title: "Quần", subtitle: "Jeans, quần suông và quần short dễ phối", href: "/shop?category=pants", image: "/products/pants-wide-pleat-beige.jpg" },
+  { title: "Chân váy", subtitle: "Chân váy mini, midi và dáng xếp ly", href: "/shop?category=skirts", image: "/products/skirt-denim-mini-blue.jpg" }
 ];
 
 export function HomeClient() {

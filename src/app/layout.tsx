@@ -12,6 +12,8 @@ import "./luxury-motion.css";
 import "./flagship-motion.css";
 import "./fitting-room.css";
 import "./order-tracker.css";
+import "./visual-search.css";
+import "./smart-fit.css";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { StoreProvider } from "@/components/store-provider";

@@ -1,4 +1,4 @@
-import { Product, products } from "./products";
+import { Product, products, storefrontCategory } from "./products";
 
 export type Outfit = {
   id: string;
@@ -37,6 +37,7 @@ export function generateOutfit(options?: {
   requiredProductId?: string;
   excludeIds?: string[];
   budget?: number;
+  bottomKind?: "pants" | "skirts";
   variant?: number;
 }): Outfit {
   const style = options?.style ?? "minimal";
@@ -47,8 +48,8 @@ export function generateOutfit(options?: {
     : undefined;
 
   const available = products.filter((item) => item.stock > 0 && !exclude.has(item.id));
-  const tops = available.filter((item) => ["tops", "dress"].includes(item.category));
-  const bottoms = available.filter((item) => item.category === "bottoms");
+  const tops = available.filter((item) => item.category === "tops");
+  const bottoms = available.filter((item) => item.category === "bottoms" && (!options?.bottomKind || storefrontCategory(item) === options.bottomKind));
   const extras = available.filter((item) => item.category === "outerwear");
 
   const pick = (pool: Product[], salt: number) => {
@@ -64,11 +65,11 @@ export function generateOutfit(options?: {
   const seed = (options?.variant ?? 0) % 997;
   const items: Product[] = required ? [required] : [];
 
-  if (!required || !["tops", "dress"].includes(required.category)) {
+  if (!required || !["tops", "dress", "set"].includes(required.category)) {
     const top = pick(tops, seed);
     if (top) items.push(top);
   }
-  if (!items.some((item) => item.category === "dress") && (!required || required.category !== "bottoms")) {
+  if (!items.some((item) => item.category === "dress" || item.category === "set") && (!required || required.category !== "bottoms")) {
     const bottom = pick(bottoms, seed + 2);
     if (bottom) items.push(bottom);
   }

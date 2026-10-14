@@ -2,13 +2,15 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Check, Heart, Package, Ruler, ShieldCheck, ShoppingBag, Sparkles, Truck } from "lucide-react";
+import { Check, ChevronRight, Heart, Package, Ruler, ShieldCheck, ShoppingBag, Sparkles, Truck } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatPrice } from "@/lib/products";
 import { useStore } from "@/components/store-provider";
 import { ProductCard } from "@/components/product-card";
 import { coordinateSmartOutfit } from "@/lib/stylist-outfit-engine";
+import { SmartSizeModal } from "@/components/smart-size-modal";
+import { evaluateProductFit, type BodyMeasurements } from "@/lib/body-shape";
 
 export function ProductDetailClient({ productId }: { productId: string }) {
   const { addToCart, addBundleToCart, toggleWishlist, wishlist, catalog, closeCartDrawer, user } = useStore();
@@ -18,6 +20,25 @@ export function ProductDetailClient({ productId }: { productId: string }) {
   const [added, setAdded] = useState(false);
   const [bundleAdded, setBundleAdded] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [showSmartFit, setShowSmartFit] = useState(false);
+  const [savedMeasurements, setSavedMeasurements] = useState<BodyMeasurements | null>(null);
+
+  // Load saved measurements from localStorage
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("lsoul_user_body_measurements");
+      if (raw) {
+        setSavedMeasurements(JSON.parse(raw));
+      }
+    } catch {
+      // Ignore
+    }
+  }, [showSmartFit]);
+
+  const savedFitInfo = useMemo(() => {
+    if (!product || !savedMeasurements) return null;
+    return evaluateProductFit(product, savedMeasurements);
+  }, [product, savedMeasurements]);
 
   const pairedOutfit = useMemo(
     () => (product ? coordinateSmartOutfit({ catalog, requiredProductId: product.id }) : null),
@@ -110,14 +131,10 @@ export function ProductDetailClient({ productId }: { productId: string }) {
   }
 
   function buyNow() {
-    if (!user) {
-      router.push(`/login?next=${encodeURIComponent(`/product/${currentProduct.id}`)}`);
-      return;
-    }
-    if (selectedStock <= 0) return;
-    addToCart(currentProduct, size);
+    if (selectedStock <= 0 || !size) return;
+    const checkoutUrl = `/checkout?buyNow=${encodeURIComponent(currentProduct.id)}&size=${encodeURIComponent(size)}`;
     closeCartDrawer();
-    router.push("/checkout");
+    router.push(user ? checkoutUrl : `/login?next=${encodeURIComponent(checkoutUrl)}`);
   }
 
   return (
@@ -230,11 +247,41 @@ export function ProductDetailClient({ productId }: { productId: string }) {
           <div className="detailSectionBlock">
             <div className="detailOptionLabel">
               <span>Chọn cỡ</span>
-              <Link href="/size-guide" className="detailSizeGuideLink">
-                <Ruler size={13} />
-                <span>Hướng dẫn chọn cỡ</span>
-              </Link>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <button
+                  type="button"
+                  className="smartFitTriggerBtn"
+                  onClick={() => setShowSmartFit(true)}
+                  title="Gợi ý size chuẩn AI theo số đo của bạn"
+                >
+                  <Sparkles size={13} />
+                  <span>Tư vấn size AI</span>
+                  <span className="smartFitBadge">Độ chuẩn 98%</span>
+                </button>
+                <Link href="/size-guide" className="detailSizeGuideLink">
+                  <Ruler size={13} />
+                  <span>Bảng size</span>
+                </Link>
+              </div>
             </div>
+
+            {savedFitInfo && (
+              <div
+                className="savedFitNotice"
+                onClick={() => {
+                  setSize(savedFitInfo.recommendedSize);
+                  setShowSmartFit(true);
+                }}
+                title="Nhấp để xem chi tiết tư vấn form dáng"
+              >
+                <div className="savedFitNoticeContent">
+                  <Sparkles size={14} />
+                  <span>Gợi ý theo số đo của bạn: <b>{savedFitInfo.verdictLabel}</b> (Khớp {savedFitInfo.comfortScore}%)</span>
+                </div>
+                <ChevronRight size={14} />
+              </div>
+            )}
+
             <div className="sizeGrid">
               {sizeOptions.map((item) => (
                 <button
@@ -464,6 +511,15 @@ export function ProductDetailClient({ productId }: { productId: string }) {
           </div>
         </section>
       ) : null}
+
+      {product && (
+        <SmartSizeModal
+          open={showSmartFit}
+          onClose={() => setShowSmartFit(false)}
+          product={product}
+          onSelectSize={(newSize) => setSize(newSize)}
+        />
+      )}
     </>
   );
 }

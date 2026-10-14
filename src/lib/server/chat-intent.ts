@@ -1,3 +1,4 @@
+import { pantsTypes } from "@/lib/products";
 import type {
   ClothingType,
   ColorFamily,
@@ -6,6 +7,7 @@ import type {
 } from "@/lib/products";
 import type { ShoppingState } from "@/lib/server/chat-state";
 import { semanticTextScore } from "@/lib/server/product-semantic-profile";
+import { socialChatReply } from "@/lib/server/chat-social";
 
 export type ShoppingIntentName =
   | "search_products"
@@ -467,8 +469,10 @@ function fallbackItemConstraints(text: string) {
     const types: ClothingType[] = [];
     if (/\b(?:chan vay|skirt|vay)\b/.test(seg)) types.push("skirt");
     else if (/\bjeans?\b/.test(seg)) types.push("jeans");
-    else if (/\bshorts?\b/.test(seg)) types.push("shorts");
-    else if (/\b(?:quan|pants|trousers)\b/.test(seg)) types.push("trousers");
+    else if (/\b(?:quan loe|flare)\b/.test(seg)) types.push("flare-pants");
+    else if (/\b(?:shorts?|quan short|quan dui)\b/.test(seg)) types.push("shorts");
+    else if (/\b(?:quan tay|quan au|trousers)\b/.test(seg)) types.push("trousers");
+    else if (/\b(?:quan|pants)\b/.test(seg)) types.push(...pantsTypes);
     const lengthClass = fallbackLength(text);
     const color = fallbackColor(seg);
     items.push({
@@ -529,6 +533,18 @@ export function inferFallbackShoppingIntent(args: {
   contextProducts?: Product[];
   shoppingState?: ShoppingState | null;
 }): ShoppingIntent {
+  // Treat standalone greetings/pleasantries as social even when words such as
+  // "sáng" might otherwise be misread as a style or product attribute.
+  if (socialChatReply(args.message)) {
+    return {
+      intent: "general",
+      confidence: 1,
+      inheritPrevious: false,
+      targetScope: "single",
+      includeOuterwear: false,
+      items: []
+    };
+  }
   const text = normalized(args.message);
   const hasOutfitState = Boolean(args.shoppingState?.outfit);
   const items = fallbackItemConstraints(text);
@@ -624,6 +640,7 @@ export async function analyzeShoppingIntent(args: {
   shoppingState?: ShoppingState | null;
 }): Promise<ShoppingIntent | null> {
   const fallbackIntent = inferFallbackShoppingIntent(args);
+  if (socialChatReply(args.message)) return fallbackIntent;
   const rawKey = process.env.GEMINI_API_KEY ?? "";
   const key = rawKey.replace(/^["']|["']$/g, "").trim();
   if (!key) return fallbackIntent;
@@ -663,7 +680,7 @@ Các intent hợp lệ:
 
 QUY TẮC HIỂU NGÔN NGỮ:
 1. Tự hiểu tiếng Việt tự nhiên, tiếng Anh, từ đồng nghĩa và ngữ cảnh; KHÔNG dựa vào exact keyword.
-2. "áo đỏ + váy đen" nghĩa là role top màu red + role bottom type skirt màu black. Khi có một chiếc áo riêng đi cùng "váy", hiểu "váy" là chân váy/bottom trừ khi ngữ cảnh nói rõ đầm liền.
+2. "áo đỏ + váy đen" nghĩa là role top màu red + role bottom type skirt màu black. Khi có một chiếc áo riêng đi cùng "váy", hiểu "váy" là chân váy/bottom trừ khi ngữ cảnh nói rõ đầm liền. "Áo + quần" phải giới hạn bottom vào jeans/trousers/flare-pants/shorts và tuyệt đối không lấy skirt; "áo + chân váy" phải giới hạn bottom vào skirt và không lấy quần/đầm liền.
 3. "đầm/váy liền/dress" là role dress.
 4. "dạ hội", "gala", "tiệc tối", "party", "event sang" map occasion=party.
 5. Chỉ đưa constraint vào items khi khách NÓI RÕ constraint đó hoặc đang giữ lại constraint từ context. Không tự biến suy luận stylist (ví dụ đi tiệc => corset) thành hard constraint.
@@ -845,6 +862,11 @@ export function retrieveProductsFromIntent(
   contextProducts: Product[] = [],
   affinityScores: Map<string, number> = new Map()
 ) {
+  // General conversation without product constraints must never auto-select
+  // featured/new items. A follow-up that *does* include constraints still runs.
+  if (intent.intent === "general" && !intent.items.length && !intent.budgetMax &&
+      !intent.occasion && !intent.style) return [];
+
   const operationalIntent = ["size_advice", "coupon", "order", "checkout", "policy"].includes(intent.intent);
   if (operationalIntent && intent.items.length === 0) {
     return contextProducts.slice(0, limit);

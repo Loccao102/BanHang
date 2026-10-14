@@ -433,7 +433,8 @@ export function ChatWidget() {
 
           <div className="chatSuggestions">
             {[
-              "✨ Phối set Quần/Chân váy + Áo",
+              "✨ Phối áo với quần",
+              "✨ Phối áo với chân váy",
               "✨ Phối set Đầm liền & Áo khoác",
               "✨ Phối set đồ đồng bộ (Co-ord)",
               "Phối đồ đi hẹn hò dưới 2 triệu",

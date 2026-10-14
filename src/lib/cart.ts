@@ -25,6 +25,7 @@ export type OrderRecord = {
   discount: number;
   total: number;
   payment: "qr" | "cod";
+  checkoutMode?: "cart" | "buy_now";
   paymentStatus?: PaymentStatus;
   status: OrderStatus;
   couponCode?: string;

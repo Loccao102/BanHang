@@ -1,16 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { Heart, Menu, Search, ShoppingBag, UserRound, X } from "lucide-react";
+import { Camera, Heart, Menu, Search, ShoppingBag, UserRound, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useCallback, useState } from "react";
 import { useStore } from "./store-provider";
 import { SearchOverlay } from "./search-overlay";
+import { VisualSearchModal } from "./visual-search-modal";
 
 const nav = [
   ["Mới về", "/shop?sort=new"],
   ["Đầm", "/shop?category=dress"],
   ["Áo & Corset", "/shop?category=tops"],
+  ["Quần", "/shop?category=pants"],
+  ["Chân váy", "/shop?category=skirts"],
   ["Set đồ", "/shop?category=set"],
   ["Áo khoác", "/shop?category=outerwear"],
   ["Phối đồ AI", "/outfit"],
@@ -22,7 +25,7 @@ const nav = [
 const megaGroups = [
   {
     title: "Mua sắm",
-    links: [["Mới về", "/shop?sort=new"], ["Đầm", "/shop?category=dress"], ["Áo / corset", "/shop?category=tops"], ["Quần & chân váy", "/shop?category=bottoms"], ["Áo khoác", "/shop?category=outerwear"], ["Đang giảm giá", "/shop?sale=1"]]
+    links: [["Mới về", "/shop?sort=new"], ["Đầm", "/shop?category=dress"], ["Áo / corset", "/shop?category=tops"], ["Quần", "/shop?category=pants"], ["Chân váy", "/shop?category=skirts"], ["Áo khoác", "/shop?category=outerwear"], ["Đang giảm giá", "/shop?sale=1"]]
   },
   {
     title: "Khám phá",
@@ -34,8 +37,10 @@ export function Header() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [visualSearchOpen, setVisualSearchOpen] = useState(false);
   const { cartCount, wishlist, settings, user, openCartDrawer } = useStore();
   const closeSearch = useCallback(() => setSearchOpen(false), []);
+  const closeVisualSearch = useCallback(() => setVisualSearchOpen(false), []);
 
   if (pathname?.startsWith("/admin")) return null;
 
@@ -60,6 +65,14 @@ export function Header() {
         </nav>
 
         <div className="headerActions">
+          <button
+            className="iconButton visualSearchHeaderBtn"
+            onClick={() => setVisualSearchOpen(true)}
+            aria-label="Tìm kiếm bằng hình ảnh AI"
+            title="Tìm kiếm bằng hình ảnh AI"
+          >
+            <Camera size={19} />
+          </button>
           <button className="iconButton" onClick={() => setSearchOpen(true)} aria-label="Tìm kiếm">
             <Search size={19} />
           </button>
@@ -127,7 +140,8 @@ export function Header() {
         </div>
       ) : null}
 
-      <SearchOverlay open={searchOpen} onClose={closeSearch} />
+      <SearchOverlay open={searchOpen} onClose={closeSearch} onOpenVisualSearch={() => { closeSearch(); setVisualSearchOpen(true); }} />
+      <VisualSearchModal open={visualSearchOpen} onClose={closeVisualSearch} />
     </>
   );
 }

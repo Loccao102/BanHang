@@ -1,12 +1,19 @@
 import assert from "node:assert/strict";
-import { products as productionCatalog, type Product } from "../products";
+import { pantsTypes, storefrontCategory, products as productionCatalog, type Product } from "../products";
+import { outfitLabel, wardrobeGroup, normalizeOutfitSelection } from "../wardrobe";
 import type { ShoppingIntent } from "./chat-intent";
 import { inferFallbackShoppingIntent, retrieveProductsFromIntent } from "./chat-intent";
 import { applyShoppingState, buildShoppingState, type ShoppingState } from "./chat-state";
 import { evaluateRecommendation } from "./chat-evaluation";
 import { semanticTextScore } from "./product-semantic-profile";
-import { coordinateSmartOutfit } from "../stylist-outfit-engine";
+import { coordinateSmartOutfit, outfitSelectionKey } from "../stylist-outfit-engine";
 import { buildAgentPlan } from "./chat-agent";
+import { canReadPaymentStatus, canSimulatePayment, canRecordCodCollection } from "./payment-access";
+import { getSearchPreviewProducts } from "../product-search";
+import { fastCatalogLookupReply } from "./chat-fast-reply";
+import { allowedOrderStatuses, canTransitionOrderStatus, isOrderStatus } from "../order-workflow";
+import { socialChatReply } from "./chat-social";
+import { retrieveProducts } from "./chat-assistant";
 
 function product(overrides: Partial<Product> & Pick<Product, "id" | "category" | "type" | "colorFamily">): Product {
   const colorLabels: Record<Product["colorFamily"], string> = {
@@ -18,6 +25,7 @@ function product(overrides: Partial<Product> & Pick<Product, "id" | "category" |
   return {
     id: overrides.id,
     sku: overrides.id.toUpperCase(),
+    groupCode: overrides.groupCode,
     name: overrides.name ?? overrides.id,
     subtitle: overrides.subtitle ?? "Regression fixture",
     category: overrides.category,
@@ -893,6 +901,326 @@ test("last assistant product lookup in multi-turn stays grounded on most recent 
   // Logic đã fix trong route.ts: lấy first assistant từ mảng desc trước khi reverse
   const lastAssistant = dbMessagesDesc.find((item) => item.role === "assistant" && item.productIds.length);
   assert.equal(lastAssistant?.productIds[0], "white-shirt");
+});
+
+test("catalog treats pants and skirts as distinct product categories", () => {
+  assert.equal(storefrontCategory(whiteTrousers), "pants");
+  assert.equal(storefrontCategory(whitePartySkirt), "skirts");
+  assert.equal(storefrontCategory(redDress), "dress");
+  assert.deepEqual(pantsTypes, ["jeans", "trousers", "flare-pants", "shorts"]);
+});
+
+test("fitting room keeps pants and skirts in separate wardrobes", () => {
+  assert.equal(wardrobeGroup(whiteTrousers), "pants");
+  assert.equal(wardrobeGroup(whitePartySkirt), "skirts");
+  assert.equal(outfitLabel([redCorset, whiteTrousers]), "áo + quần");
+  assert.equal(outfitLabel([redCorset, whitePartySkirt]), "áo + chân váy");
+  const replaced = normalizeOutfitSelection([redCorset.id, whiteTrousers.id], whitePartySkirt, catalog);
+  assert.deepEqual(replaced, [redCorset.id, whitePartySkirt.id]);
+});
+
+test("outfit tab Áo + Quần never contains a skirt", () => {
+  const outfit = coordinateSmartOutfit({ catalog, setType: "top_pants", preferredTopColor: "red" });
+  assert.equal(outfit.items.length, 2);
+  assert.equal(outfit.items.find((item) => item.role === "bottom")?.product.type, "trousers");
+  assert.equal(outfit.setTypeName, "Áo + Quần");
+});
+
+test("outfit tab Áo + Chân váy never contains pants", () => {
+  const outfit = coordinateSmartOutfit({ catalog, setType: "top_skirt", preferredTopColor: "red" });
+  assert.equal(outfit.items.length, 2);
+  assert.equal(outfit.items.find((item) => item.role === "bottom")?.product.type, "skirt");
+  assert.equal(outfit.setTypeName, "Áo + Chân váy");
+});
+
+test("locked skirt cannot be silently substituted into pants mode", () => {
+  const outfit = coordinateSmartOutfit({
+    catalog,
+    setType: "top_pants",
+    fixedBottomProductId: whitePartySkirt.id
+  });
+  assert.equal(outfit.items.length, 0);
+});
+
+test("no skirt found means Áo + Chân váy remains empty, never substitutes pants", () => {
+  const outfit = coordinateSmartOutfit({ catalog: [redCorset, whiteTrousers], setType: "top_skirt" });
+  assert.equal(outfit.items.length, 0);
+});
+
+test("chat fallback distinguishes áo with quần from áo with chân váy", () => {
+  const pantsIntent = inferFallbackShoppingIntent({ message: "Phối áo đỏ với quần trắng", contextProducts: [] });
+  const pantsConstraint = pantsIntent.items.find((item) => item.role === "bottom");
+  assert.ok(pantsConstraint);
+  assert.ok(pantsConstraint.types?.every((type) => pantsTypes.includes(type)));
+  assert.equal(pantsConstraint.types?.includes("skirt"), false);
+
+  const skirtIntent = inferFallbackShoppingIntent({ message: "Phối áo đỏ với chân váy trắng", contextProducts: [] });
+  const skirtConstraint = skirtIntent.items.find((item) => item.role === "bottom");
+  assert.deepEqual(skirtConstraint?.types, ["skirt"]);
+});
+
+
+test("outfit studio explores many unique pants outfits before repeating a set", () => {
+  const tops = Array.from({ length: 9 }, (_, index) => product({
+    id: `rotation-top-${index}`,
+    category: "tops",
+    type: "shirt",
+    colorFamily: "white",
+    formality: 3
+  }));
+  const pants = Array.from({ length: 9 }, (_, index) => product({
+    id: `rotation-pants-${index}`,
+    category: "bottoms",
+    type: "trousers",
+    colorFamily: "black",
+    formality: 3
+  }));
+  const seen: string[] = [];
+  const selectedTops = new Set<string>();
+  const selectedPants = new Set<string>();
+
+  for (let index = 0; index < 30; index += 1) {
+    const outfit = coordinateSmartOutfit({
+      catalog: [...tops, ...pants],
+      setType: "top_pants",
+      variantSalt: index * 7 + 11,
+      excludeOutfitKeys: seen
+    });
+    const key = outfitSelectionKey(outfit.items);
+    assert.ok(key && !seen.includes(key), `Set repeated at click ${index + 1}: ${key}`);
+    seen.push(key);
+    selectedTops.add(outfit.items.find((item) => item.role === "top")!.product.id);
+    selectedPants.add(outfit.items.find((item) => item.role === "bottom")!.product.id);
+    assert.equal(outfit.setTypeName, "Áo + Quần");
+  }
+
+  assert.equal(seen.length, 30);
+  assert.ok(selectedTops.size >= 6);
+  assert.ok(selectedPants.size >= 6);
+});
+
+test("outfit studio rotates unique dresses and co-ord sets", () => {
+  for (const [category, type, setType] of [
+    ["dress", "midi-dress", "dress_layer"],
+    ["set", "set", "coord_set"]
+  ] as const) {
+    const choices = Array.from({ length: 6 }, (_, index) => product({
+      id: `rotation-${category}-${index}`,
+      category,
+      type,
+      colorFamily: "black"
+    }));
+    const seen: string[] = [];
+
+    for (let index = 0; index < choices.length; index += 1) {
+      const outfit = coordinateSmartOutfit({
+        catalog: choices,
+        setType,
+        variantSalt: index * 3,
+        excludeOutfitKeys: seen
+      });
+      const key = outfitSelectionKey(outfit.items);
+      assert.ok(key && !seen.includes(key));
+      seen.push(key);
+    }
+
+    assert.equal(new Set(seen).size, choices.length);
+    const reset = coordinateSmartOutfit({
+      catalog: choices,
+      setType,
+      excludeOutfitKeys: seen
+    });
+    assert.ok(outfitSelectionKey(reset.items));
+  }
+});
+
+test("outfit selection preserves hard constraints and gracefully repeats if there is only one set", () => {
+  const catalog = [redCorset, whiteTrousers];
+  const first = coordinateSmartOutfit({ catalog, setType: "top_pants" });
+  const onlyKey = outfitSelectionKey(first.items);
+  const repeat = coordinateSmartOutfit({
+    catalog,
+    setType: "top_pants",
+    excludeOutfitKeys: [onlyKey],
+    variantSalt: 47
+  });
+  assert.equal(outfitSelectionKey(repeat.items), onlyKey);
+  assert.equal(outfitSelectionKey([
+    ...first.items,
+    { product: blackCorset, role: "outerwear" }
+  ]), onlyKey);
+});
+
+test("stylist explanations reflect garment types, not repeated body-shape sales copy", () => {
+  const shirt = product({
+    id: "review-shirt",
+    category: "tops",
+    type: "shirt",
+    colorFamily: "white",
+    volume: "voluminous"
+  });
+  const jeans = product({
+    id: "review-jeans",
+    category: "bottoms",
+    type: "jeans",
+    colorFamily: "blue",
+    volume: "fitted"
+  });
+  const skirt = product({
+    id: "review-skirt",
+    category: "bottoms",
+    type: "skirt",
+    colorFamily: "black",
+    lengthClass: "midi"
+  });
+  const pantsReview = coordinateSmartOutfit({ catalog: [shirt, jeans], setType: "top_pants" });
+  const skirtReview = coordinateSmartOutfit({ catalog: [shirt, skirt], setType: "top_skirt" });
+  assert.match(pantsReview.reason, /sơ mi dáng rộng/);
+  assert.match(pantsReview.reason, /quần jeans/);
+  assert.match(skirtReview.reason, /chân váy midi/);
+  assert.notEqual(pantsReview.reason, skirtReview.reason);
+  for (const review of [pantsReview, skirtReview]) {
+    assert.doesNotMatch(review.reason, /ôm trọn vòng eo|quyến rũ|đường cong của người phụ nữ|cắt xẻ sắc sảo/i);
+  }
+});
+
+test("dress and coordinated-set reviews do not invent body-hugging or cut-out details", () => {
+  const casualDress = product({
+    id: "review-casual-dress",
+    category: "dress",
+    type: "midi-dress",
+    colorFamily: "beige"
+  });
+  const coordSet = product({
+    id: "review-coord-set",
+    category: "set",
+    type: "set",
+    colorFamily: "black"
+  });
+  const dressReview = coordinateSmartOutfit({ catalog: [casualDress], setType: "dress_layer" });
+  const setReview = coordinateSmartOutfit({ catalog: [coordSet], setType: "coord_set" });
+  assert.match(dressReview.reason, /đầm dáng midi/);
+  assert.match(setReview.reason, /set đồng bộ/);
+  assert.doesNotMatch(dressReview.reason, /cắt xẻ|đường cong|quyến rũ/i);
+  assert.doesNotMatch(setReview.reason, /tôn dáng|cắt may/i);
+});
+
+test("stylist accessory tips follow occasion without changing products", () => {
+  const day = coordinateSmartOutfit({ catalog: [redCorset, whiteTrousers], setType: "top_pants", occasion: "casual" });
+  const office = coordinateSmartOutfit({ catalog: [redCorset, whiteTrousers], setType: "top_pants", occasion: "work" });
+  assert.match(day.stylingTip, /sneaker/);
+  assert.match(office.stylingTip, /loafer/);
+  assert.notEqual(day.stylingTip, office.stylingTip);
+});
+
+test("payment data is visible only to its owner or an admin", () => {
+  assert.equal(canReadPaymentStatus(null, "owner"), false);
+  assert.equal(canReadPaymentStatus({ id: "stranger", role: "user" }, "owner"), false);
+  assert.equal(canReadPaymentStatus({ id: "owner", role: "user" }, "owner"), true);
+  assert.equal(canReadPaymentStatus({ id: "admin", role: "admin" }, "owner"), true);
+  assert.equal(canReadPaymentStatus({ id: "owner", role: "user" }, null), false);
+});
+
+test("simulated QR payment is never allowed in production or for customers", () => {
+  const order = { payment: "qr", paymentStatus: "pending", status: "processing" };
+  const admin = { id: "admin", role: "admin" };
+  assert.equal(canSimulatePayment(admin, order, "production"), false);
+  assert.equal(canSimulatePayment({ id: "owner", role: "user" }, order, "development"), false);
+  assert.equal(canSimulatePayment(admin, order, "development"), true);
+  assert.equal(canSimulatePayment(admin, { ...order, paymentStatus: "paid" }, "development"), false);
+  assert.equal(canSimulatePayment(admin, { ...order, status: "cancelled" }, "development"), false);
+  assert.equal(canSimulatePayment(admin, { ...order, payment: "cod" }, "development"), false);
+});
+
+
+test("quick search matches accent-insensitive shop results and groups colors", () => {
+  const blue = product({ id: "shirt-blue", name: "Sơ mi Oxford", category: "tops", type: "shirt", colorFamily: "blue", color: "Xanh", groupCode: "oxford" });
+  const white = product({ id: "shirt-white", name: "Sơ mi Oxford", category: "tops", type: "shirt", colorFamily: "white", color: "Trắng", groupCode: "oxford" });
+  const other = product({ id: "pants", name: "Quần Âu", category: "bottoms", type: "trousers", colorFamily: "black", color: "Đen" });
+  const sold = product({ id: "shirt-sold", name: "Sơ mi bán hết", category: "tops", type: "shirt", colorFamily: "white", stock: 0 });
+  const found = getSearchPreviewProducts([blue, other, white, sold], "so mi trang");
+  assert.equal(found[0]?.id, "shirt-white");
+  assert.equal(found.filter((item) => item.groupCode === "oxford").length, 1);
+  assert.ok(found.every((item) => item.id !== sold.id));
+  const all = getSearchPreviewProducts([blue, other, white, sold], "so mi");
+  assert.equal(all.filter((item) => item.groupCode === "oxford").length, 1);
+  assert.ok(all.every((item) => item.id !== sold.id));
+});
+
+test("plain product lookup replies without LLM but outfit conversations do not", () => {
+  const intent = inferFallbackShoppingIntent({ message: "Tìm áo corset màu đỏ", contextProducts: [] });
+  assert.equal(intent.intent, "search_products");
+  const response = fastCatalogLookupReply("Tìm áo corset màu đỏ", intent, [redCorset]);
+  assert.ok(response?.includes(redCorset.name));
+  assert.ok(response?.includes("đ"));
+  assert.equal(fastCatalogLookupReply("Tìm áo corset màu đỏ", intent, [redCorset], true), null);
+  assert.equal(fastCatalogLookupReply("Tìm áo corset màu đỏ", { ...intent, inheritPrevious: true }, [redCorset]), null);
+  const outfit = inferFallbackShoppingIntent({ message: "Phối áo đỏ với chân váy trắng", contextProducts: [] });
+  assert.equal(fastCatalogLookupReply("Phối áo đỏ với chân váy trắng", outfit, [redCorset]), null);
+});
+
+test("admin COD collection is only valid for completed, unpaid deliveries", () => {
+  const order = { payment: "cod", paymentStatus: "cod_pending", status: "processing" };
+  assert.equal(canRecordCodCollection(order), false);
+  assert.equal(canRecordCodCollection(order, "completed"), true);
+  assert.equal(canRecordCodCollection({ ...order, status: "completed" }), true);
+  assert.equal(canRecordCodCollection({ ...order, payment: "qr" }, "completed"), false);
+  assert.equal(canRecordCodCollection({ ...order, status: "cancelled" }, "completed"), false);
+  assert.equal(canRecordCodCollection({ ...order, paymentStatus: "paid" }, "completed"), false);
+});
+
+
+test("greetings and social turns never trigger product recommendations", () => {
+  for (const message of [
+    "chào người anh em", "Chào shop ơi!", "xin chào", "hello", "hi shop!",
+    "ê shop ơi", "chào buổi sáng", "cảm ơn shop nhé", "bye"
+  ]) {
+    const response = socialChatReply(message);
+    assert.ok(response, `Missing social response: ${message}`);
+    assert.doesNotMatch(response!, /\b(?:corset|giá|mua hàng|đơn hàng|chân váy|quần|sản phẩm)\b/i);
+    assert.equal(retrieveProductsFromIntent(
+      inferFallbackShoppingIntent({ message, contextProducts: [] }),
+      productionCatalog
+    ).length, 0, `Should not retrieve products for: ${message}`);
+  }
+  assert.match(socialChatReply("chào người anh em")!, /người anh em/i);
+  assert.equal(socialChatReply("hello", true), null);
+});
+
+test("greeting plus purchase intent still follows normal shopping recommendations", () => {
+  for (const message of [
+    "Chào shop, mình muốn tìm áo đỏ",
+    "hi, cho mình xem chân váy trắng",
+    "hello shop có áo corset không?",
+    "ê shop ơi có váy không"
+  ]) {
+    assert.equal(socialChatReply(message), null, message);
+  }
+  assert.equal(socialChatReply("chào người anh em", true), null);
+});
+
+test("general intent and legacy greeting lookup cannot inject featured items", () => {
+  const general = inferFallbackShoppingIntent({ message: "chào người anh em", contextProducts: [] });
+  assert.equal(general.intent, "general");
+  assert.equal(retrieveProductsFromIntent(general, productionCatalog).length, 0);
+  assert.equal(retrieveProducts("chào người anh em", productionCatalog).length, 0);
+  assert.equal(retrieveProducts("hello", productionCatalog).length, 0);
+  const purchase = inferFallbackShoppingIntent({ message: "tìm áo corset đỏ", contextProducts: [] });
+  assert.ok(retrieveProductsFromIntent(purchase, productionCatalog).length > 0);
+});
+
+test("admin fulfillment enforces forward-only order transitions", () => {
+  assert.deepEqual(allowedOrderStatuses("processing"), ["processing", "confirmed", "cancelled"]);
+  assert.deepEqual(allowedOrderStatuses("confirmed"), ["confirmed", "shipping", "cancelled"]);
+  assert.deepEqual(allowedOrderStatuses("shipping"), ["shipping", "completed", "cancelled"]);
+  assert.deepEqual(allowedOrderStatuses("completed"), ["completed"]);
+  assert.deepEqual(allowedOrderStatuses("cancelled"), ["cancelled"]);
+  assert.equal(canTransitionOrderStatus("processing", "completed"), false);
+  assert.equal(canTransitionOrderStatus("shipping", "processing"), false);
+  assert.equal(canTransitionOrderStatus("completed", "cancelled"), false);
+  assert.equal(canTransitionOrderStatus("confirmed", "shipping"), true);
+  assert.equal(isOrderStatus("unknown"), false);
+  assert.equal(isOrderStatus("paid"), false);
 });
 
 let passed = 0;

@@ -16,22 +16,37 @@ import {
 } from "@ant-design/icons";
 import { useStore } from "@/components/store-provider";
 import { formatPrice } from "@/lib/products";
+import type { OrderStatus } from "@/lib/cart";
+import { allowedOrderStatuses } from "@/lib/order-workflow";
 
 export default function AdminOrderDetailPage() {
   const { user, accountLoading } = useStore();
   const params = useParams<{ id: string }>();
   const [order, setOrder] = useState<any>(null);
+  const [draftStatus, setDraftStatus] = useState<OrderStatus>("processing");
+  const [draftCarrier, setDraftCarrier] = useState("");
+  const [draftTracking, setDraftTracking] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState<{ error: boolean; text: string } | null>(null);
 
   async function load() {
     const r = await fetch(`/api/orders/${params.id}`, { cache: "no-store" });
-    if (r.ok) setOrder((await r.json()).order);
+    if (!r.ok) {
+      setFeedback({ error: true, text: "Không thể tải đơn hàng. Hãy kiểm tra mã đơn và quyền truy cập." });
+      return;
+    }
+    const fetched = (await r.json()).order;
+    setOrder(fetched);
+    setDraftStatus(fetched.status);
+    setDraftCarrier(fetched.shippingCarrier ?? "");
+    setDraftTracking(fetched.trackingCode ?? "");
   }
 
   useEffect(() => {
     if (user?.role === "admin" && params.id) void load();
   }, [user, params.id]);
 
-  if (accountLoading || (user?.role === "admin" && !order)) {
+  if (accountLoading || (user?.role === "admin" && !order && !feedback)) {
     return (
       <div className="antLoadingState">
         <SyncOutlined spin style={{ fontSize: 32, color: "#1677ff" }} />
@@ -55,14 +70,40 @@ export default function AdminOrderDetailPage() {
     );
   }
 
+  async function saveOperations(collectCod = false) {
+    if (!order || saving) return;
+    setSaving(true);
+    setFeedback(null);
+    try {
+      const response = await fetch(`/api/orders/${encodeURIComponent(order.id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: collectCod ? order.status : draftStatus,
+          shippingCarrier: draftCarrier,
+          trackingCode: draftTracking,
+          ...(collectCod ? { paymentStatus: "paid" } : {})
+        })
+      });
+      const result = await response.json().catch(() => ({})) as { error?: string };
+      if (!response.ok) throw new Error(result.error || "Không thể lưu đơn hàng.");
+      await load();
+      setFeedback({ error: false, text: collectCod ? "Đã ghi nhận tiền mặt COD." : "Đã lưu thông tin vận hành đơn hàng." });
+    } catch (error) {
+      setFeedback({ error: true, text: error instanceof Error ? error.message : "Lỗi cập nhật đơn hàng." });
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (!order) {
     return (
       <div className="antAdminPageContainer">
         <div className="antCard">
           <div className="antEmptyState">
             <ShoppingOutlined style={{ fontSize: 44, color: "#8c8c8c" }} />
-            <h3>Không tìm thấy đơn hàng</h3>
-            <p>Mã đơn hàng không tồn tại hoặc đã bị xóa.</p>
+            <h3>Không thể tải đơn hàng</h3>
+            <p>{feedback?.text || "Mã đơn hàng không tồn tại hoặc đã bị xóa."}</p>
             <Link className="antBtn antBtnPrimary" href="/admin?tab=orders">
               Quay lại danh sách
             </Link>
@@ -164,6 +205,66 @@ export default function AdminOrderDetailPage() {
             <span className="antTag antTagWarning">
               Mã: {order.trackingCode || "Chưa có tracking"}
             </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Fulfillment operations with server-side transition and payment guards */}
+      <div className="antCard" style={{ marginTop: 24 }}>
+        <div className="antCardHead">
+          <div>
+            <div className="antCardEyebrow">ĐIỀU PHỐI ĐƠN HÀNG</div>
+            <h2 className="antCardTitle">Xử lý đơn và vận chuyển</h2>
+          </div>
+        </div>
+        <div className="antCardBody">
+          <div className="antFormGrid">
+            <label className="antFormField">
+              <span className="antFormLabel">Trạng thái đơn hàng</span>
+              <select className="antInput" value={draftStatus}
+                onChange={(event) => setDraftStatus(event.target.value as OrderStatus)}>
+                {allowedOrderStatuses(order.status as OrderStatus).map((status) => (
+                  <option key={status} value={status}>{
+                    { processing: "Đang xử lý", confirmed: "Đã xác nhận", shipping: "Đang giao",
+                      completed: "Đã hoàn tất", cancelled: "Đã hủy" }[status]
+                  }</option>
+                ))}
+              </select>
+            </label>
+            <label className="antFormField">
+              <span className="antFormLabel">Hãng vận chuyển</span>
+              <input className="antInput" value={draftCarrier}
+                onChange={(event) => setDraftCarrier(event.target.value)}
+                placeholder="GHN, GHTK, Viettel Post..." />
+            </label>
+            <label className="antFormField">
+              <span className="antFormLabel">Mã vận đơn</span>
+              <input className="antInput" value={draftTracking}
+                onChange={(event) => setDraftTracking(event.target.value)}
+                placeholder="Mã theo dõi lô hàng" />
+            </label>
+          </div>
+          <p style={{ margin: "8px 0 16px", color: "#64748b", fontSize: 13 }}>
+            Chỉ chuyển sang Đang giao khi đã có hãng vận chuyển và mã vận đơn.
+            Thanh toán QR phải được xác nhận qua giao dịch, không xác nhận thủ công.
+          </p>
+          {feedback && (
+            <p role="status" style={{ color: feedback.error ? "#cf1322" : "#389e0d", marginBottom: 12 }}>
+              {feedback.text}
+            </p>
+          )}
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <button type="button" className="antBtn antBtnPrimary"
+              disabled={saving || order.status === "cancelled"}
+              onClick={() => void saveOperations()}>
+              {saving ? "Đang lưu..." : "Lưu xử lý đơn"}
+            </button>
+            {order.payment === "cod" && order.status === "completed" && order.paymentStatus !== "paid" && (
+              <button type="button" className="antBtn antBtnDefault" disabled={saving}
+                onClick={() => void saveOperations(true)}>
+                Ghi nhận đã thu COD
+              </button>
+            )}
           </div>
         </div>
       </div>

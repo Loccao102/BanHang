@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
+import { allowedOrderStatuses } from "@/lib/order-workflow";
 import {
   ArrowLeftOutlined,
   BarcodeOutlined,
@@ -34,6 +36,19 @@ const payments: { value: PaymentStatus; label: string }[] = [
 
 export default function FulfillmentPage() {
   const { user, accountLoading, orders, updateOrderStatus } = useStore();
+  const [shippingDrafts, setShippingDrafts] = useState<Record<string, { carrier: string; tracking: string }>>({});
+  function draft(order: (typeof orders)[number]) {
+    return shippingDrafts[order.id] || {
+      carrier: order.shippingCarrier ?? "",
+      tracking: order.trackingCode ?? ""
+    };
+  }
+  function updateDraft(id: string, key: "carrier" | "tracking", value: string, order: (typeof orders)[number]) {
+    setShippingDrafts((previous) => ({
+      ...previous,
+      [id]: { ...draft(order), ...previous[id], [key]: value }
+    }));
+  }
 
   if (accountLoading) {
     return (
@@ -188,11 +203,12 @@ export default function FulfillmentPage() {
                   <select
                     className="antInput"
                     value={order.status}
-                    onChange={(event) =>
-                      updateOrderStatus(order.id, event.target.value as OrderStatus)
-                    }
+                    onChange={(event) => updateOrderStatus(order.id, event.target.value as OrderStatus, {
+                      shippingCarrier: draft(order).carrier,
+                      trackingCode: draft(order).tracking
+                    })}
                   >
-                    {statuses.map((item) => (
+                    {statuses.filter((item) => allowedOrderStatuses(order.status).includes(item.value)).map((item) => (
                       <option value={item.value} key={item.value}>
                         {item.label}
                       </option>
@@ -201,39 +217,25 @@ export default function FulfillmentPage() {
                 </div>
 
                 <div className="antFulfillColField">
-                  <label className="antFulfillLabel">Trạng thái thanh toán</label>
-                  <select
-                    className="antInput"
-                    value={
-                      order.paymentStatus ??
-                      (order.payment === "cod" ? "cod_pending" : "pending")
-                    }
-                    onChange={(event) =>
-                      updateOrderStatus(order.id, order.status, {
-                        paymentStatus: event.target.value as PaymentStatus
-                      })
-                    }
-                  >
-                    {payments.map((item) => (
-                      <option value={item.value} key={item.value}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </select>
+                  <label className="antFulfillLabel">Thanh toán</label>
+                  <span className={`antTag ${order.paymentStatus === "paid" ? "antTagSuccess" : "antTagWarning"}`}>
+                    {payments.find((item) => item.value === order.paymentStatus)?.label || order.paymentStatus}
+                  </span>
+                  {order.payment === "cod" && order.status === "completed" && order.paymentStatus !== "paid" && (
+                    <button type="button" className="antBtn antBtnDefault antBtnSm"
+                      onClick={() => updateOrderStatus(order.id, order.status, { paymentStatus: "paid" })}>
+                      Ghi nhận đã thu COD
+                    </button>
+                  )}
                 </div>
 
                 <div className="antFulfillColField">
                   <label className="antFulfillLabel">Hãng vận chuyển</label>
                   <input
                     className="antInput"
-                    defaultValue={order.shippingCarrier ?? ""}
+                    value={draft(order).carrier}
                     placeholder="GHN, GHTK, Viettel Post..."
-                    onBlur={(event) =>
-                      updateOrderStatus(order.id, order.status, {
-                        shippingCarrier: event.target.value,
-                        trackingCode: order.trackingCode
-                      })
-                    }
+                    onChange={(event) => updateDraft(order.id, "carrier", event.target.value, order)}
                   />
                 </div>
 
@@ -241,14 +243,9 @@ export default function FulfillmentPage() {
                   <label className="antFulfillLabel">Mã vận đơn (Tracking)</label>
                   <input
                     className="antInput"
-                    defaultValue={order.trackingCode ?? ""}
+                    value={draft(order).tracking}
                     placeholder="Nhập mã vận đơn"
-                    onBlur={(event) =>
-                      updateOrderStatus(order.id, order.status, {
-                        shippingCarrier: order.shippingCarrier,
-                        trackingCode: event.target.value
-                      })
-                    }
+                    onChange={(event) => updateDraft(order.id, "tracking", event.target.value, order)}
                   />
                 </div>
 
@@ -256,12 +253,14 @@ export default function FulfillmentPage() {
                   <span className="antTag antTagInfo">
                     {order.items.reduce((sum, line) => sum + line.quantity, 0)} món
                   </span>
-                  <Link
-                    href={`/admin/orders/${order.id}`}
-                    className="antBtn antBtnDefault antBtnSm"
-                  >
-                    Chi tiết
-                  </Link>
+                  <button type="button" className="antBtn antBtnPrimary antBtnSm"
+                    onClick={() => updateOrderStatus(order.id, order.status, {
+                      shippingCarrier: draft(order).carrier,
+                      trackingCode: draft(order).tracking
+                    })}>
+                    Lưu vận chuyển
+                  </button>
+                  <Link href={`/admin/orders/${order.id}`} className="antBtn antBtnDefault antBtnSm">Chi tiết</Link>
                 </div>
               </div>
             ))}

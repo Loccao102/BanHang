@@ -42,6 +42,7 @@ type StoreContextValue = {
   saveProduct: (product: Product) => Promise<boolean>;
   deleteProduct: (id: string) => void;
   adjustStock: (id: string, delta: number) => void;
+  adjustVariantStock: (id: string, size: string, delta: number) => Promise<boolean>;
   toggleProductActive: (id: string) => void;
   resetCatalog: () => void;
   updateSettings: (next: StoreSettings) => void;
@@ -420,18 +421,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     const response = await fetch("/api/orders", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...draft, couponCode: coupon?.code })
+      body: JSON.stringify({ ...draft, couponCode: draft.couponCode ?? null })
     });
     const data = await response.json() as { order?: OrderRecord; error?: string };
     if (!response.ok || !data.order) throw new Error(data.error ?? "Không thể tạo đơn hàng.");
 
     setOrders((current) => [data.order!, ...current.filter((order) => order.id !== data.order!.id)]);
-    setCart([]);
-    setCoupon(null);
+    // Direct purchases must leave the user's cart and its voucher untouched.
+    if (draft.checkoutMode !== "buy_now") {
+      setCart([]);
+      setCoupon(null);
+    }
     setCartDrawerOpen(false);
     await refreshCatalog();
     return data.order;
-  }, [user, router, showNotice, persistenceMode, coupon, refreshCatalog]);
+  }, [user, router, showNotice, persistenceMode, refreshCatalog]);
 
   const updateOrderStatus = useCallback((id: string, status: OrderStatus, extra?: { paymentStatus?: PaymentStatus; shippingCarrier?: string; trackingCode?: string }) => {
     const previous = orders.find((order) => order.id === id);
@@ -471,18 +475,35 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     }
   }, [persistenceMode, user, refreshCatalog]);
 
+  const adjustVariantStock = useCallback(async (id: string, size: string, delta: number): Promise<boolean> => {
+    if (persistenceMode !== "database" || user?.role !== "admin") {
+      showNotice("Không thể cập nhật kho", "Chỉ cập nhật tồn kho được lưu trên máy chủ.", "error");
+      return false;
+    }
+    try {
+      const response = await fetch(`/api/admin/inventory/${encodeURIComponent(id)}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ size, delta })
+      });
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({})) as { error?: string };
+        throw new Error(error.error ?? "Không thể điều chỉnh tồn kho.");
+      }
+      await refreshCatalog();
+      showNotice("Đã cập nhật tồn kho", `Size ${size}: ${delta > 0 ? "+" : ""}${delta}`);
+      return true;
+    } catch (error) {
+      showNotice("Không thể cập nhật kho", error instanceof Error ? error.message : "Mất kết nối.", "error");
+      await refreshCatalog();
+      return false;
+    }
+  }, [persistenceMode, user, refreshCatalog, showNotice]);
+
   const adjustStock = useCallback((id: string, delta: number) => {
-    if (user?.role !== "admin") return;
-    const product = catalog.find((item) => item.id === id);
-    if (!product) return;
-    const sizes = product.sizes.length || 1;
-    const variants = (product.variants ?? product.sizes.map((size) => ({ sku: `${product.sku}-${size}`, size, stock: 0, active: true }))).map((variant, index) =>
-      index === 0 ? { ...variant, stock: Math.max(0, variant.stock + delta), active: Math.max(0, variant.stock + delta) > 0 } : variant
-    );
-    const next = { ...product, variants, stock: variants.reduce((sum, variant) => sum + variant.stock, 0) || Math.max(0, product.stock + delta * sizes) };
-    setCatalog((current) => current.map((item) => item.id === id ? next : item));
-    void persistProduct(next);
-  }, [catalog, persistProduct, user]);
+    const item = catalog.find((product) => product.id === id);
+    const size = item?.variants?.[0]?.size ?? item?.sizes[0];
+    if (size) void adjustVariantStock(id, size, delta);
+  }, [catalog, adjustVariantStock]);
 
   const toggleProductActive = useCallback((id: string) => {
     if (user?.role !== "admin") return;
@@ -530,11 +551,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     cartCount: cart.reduce((sum, line) => sum + line.quantity, 0),
     coupon, cartDrawerOpen, notice, addToCart, addBundleToCart, removeFromCart, updateQuantity, updateCartVariant,
     clearCart: () => setCart([]), toggleWishlist, applyCoupon, clearCoupon: () => setCoupon(null),
-    placeOrder, updateOrderStatus, saveProduct, deleteProduct, adjustStock, toggleProductActive,
+    placeOrder, updateOrderStatus, saveProduct, deleteProduct, adjustStock, adjustVariantStock, toggleProductActive,
     resetCatalog, updateSettings, refreshAccount, logout,
     openCartDrawer: () => setCartDrawerOpen(true), closeCartDrawer: () => setCartDrawerOpen(false),
     dismissNotice: () => setNotice(null)
-  }), [cart, wishlist, orders, catalog, settings, persistenceMode, user, addresses, accountLoading, coupon, cartDrawerOpen, notice, addToCart, addBundleToCart, removeFromCart, updateQuantity, updateCartVariant, toggleWishlist, applyCoupon, placeOrder, updateOrderStatus, saveProduct, deleteProduct, adjustStock, toggleProductActive, resetCatalog, updateSettings, refreshAccount, logout]);
+  }), [cart, wishlist, orders, catalog, settings, persistenceMode, user, addresses, accountLoading, coupon, cartDrawerOpen, notice, addToCart, addBundleToCart, removeFromCart, updateQuantity, updateCartVariant, toggleWishlist, applyCoupon, placeOrder, updateOrderStatus, saveProduct, deleteProduct, adjustStock, adjustVariantStock, toggleProductActive, resetCatalog, updateSettings, refreshAccount, logout]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }

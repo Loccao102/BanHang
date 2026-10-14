@@ -9,6 +9,8 @@ import { retrieveProductsHybrid } from "@/lib/server/product-vector-search";
 import { applyShoppingState, buildShoppingState, parseShoppingState } from "@/lib/server/chat-state";
 import { getDb } from "@/lib/server/db";
 import { evaluateRecommendation } from "@/lib/server/chat-evaluation";
+import { fastCatalogLookupReply } from "@/lib/server/chat-fast-reply";
+import { socialChatReply } from "@/lib/server/chat-social";
 
 export const runtime = "nodejs";
 
@@ -222,6 +224,41 @@ export async function POST(request: Request) {
     }
   }
 
+  // A greeting is a conversation turn, not a catalog request.
+  // Handle it before intent parsing/retrieval so no product cards or actions leak
+  // through from the default recommendation pool or previous outfit context.
+  const socialReply = socialChatReply(message, Boolean(body.image));
+  if (socialReply) {
+    if (user && db && conversationId) {
+      await db.$transaction([
+        db.chatMessage.create({
+          data: {
+            conversationId,
+            role: "assistant",
+            content: socialReply,
+            productIds: [],
+            actions: []
+          }
+        }),
+        db.chatConversation.update({
+          where: { id: conversationId },
+          data: {
+            updatedAt: new Date(),
+            ...(createdConversation ? { title: titleFromMessage(message) } : {})
+          }
+        })
+      ]);
+    }
+    return NextResponse.json({
+      message: socialReply,
+      products: [],
+      actions: [] satisfies ChatAgentAction[],
+      shoppingState,
+      conversationId: conversationId ?? null,
+      persisted: Boolean(user && db)
+    });
+  }
+
   if (shoppingState?.outfit?.selectedProductIds?.length) {
     contextProductIds = Array.from(new Set([
       ...shoppingState.outfit.selectedProductIds,
@@ -250,7 +287,11 @@ export async function POST(request: Request) {
 
   // The AI parser owns natural-language/context understanding. The legacy retriever is
   // retained only as a resilience fallback when intent parsing is unavailable.
-  const initiallyFound = intent && intent.confidence >= 0.35
+  const isSmallTalk = intent?.intent === "general" && !intent.items.length &&
+    !intent.style && !intent.occasion && !intent.budgetMax;
+  const initiallyFound = isSmallTalk
+    ? []
+    : intent && intent.confidence >= 0.35
     ? await retrieveProductsHybrid({
         db,
         message,
@@ -335,7 +376,10 @@ export async function POST(request: Request) {
       ].filter(Boolean).join(" ")
     : "";
 
-  const aiText = hardOutfitNoMatch
+  const fastReply = hardOutfitNoMatch
+    ? null
+    : fastCatalogLookupReply(message, intent, responseProducts, Boolean(body.image));
+  const aiText = hardOutfitNoMatch || fastReply
     ? null
     : await askGemini({
         message,
@@ -347,7 +391,9 @@ export async function POST(request: Request) {
       });
   const baseReply = hardOutfitNoMatch
     ? noMatchReply
-    : aiText ?? fallbackReply(message, responseProducts, Boolean(orderContext), plan.notes);
+    : fastReply ?? aiText ?? (isSmallTalk
+        ? "Mình đây 😄 Bạn cứ nói chuyện thoải mái nhé!"
+        : fallbackReply(message, responseProducts, Boolean(orderContext), plan.notes));
 
   // Câu trả lời của model có thể bỏ sót món trong set đã phối, gây lệch với số thẻ sản phẩm
   // hiển thị bên dưới. Bổ sung danh sách chuẩn (tên + tổng tiền) khi thiếu món.
@@ -375,7 +421,7 @@ export async function POST(request: Request) {
     : withBundle;
 
   // Khi khách chuyển sang tìm kiếm mới độc lập hoặc reset, giải phóng outfit state cũ để tránh dính context
-  const stateContext = (intent?.inheritPrevious || intent?.intent === "modify_outfit" || intent?.intent === "size_advice" || intent?.intent === "add_outfit_to_cart")
+  const stateContext = (isSmallTalk || intent?.inheritPrevious || intent?.intent === "modify_outfit" || intent?.intent === "size_advice" || intent?.intent === "add_outfit_to_cart")
     ? shoppingState
     : null;
   const nextShoppingState = buildShoppingState(intent, responseProducts, stateContext);

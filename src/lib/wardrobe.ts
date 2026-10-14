@@ -1,11 +1,12 @@
 import type { Product } from "./products";
 
-export type WardrobeGroup = "tops" | "bottoms" | "dresses" | "outerwear" | "sets";
+export type WardrobeGroup = "tops" | "pants" | "skirts" | "dresses" | "outerwear" | "sets";
 export type OutfitSlot = "top" | "bottom" | "outerwear" | "one-piece";
 
 export const wardrobeGroupLabels: Record<WardrobeGroup, string> = {
   tops: "Áo / corset",
-  bottoms: "Quần & chân váy",
+  pants: "Quần",
+  skirts: "Chân váy",
   dresses: "Váy / đầm",
   outerwear: "Áo khoác",
   sets: "Set nguyên bộ"
@@ -13,15 +14,16 @@ export const wardrobeGroupLabels: Record<WardrobeGroup, string> = {
 
 export const wardrobeGroupDescriptions: Record<WardrobeGroup, string> = {
   tops: "Phối cùng một món quần hoặc chân váy.",
-  bottoms: "Quần và chân váy dùng chung một slot phối đồ.",
+  pants: "Phối riêng áo + quần.",
+  skirts: "Phối riêng áo + chân váy.",
   dresses: "Look liền thân, thử riêng.",
-  outerwear: "Lớp ngoài tùy chọn cho outfit áo + bottom.",
+  outerwear: "Lớp ngoài tùy chọn cho outfit áo + quần hoặc áo + chân váy.",
   sets: "Set hoàn chỉnh, thử riêng."
 };
 
 export function wardrobeGroup(product: Product): WardrobeGroup {
   if (product.category === "tops") return "tops";
-  if (product.category === "bottoms") return "bottoms";
+  if (product.category === "bottoms") return product.type === "skirt" ? "skirts" : "pants";
   if (product.category === "outerwear") return "outerwear";
   if (product.category === "dress") return "dresses";
   return "sets";
@@ -30,7 +32,7 @@ export function wardrobeGroup(product: Product): WardrobeGroup {
 export function outfitSlot(product: Product): OutfitSlot {
   const group = wardrobeGroup(product);
   if (group === "tops") return "top";
-  if (group === "bottoms") return "bottom";
+  if (group === "pants" || group === "skirts") return "bottom";
   if (group === "outerwear") return "outerwear";
   return "one-piece";
 }
@@ -75,14 +77,15 @@ export function outfitLabel(products: Product[]) {
       return wardrobeGroup(products[0]) === "sets" ? "Set nguyên bộ" : "Váy / đầm";
     }
     if (slot === "top") return "Áo";
-    if (slot === "bottom") return "Quần / Chân váy";
+    if (slot === "bottom") return wardrobeGroup(products[0]) === "skirts" ? "Chân váy" : "Quần";
     if (slot === "outerwear") return "Áo khoác";
     return products[0].name;
   }
 
   const labels: string[] = [];
   if (products.some((product) => outfitSlot(product) === "top")) labels.push("áo");
-  if (products.some((product) => outfitSlot(product) === "bottom")) labels.push("quần / chân váy");
+  if (products.some((product) => wardrobeGroup(product) === "pants")) labels.push("quần");
+  if (products.some((product) => wardrobeGroup(product) === "skirts")) labels.push("chân váy");
   if (products.some((product) => outfitSlot(product) === "outerwear")) labels.push("áo khoác");
   return labels.join(" + ");
 }

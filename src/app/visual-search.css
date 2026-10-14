@@ -1,0 +1,725 @@
+/* ============================================================
+   LSOUL AI Visual Search Modal Styles
+   ============================================================ */
+
+.visualSearchOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  overflow-y: auto;
+}
+
+.visualSearchBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: fadeIn 0.25s ease-out;
+}
+
+.visualSearchCard {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 980px;
+  max-height: 90vh;
+  background: #0d0d10;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: modalScaleUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #f3f3f5;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalScaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Header */
+.visualSearchHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1.75rem 2rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.visualSearchBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(212, 175, 55, 0.15), rgba(255, 255, 255, 0.05));
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  color: #f5d77f;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+.visualSearchTitleWrap h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.35rem;
+  letter-spacing: -0.02em;
+  color: #fff;
+}
+
+.visualSearchTitleWrap p {
+  font-size: 0.88rem;
+  color: #9e9ea7;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.visualSearchCloseBtn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #bbb;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.visualSearchCloseBtn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  transform: rotate(90deg);
+}
+
+/* Body */
+.visualSearchBody {
+  padding: 1.75rem 2rem 2rem;
+  overflow-y: auto;
+  max-height: calc(90vh - 120px);
+}
+
+/* Upload Dropzone */
+.visualDropZone {
+  border: 2px dashed rgba(255, 255, 255, 0.16);
+  border-radius: 16px;
+  padding: 3rem 2rem;
+  text-align: center;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.02);
+  transition: all 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.visualDropZone:hover,
+.visualDropZone.dragOver {
+  border-color: #f5d77f;
+  background: rgba(212, 175, 55, 0.04);
+  transform: translateY(-2px);
+}
+
+.visualDropIconWrap {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #f5d77f;
+  margin-bottom: 1.25rem;
+}
+
+.visualDropZone h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0 0 0.4rem;
+  color: #fff;
+}
+
+.visualDropZone p {
+  font-size: 0.88rem;
+  color: #8f8f9d;
+  margin: 0 0 1rem;
+}
+
+.visualDropMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.78rem;
+  color: #6c6c78;
+}
+
+/* Preset Samples */
+.visualPresetsSection {
+  margin-top: 2rem;
+}
+
+.visualPresetsHeader {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #7b7b8a;
+  margin-bottom: 0.85rem;
+}
+
+.visualPresetsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.85rem;
+}
+
+.visualPresetItem {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+}
+
+.visualPresetItem:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(212, 175, 55, 0.4);
+  transform: translateY(-2px);
+}
+
+.visualPresetThumb {
+  position: relative;
+  width: 48px;
+  height: 60px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #19191d;
+  flex-shrink: 0;
+}
+
+.visualPresetThumb img {
+  object-fit: cover;
+}
+
+.visualPresetInfo strong {
+  display: block;
+  font-size: 0.85rem;
+  color: #eee;
+  margin-bottom: 0.2rem;
+  line-height: 1.25;
+}
+
+.visualPresetInfo span {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+/* Scanning Radar Animation */
+.visualAnalyzingSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2.5rem 1rem;
+  gap: 2rem;
+}
+
+.visualScanningVisual {
+  position: relative;
+}
+
+.visualImageHolder {
+  position: relative;
+  width: 180px;
+  height: 240px;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+}
+
+.visualImageHolder img {
+  object-fit: cover;
+}
+
+.visualLaserBeam {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, #f5d77f, #fff, #f5d77f, transparent);
+  box-shadow: 0 0 16px #f5d77f, 0 0 32px #f5d77f;
+  animation: laserScan 2s ease-in-out infinite alternate;
+}
+
+@keyframes laserScan {
+  0% { top: 2%; }
+  100% { top: 96%; }
+}
+
+.visualScanningStatus {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.visualSpinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #f5d77f;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 1rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.visualScanningStatus h3 {
+  font-size: 1.15rem;
+  margin: 0 0 1.25rem;
+  color: #fff;
+}
+
+.visualStepList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  width: 100%;
+  max-width: 380px;
+}
+
+.visualStepItem {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  color: #555;
+  transition: all 0.3s;
+}
+
+.visualStepItem.active {
+  color: #22c55e;
+}
+
+.visualStepItem.active svg {
+  color: #22c55e;
+}
+
+/* Results View */
+.visualResultsSection {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 2rem;
+}
+
+@media (max-width: 800px) {
+  .visualResultsSection {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Left Column: Query Card */
+.visualQueryColumn {
+  display: flex;
+  flex-direction: column;
+}
+
+.visualQueryImageCard {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.visualQueryImage {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  background: #111;
+}
+
+.visualQueryImage img {
+  object-fit: cover;
+}
+
+.visualQueryTag {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  border-radius: 6px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.visualQueryDetails {
+  padding: 1.25rem;
+}
+
+.visualAnalysisSummary {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: #e2e2e8;
+  margin-bottom: 1.25rem;
+  line-height: 1.45;
+  border-left: 2px solid #f5d77f;
+  padding-left: 0.75rem;
+}
+
+.visualTagGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.visualTagRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: 0.82rem;
+}
+
+.tagLabel {
+  color: #888;
+}
+
+.tagVal {
+  color: #eee;
+  text-align: right;
+}
+
+.tagVal.highlight {
+  color: #f5d77f;
+}
+
+.visualFeaturePills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1.25rem;
+}
+
+.featurePill {
+  font-size: 0.75rem;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  color: #ccc;
+}
+
+.visualChangeImgBtn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #ddd;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.visualChangeImgBtn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+/* Right Column: Matches */
+.visualMatchesColumn {
+  display: flex;
+  flex-direction: column;
+}
+
+.visualMatchesHeader {
+  margin-bottom: 1.25rem;
+}
+
+.visualMatchesHeader h4 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0 0 0.2rem;
+  color: #fff;
+}
+
+.visualSortNote {
+  font-size: 0.78rem;
+  color: #7b7b88;
+}
+
+.visualProductGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1.2rem;
+}
+
+.visualProductCard {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.25s ease;
+}
+
+.visualProductCard:hover {
+  border-color: rgba(212, 175, 55, 0.35);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+}
+
+.visualProductImageLink {
+  display: block;
+}
+
+.visualProductImage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  background: #18181c;
+}
+
+.visualProductImage img {
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.visualProductCard:hover .visualProductImage img {
+  transform: scale(1.04);
+}
+
+.visualMatchPercentBadge {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  right: 8px;
+  background: rgba(13, 13, 16, 0.88);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 8px;
+  padding: 0.25rem 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  color: #f5d77f;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.visualProductMeta {
+  padding: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.visualProductTitle {
+  text-decoration: none;
+  color: #eee;
+  font-size: 0.86rem;
+  line-height: 1.3;
+  margin-bottom: 0.35rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.visualProductTitle:hover {
+  color: #f5d77f;
+}
+
+.visualProductPrice {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.6rem;
+}
+
+.visualProductPrice del {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #777;
+}
+
+.visualMatchReasonList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.85rem;
+}
+
+.matchReasonPill {
+  font-size: 0.7rem;
+  color: #9cb3a0;
+  line-height: 1.25;
+}
+
+.visualCardActionRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+  margin-top: auto;
+}
+
+.visualViewBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 0.45rem 0.25rem;
+  font-size: 0.75rem;
+  color: #fff;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.visualViewBtn:hover {
+  background: #fff;
+  color: #000;
+}
+
+.visualTryBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 8px;
+  padding: 0.45rem 0.25rem;
+  font-size: 0.75rem;
+  color: #f5d77f;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.visualTryBtn:hover {
+  background: #f5d77f;
+  color: #111;
+}
+
+/* Error state */
+.visualErrorSection {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.visualErrorSection p {
+  color: #ef4444;
+  margin-bottom: 1rem;
+}
+
+.visualNoMatch {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #888;
+}
+
+.visualNoMatch svg {
+  margin-bottom: 0.75rem;
+  opacity: 0.4;
+}
+
+.visualNoMatch p {
+  margin-bottom: 1.25rem;
+}
+
+/* Trigger Button on Header / Search */
+.visualSearchTriggerBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.85rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  color: #eee;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.visualSearchTriggerBtn:hover {
+  background: rgba(212, 175, 55, 0.15);
+  border-color: rgba(212, 175, 55, 0.4);
+  color: #f5d77f;
+  transform: translateY(-1px);
+}
+
+.searchOverlayCameraBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(212, 175, 55, 0.12);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  color: #f5d77f;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-right: 0.5rem;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.searchOverlayCameraBtn:hover {
+  background: #f5d77f;
+  color: #000;
+  transform: translateY(-1px);
+}
+

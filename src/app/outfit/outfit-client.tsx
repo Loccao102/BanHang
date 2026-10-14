@@ -20,6 +20,8 @@ import { useStore } from "@/components/store-provider";
 import { formatPrice, type Product } from "@/lib/products";
 import {
   coordinateSmartOutfit,
+  outfitSelectionKey,
+  reviewSelectedOutfit,
   CoordinatedOutfit,
   OutfitSetType
 } from "@/lib/stylist-outfit-engine";
@@ -35,6 +37,7 @@ export function OutfitClient() {
   const [style, setStyle] = useState<string>("all");
   const [includeOuterwear, setIncludeOuterwear] = useState(false);
   const [salt, setSalt] = useState<number>(() => Math.floor(Math.random() * 1000));
+  const [seenOutfitKeys, setSeenOutfitKeys] = useState<string[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [addedSuccess, setAddedSuccess] = useState(false);
   const [wishlistSuccess, setWishlistSuccess] = useState(false);
@@ -48,9 +51,10 @@ export function OutfitClient() {
       style,
       requiredProductId,
       variantSalt: salt,
+      excludeOutfitKeys: seenOutfitKeys,
       includeOuterwear
     });
-  }, [catalog, setType, occasion, style, requiredProductId, salt, includeOuterwear]);
+  }, [catalog, setType, occasion, style, requiredProductId, salt, seenOutfitKeys, includeOuterwear]);
 
   // Variant selections are keyed by the original item id so changing color never
   // breaks the relationship between the visible card and its cart / try-on action.
@@ -122,6 +126,10 @@ export function OutfitClient() {
     [selectedItems]
   );
   const hasSelectedDiscount = selectedOriginalTotal > selectedTotal;
+  const selectedReview = useMemo(
+    () => reviewSelectedOutfit(outfit, selectedItems.map((item) => item.product), occasion, style),
+    [outfit, selectedItems, occasion, style]
+  );
 
   // Check if all items in current set are already favorited
   const allInWishlist = useMemo(() => {
@@ -181,6 +189,12 @@ export function OutfitClient() {
 
   // Generate next coordinated set on click
   function handleGenerateNext(chosenType?: OutfitSetType) {
+    const currentKey = outfitSelectionKey(outfit.items);
+    if (currentKey) {
+      setSeenOutfitKeys((previous) =>
+        [...previous.filter((key) => key !== currentKey), currentKey].slice(-150)
+      );
+    }
     setIsGenerating(true);
     if (chosenType && chosenType !== setType) {
       setSetType(chosenType);
@@ -248,11 +262,23 @@ export function OutfitClient() {
           </button>
           <button
             type="button"
-            className={`archTabBtn ${setType === "top_bottom" ? "active" : ""}`}
-            onClick={() => handleGenerateNext("top_bottom")}
+            className={`archTabBtn ${setType === "top_pants" ? "active" : ""}`}
+            onClick={() => handleGenerateNext("top_pants")}
+            disabled={requiredProduct?.category === "bottoms" && requiredProduct.type === "skirt"}
+            title={requiredProduct?.category === "bottoms" && requiredProduct.type === "skirt" ? "Bỏ khóa chân váy để phối với quần" : undefined}
           >
             <Layers size={16} />
-            <span>Quần / Chân váy + Áo</span>
+            <span>Áo + Quần</span>
+          </button>
+          <button
+            type="button"
+            className={`archTabBtn ${setType === "top_skirt" ? "active" : ""}`}
+            onClick={() => handleGenerateNext("top_skirt")}
+            disabled={requiredProduct?.category === "bottoms" && requiredProduct.type !== "skirt"}
+            title={requiredProduct?.category === "bottoms" && requiredProduct.type !== "skirt" ? "Bỏ khóa quần để phối với chân váy" : undefined}
+          >
+            <Layers size={16} />
+            <span>Áo + Chân váy</span>
           </button>
           <button
             type="button"
@@ -313,7 +339,7 @@ export function OutfitClient() {
 
           <div className="outfitFilterGroup">
             <span className="filterLabel">Áo khoác ngoài:</span>
-            <label className="outfitCheckbox" title="Mặc định chỉ phối đúng áo + quần/chân váy bạn chọn. Bật nếu muốn thêm lớp khoác ngoài.">
+            <label className="outfitCheckbox" title="Mặc định chỉ phối áo + quần hoặc áo + chân váy theo tab bạn chọn. Bật nếu muốn thêm lớp khoác ngoài.">
               <input
                 type="checkbox"
                 checked={includeOuterwear}
@@ -345,11 +371,11 @@ export function OutfitClient() {
               <div className="outfitCanvasMeta">
                 <div className="outfitTypeTag">
                   <span className="dot" />
-                  <span>{outfit.setTypeName}</span>
+                  <span>{selectedReview.setTypeName}</span>
                 </div>
                 <div className="outfitMatchBadge">
                   <Sparkles size={14} />
-                  <span>{outfit.matchBadge} ({outfit.score}/100)</span>
+                  <span>{selectedReview.matchBadge} ({selectedReview.score}/100)</span>
                 </div>
               </div>
 
@@ -499,19 +525,19 @@ export function OutfitClient() {
             </div>
 
             <div className="stylistOutfitTitle">
-              <h4>{outfit.title}</h4>
+              <h4>{selectedReview.title}</h4>
             </div>
 
             {/* AI Review Explanation */}
             <div className="stylistExplanationCard">
               <div className="cardSubtitle">VÌ SAO SET ĐỒ NÀY HỢP NHAU:</div>
-              <p className="explanationText">{outfit.reason}</p>
+              <p className="explanationText">{selectedReview.reason}</p>
             </div>
 
             {/* Styling Accessories Tip */}
             <div className="stylistTipCard">
               <div className="cardSubtitle">MẸO PHỐI PHỤ KIỆN & GIÀY:</div>
-              <p className="tipText">{outfit.stylingTip}</p>
+              <p className="tipText">{selectedReview.stylingTip}</p>
             </div>
 
             {/* Outfit Pricing Summary */}

@@ -27,7 +27,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     });
     if (!user) return NextResponse.json({ error: "Không tìm thấy khách hàng." }, { status: 404 });
 
-    const validOrders = user.orders.filter((o) => o.status !== "cancelled" && (o.paymentStatus === "paid" || (o.payment === "cod" && o.status === "completed")));
+    const validOrders = user.orders.filter((o) => o.status !== "cancelled" && o.paymentStatus === "paid");
     return NextResponse.json({
       customer: {
         id: user.id, name: user.name, email: user.email, phone: user.phone,
