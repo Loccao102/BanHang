@@ -421,18 +421,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
     const response = await fetch("/api/orders", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...draft, couponCode: coupon?.code })
+      body: JSON.stringify({ ...draft, couponCode: draft.couponCode ?? null })
     });
     const data = await response.json() as { order?: OrderRecord; error?: string };
     if (!response.ok || !data.order) throw new Error(data.error ?? "Không thể tạo đơn hàng.");
 
     setOrders((current) => [data.order!, ...current.filter((order) => order.id !== data.order!.id)]);
-    setCart([]);
-    setCoupon(null);
+    // Direct purchases must leave the user's cart and its voucher untouched.
+    if (draft.checkoutMode !== "buy_now") {
+      setCart([]);
+      setCoupon(null);
+    }
     setCartDrawerOpen(false);
     await refreshCatalog();
     return data.order;
-  }, [user, router, showNotice, persistenceMode, coupon, refreshCatalog]);
+  }, [user, router, showNotice, persistenceMode, refreshCatalog]);
 
   const updateOrderStatus = useCallback((id: string, status: OrderStatus, extra?: { paymentStatus?: PaymentStatus; shippingCarrier?: string; trackingCode?: string }) => {
     const previous = orders.find((order) => order.id === id);
