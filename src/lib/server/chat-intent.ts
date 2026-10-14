@@ -746,26 +746,26 @@ Trả về đúng JSON shape:
 }
 Các field không có thông tin thì bỏ hẳn, riêng items luôn là array và includeOuterwear luôn là boolean.`;
 
-  const primaryModel = process.env.GEMINI_INTENT_MODEL?.trim()
-    || process.env.GEMINI_MODEL?.trim()
-    || "gemini-flash-lite-latest";
+  // Structured intent parsing does not need flagship-length reasoning.
+  // Keep it on a strong, responsive Flash model, separate from stylist generation.
+  const primaryModel = process.env.GEMINI_INTENT_MODEL?.trim() || "gemini-3.8-flash";
   const configs = [
-    { model: primaryModel, thinkingBudget: 0 },
-    { model: "gemini-flash-lite-latest", thinkingBudget: 0 },
-    { model: "gemini-3.1-flash-lite-preview", thinkingBudget: 0 }
+    { model: primaryModel, thinkingLevel: "low", timeoutMs: 9000, maxOutputTokens: 8192 },
+    { model: "gemini-3.1-flash-lite", thinkingLevel: "minimal", timeoutMs: 6000, maxOutputTokens: 4096 }
   ].filter((config, index, all) => all.findIndex((item) => item.model === config.model) === index);
 
   for (const config of configs) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    const timeoutId = setTimeout(() => controller.abort(), config.timeoutMs);
     try {
       const generationConfig: Record<string, unknown> = {
-        temperature: 0.1,
-        maxOutputTokens: 900,
+        maxOutputTokens: config.maxOutputTokens,
         responseMimeType: "application/json"
       };
-      if (config.thinkingBudget !== undefined) {
-        generationConfig.thinkingConfig = { thinkingBudget: config.thinkingBudget };
+      if (/^gemini-(?:3[.-]|4-)/.test(config.model)) {
+        generationConfig.thinkingConfig = { thinkingLevel: config.thinkingLevel };
+      } else {
+        generationConfig.temperature = 0.1;
       }
 
       const response = await fetch(

@@ -13,6 +13,8 @@ import { fastCatalogLookupReply } from "@/lib/server/chat-fast-reply";
 import { socialChatReply } from "@/lib/server/chat-social";
 
 export const runtime = "nodejs";
+// Allow bounded Gemini 4 reasoning and failover within the serverless request.
+export const maxDuration = 60;
 
 function fallbackReply(message: string, products: Product[], hasOrderContext: boolean, agentNotes: string[]) {
   const text = message.toLowerCase();
