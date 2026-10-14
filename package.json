@@ -12,6 +12,7 @@
     "start:admin": "next start -H 0.0.0.0 -p 3001",
     "lint": "tsc --noEmit",
     "test:e2e": "node scripts/e2e-test.mjs",
+    "test:checkout": "tsx scripts/test-checkout-flow.ts",
     "test:chat": "tsx src/lib/server/chat-regression.ts",
     "test:quality": "tsx src/lib/server/quality-regression.ts",
     "test:webhook": "node scripts/test-sepay-webhook.mjs",
