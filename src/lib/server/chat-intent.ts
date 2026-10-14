@@ -750,8 +750,8 @@ Các field không có thông tin thì bỏ hẳn, riêng items luôn là array v
   // Keep it on a strong, responsive Flash model, separate from stylist generation.
   const primaryModel = process.env.GEMINI_INTENT_MODEL?.trim() || "gemini-3.8-flash";
   const configs = [
-    { model: primaryModel, thinkingLevel: "low", timeoutMs: 12000, maxOutputTokens: 8192 },
-    { model: "gemini-3.1-flash-lite", thinkingLevel: "minimal", timeoutMs: 8000, maxOutputTokens: 4096 }
+    { model: primaryModel, thinkingLevel: "low", timeoutMs: 9000, maxOutputTokens: 8192 },
+    { model: "gemini-3.1-flash-lite", thinkingLevel: "minimal", timeoutMs: 6000, maxOutputTokens: 4096 }
   ].filter((config, index, all) => all.findIndex((item) => item.model === config.model) === index);
 
   for (const config of configs) {
