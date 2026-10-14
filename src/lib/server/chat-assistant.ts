@@ -288,25 +288,31 @@ QUY TẮC MẠCH TRÒ CHUYỆN LIÊN TỤC (MULTI-TURN) VÀ CHỐNG SAI CONTEXT:
     { role: "user" as const, parts: userParts }
   ];
 
-  // Thứ tự ưu tiên model: model tùy chỉnh qua GEMINI_MODEL -> gemini-flash-lite-latest (ổn định, cực nhanh <1s) -> các bản preview mới
-  const primaryModel = process.env.GEMINI_MODEL?.trim() || "gemini-flash-lite-latest";
+  // Prefer the current flagship model for stylist replies. A lower-latency stable Flash
+  // model is the fallback when Argon is unavailable, rate-limited, or times out.
+  // GEMINI_MODEL can override this independently from the intent classification model.
+  const primaryModel = process.env.GEMINI_MODEL?.trim() || "gemini-4-argon";
+  const fallbackModel = process.env.GEMINI_FALLBACK_MODEL?.trim() || "gemini-3.8-flash";
   const configs = [
-    { model: primaryModel, thinkingBudget: 0 },
-    { model: "gemini-flash-lite-latest", thinkingBudget: 0 },
-    { model: "gemini-3.1-flash-lite-preview", thinkingBudget: 0 },
-    { model: "gemini-3-flash-preview", thinkingBudget: 0 }
+    { model: primaryModel, thinkingLevel: "medium", timeoutMs: 24000, maxOutputTokens: 32768 },
+    { model: fallbackModel, thinkingLevel: "low", timeoutMs: 14000, maxOutputTokens: 8192 },
+    { model: "gemini-3.1-flash-lite", thinkingLevel: "minimal", timeoutMs: 8000, maxOutputTokens: 4096 }
   ].filter((config, index, all) => all.findIndex((item) => item.model === config.model) === index);
 
   for (const item of configs) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), item.timeoutMs);
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 9000);
       const generationConfig: Record<string, unknown> = {
-        temperature: 0.6,
-        maxOutputTokens: 1500
+        maxOutputTokens: item.maxOutputTokens
       };
-      if (item.thinkingBudget !== undefined) {
-        generationConfig.thinkingConfig = { thinkingBudget: item.thinkingBudget };
+      if (/^gemini-(?:3[.-]|4-)/.test(item.model)) {
+        // Gemini 3/4 use thinkingLevel. thinkingBudget=0 prevents flagship
+        // reasoning and is not valid for some newer models.
+        generationConfig.thinkingConfig = { thinkingLevel: item.thinkingLevel };
+      } else {
+        // Preserve compatibility if an operator deliberately selects a 2.x model.
+        generationConfig.temperature = 0.6;
       }
 
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${item.model}:generateContent?key=${key}`, {
@@ -319,14 +325,18 @@ QUY TẮC MẠCH TRÒ CHUYỆN LIÊN TỤC (MULTI-TURN) VÀ CHỐNG SAI CONTEXT:
         }),
         signal: controller.signal
       });
-      clearTimeout(timeoutId);
-      if (response.ok) {
-        const data = await response.json();
-        const text = data?.candidates?.[0]?.content?.parts?.map((part: { text?: string }) => part.text ?? "").join("").trim();
-        if (text) return text;
-      }
+      if (!response.ok) continue;
+
+      const data = await response.json();
+      const generated = data?.candidates?.[0]?.content?.parts
+        ?.map((part: { text?: string }) => part.text ?? "")
+        .join("")
+        .trim();
+      if (generated) return generated;
     } catch {
-      // Continue to next config
+      // The next configured model can still serve the customer's request.
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 
