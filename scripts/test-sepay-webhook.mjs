@@ -2,8 +2,8 @@
  * Gửi webhook SePay giả lập (đã ký HMAC-SHA256) để kiểm thử Kịch bản 2 – "Cách B".
  *
  * Cách dùng:
- *   node scripts/test-sepay-webhook.mjs --order LS261004ABCDEF --amount 2500000
- *   node scripts/test-sepay-webhook.mjs --order LS261004ABCDEF --amount 2500000 --base http://localhost:3000
+ *   node scripts/test-sepay-webhook.mjs --order LSA1B2C3D4E5 --amount 2500000
+ *   node scripts/test-sepay-webhook.mjs --order LSA1B2C3D4E5 --amount 2500000 --base http://localhost:3000
  *   node scripts/test-sepay-webhook.mjs --list          # liệt kê đơn QR đang chờ thanh toán
  *
  * Secret lấy từ SEPAY_WEBHOOK_SECRET trong .env (mặc định lsoul_dev_sepay_secret).
@@ -51,7 +51,7 @@ const orderId = arg("order");
 const amount = Number(arg("amount", "0"));
 
 if (!orderId) {
-  console.error("Thiếu --order <mã đơn>. Ví dụ: node scripts/test-sepay-webhook.mjs --order LS261004ABCDEF --amount 2500000");
+  console.error("Thiếu --order <mã đơn>. Ví dụ: node scripts/test-sepay-webhook.mjs --order LSA1B2C3D4E5 --amount 2500000");
   process.exit(1);
 }
 

@@ -312,7 +312,7 @@ Kiểm thử webhook SePay đã ký HMAC (Kịch bản 2 – Cách B):
 
 ```bash
 # Lấy mã đơn QR đang chờ thanh toán trong Admin, sau đó:
-npm run test:webhook -- --order LS261004ABCDEF --amount 2500000
+npm run test:webhook -- --order LSA1B2C3D4E5 --amount 2500000
 ```
 
 ## CI

@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { getDb } from "@/lib/server/db";
 import { recordAndMatchIncomingPayment } from "@/lib/server/payment-processor";
+import { extractSepayOrderCode } from "@/lib/server/order-code";
 
 export const runtime = "nodejs";
 
@@ -32,15 +33,6 @@ export function verifySepaySignature(rawBody: string, signature: string, timesta
   const actualBuffer = Buffer.from(signature);
   const expectedBuffer = Buffer.from(expected);
   return actualBuffer.length === expectedBuffer.length && timingSafeEqual(actualBuffer, expectedBuffer);
-}
-
-export function extractSepayOrderCode(payload: SepayPayload) {
-  const direct = payload.code?.trim().toUpperCase();
-  if (direct?.startsWith("LS")) return direct;
-
-  const haystack = `${payload.content ?? ""} ${payload.description ?? ""}`.toUpperCase();
-  const match = haystack.match(/LS\d{6}[A-F0-9]{6}/);
-  return match?.[0] ?? null;
 }
 
 export async function POST(request: Request) {

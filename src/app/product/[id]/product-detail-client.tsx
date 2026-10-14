@@ -131,14 +131,10 @@ export function ProductDetailClient({ productId }: { productId: string }) {
   }
 
   function buyNow() {
-    if (!user) {
-      router.push(`/login?next=${encodeURIComponent(`/product/${currentProduct.id}`)}`);
-      return;
-    }
-    if (selectedStock <= 0) return;
-    addToCart(currentProduct, size);
+    if (selectedStock <= 0 || !size) return;
+    const checkoutUrl = `/checkout?buyNow=${encodeURIComponent(currentProduct.id)}&size=${encodeURIComponent(size)}`;
     closeCartDrawer();
-    router.push("/checkout");
+    router.push(user ? checkoutUrl : `/login?next=${encodeURIComponent(checkoutUrl)}`);
   }
 
   return (

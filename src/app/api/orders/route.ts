@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { generateOrderCode } from "@/lib/server/order-code";
 import { NextResponse } from "next/server";
 import type { CartLine } from "@/lib/cart";
 import { getCurrentUser } from "@/lib/server/auth";
@@ -14,13 +14,10 @@ type OrderRequest = {
   items?: CartLine[];
   couponCode?: string;
   payment?: "qr" | "cod";
+  checkoutMode?: "cart" | "buy_now";
   note?: string;
   customer?: { name?: string; phone?: string; address?: string; city?: string };
 };
-
-function orderId() {
-  return `LS${new Date().toISOString().slice(2, 10).replace(/-/g, "")}${randomBytes(3).toString("hex").toUpperCase()}`;
-}
 
 export async function POST(request: Request) {
   const db = getDb();
@@ -34,7 +31,9 @@ export async function POST(request: Request) {
   const body = await request.json() as OrderRequest;
   const items = (body.items ?? []).filter((line) => line.product?.id && line.size && line.quantity > 0);
 
-  if (!items.length) return NextResponse.json({ error: "Giỏ hàng đang trống." }, { status: 400 });
+  if (!items.length) return NextResponse.json({ error: "Không có sản phẩm để thanh toán." }, { status: 400 });
+  const isBuyNow = body.checkoutMode === "buy_now";
+  if (isBuyNow && items.length !== 1) return NextResponse.json({ error: "Mua ngay chỉ cho phép một sản phẩm." }, { status: 400 });
 
   const customer = {
     name: String(body.customer?.name ?? "").trim(),
@@ -80,7 +79,7 @@ export async function POST(request: Request) {
       const isTestOrder = subtotal <= 10000 || Boolean(couponCode?.startsWith("TEST"));
       const shipping = (subtotal >= 699000 || isTestOrder) ? 0 : 30000;
       const total = Math.max(0, subtotal + shipping - discount);
-      const id = orderId();
+      const id = generateOrderCode();
 
       for (const item of prepared) {
         const changed = await tx.productVariant.updateMany({
@@ -130,7 +129,7 @@ export async function POST(request: Request) {
       if (coupon) {
         await tx.coupon.update({ where: { code: coupon.code }, data: { usedCount: { increment: 1 } } });
       }
-      if (currentUser) {
+      if (currentUser && !isBuyNow) {
         await tx.cartItem.deleteMany({ where: { userId: currentUser.id } });
       }
 
