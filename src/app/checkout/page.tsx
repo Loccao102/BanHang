@@ -313,11 +313,23 @@ function CheckoutContent() {
             Vui lòng đăng nhập vào tài khoản LSOUL của bạn để tiếp tục thanh toán, áp dụng ưu đãi và theo dõi tiến độ đơn hàng.
           </p>
           <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
-            <Link className="btn" href="/login?next=/checkout">Đăng nhập ngay</Link>
-            <Link className="btn secondary" href="/register?next=/checkout">Tạo tài khoản</Link>
+            <Link className="btn" href={loginUrl}>Đăng nhập ngay</Link>
+            <Link className="btn secondary" href={`/register?next=${encodeURIComponent(checkoutUrl)}`}>Tạo tài khoản</Link>
           </div>
         </div>
       </section>
+    );
+  }
+
+  if (buyNowId && !directLine && !completedOrder && !pendingQrOrder) {
+    return (
+      <div className="emptyState">
+        <div>
+          <h2>Không thể mua ngay sản phẩm này</h2>
+          <p>Sản phẩm hoặc kích cỡ đã hết hàng, không còn bán hoặc chưa tải xong. Hãy chọn lại kích cỡ.</p>
+          <Link className="btn" href={`/product/${encodeURIComponent(buyNowId)}`}>Quay lại sản phẩm</Link>
+        </div>
+      </div>
     );
   }
 
@@ -499,7 +511,7 @@ function CheckoutContent() {
     <section className="checkoutPage">
       <div className="pageHero" style={{ padding: 0, border: 0, marginBottom: 30 }}>
         <p className="eyebrow">SECURE CHECKOUT</p>
-        <h1>Thanh toán</h1>
+        <h1>{buyNowId ? "Thanh toán sản phẩm" : "Thanh toán"}</h1>
       </div>
 
       <form onSubmit={submit} className="twoCol">
@@ -570,10 +582,10 @@ function CheckoutContent() {
         </div>
 
         <aside className="panel">
-          <h2>Đơn hàng ({cart.reduce((s, i) => s + i.quantity, 0)})</h2>
+          <h2>Đơn hàng ({checkoutItems.reduce((s, i) => s + i.quantity, 0)})</h2>
 
           <div style={{ maxHeight: 240, overflowY: "auto", marginBottom: 12 }}>
-            {cart.map((line) => (
+            {checkoutItems.map((line) => (
               <div className="summaryLine" key={`${line.product.id}-${line.size ?? ""}`}>
                 <span>{line.quantity} × {line.product.name} {line.size ? `(${line.size})` : ""}</span>
                 <strong>{formatPrice(line.product.price * line.quantity)}</strong>
@@ -599,7 +611,7 @@ function CheckoutContent() {
                 <button
                   type="button"
                   className="checkoutPromoRemoveBtn"
-                  onClick={clearCoupon}
+                  onClick={() => buyNowId ? setBuyNowCoupon(null) : clearCoupon()}
                 >
                   Gỡ mã
                 </button>
