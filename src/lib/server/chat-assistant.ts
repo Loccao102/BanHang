@@ -294,9 +294,9 @@ QUY TẮC MẠCH TRÒ CHUYỆN LIÊN TỤC (MULTI-TURN) VÀ CHỐNG SAI CONTEXT:
   const primaryModel = process.env.GEMINI_MODEL?.trim() || "gemini-4-argon";
   const fallbackModel = process.env.GEMINI_FALLBACK_MODEL?.trim() || "gemini-3.8-flash";
   const configs = [
-    { model: primaryModel, thinkingLevel: "medium", timeoutMs: 24000, maxOutputTokens: 32768 },
-    { model: fallbackModel, thinkingLevel: "low", timeoutMs: 14000, maxOutputTokens: 8192 },
-    { model: "gemini-3.1-flash-lite", thinkingLevel: "minimal", timeoutMs: 8000, maxOutputTokens: 4096 }
+    { model: primaryModel, thinkingLevel: "medium", timeoutMs: 20000, maxOutputTokens: 32768 },
+    { model: fallbackModel, thinkingLevel: "low", timeoutMs: 10000, maxOutputTokens: 8192 },
+    { model: "gemini-3.1-flash-lite", thinkingLevel: "minimal", timeoutMs: 6000, maxOutputTokens: 4096 }
   ].filter((config, index, all) => all.findIndex((item) => item.model === config.model) === index);
 
   for (const item of configs) {
