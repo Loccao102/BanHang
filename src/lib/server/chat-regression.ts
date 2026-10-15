@@ -14,6 +14,12 @@ import { fastCatalogLookupReply } from "./chat-fast-reply";
 import { allowedOrderStatuses, canTransitionOrderStatus, isOrderStatus } from "../order-workflow";
 import { socialChatReply } from "./chat-social";
 import { retrieveProducts } from "./chat-assistant";
+import {
+  extractMeasurementsFromText,
+  evaluateSizeAdvice,
+  getVerifiedSizeGuide,
+  analyzeBodyShape
+} from "./chat-size-knowledge";
 
 function product(overrides: Partial<Product> & Pick<Product, "id" | "category" | "type" | "colorFamily">): Product {
   const colorLabels: Record<Product["colorFamily"], string> = {
@@ -55,7 +61,8 @@ function product(overrides: Partial<Product> & Pick<Product, "id" | "category" |
     avoidPairingTags: overrides.avoidPairingTags ?? [],
     aiSearchText: overrides.aiSearchText,
     featured: overrides.featured ?? false,
-    isNew: overrides.isNew ?? false
+    isNew: overrides.isNew ?? false,
+    variants: overrides.variants
   };
 }
 
@@ -1221,6 +1228,263 @@ test("admin fulfillment enforces forward-only order transitions", () => {
   assert.equal(canTransitionOrderStatus("confirmed", "shipping"), true);
   assert.equal(isOrderStatus("unknown"), false);
   assert.equal(isOrderStatus("paid"), false);
+});
+
+test("extractMeasurementsFromText parses varied Vietnamese height, weight, and 3-ring formats", () => {
+  assert.deepEqual(extractMeasurementsFromText("cao 1m65 nang 48kg"), { height: 165, weight: 48 });
+  assert.deepEqual(extractMeasurementsFromText("1m70 52 ký"), { height: 170, weight: 52 });
+  assert.deepEqual(extractMeasurementsFromText("cao 180cm nang 68 kg"), { height: 180, weight: 68 });
+  assert.deepEqual(extractMeasurementsFromText("1m8 65kg"), { height: 180, weight: 65 });
+  assert.deepEqual(extractMeasurementsFromText("v1 86 v2 62 v3 90"), { bust: 86, waist: 62, hips: 90 });
+  assert.deepEqual(extractMeasurementsFromText("nguc 88 eo 64 mong 92"), { bust: 88, waist: 64, hips: 92 });
+  assert.deepEqual(extractMeasurementsFromText("84-60-88"), { bust: 84, waist: 60, hips: 88 });
+  assert.deepEqual(extractMeasurementsFromText("84/62/90"), { bust: 84, waist: 62, hips: 90 });
+});
+
+test("out-of-range body measurements reject arbitrary sizing and advise on length vs width", () => {
+  const res = evaluateSizeAdvice({ measurements: { height: 190, weight: 45 } });
+  assert.equal(res.status, "out_of_range");
+  assert.ok(res.confidence <= 0.25);
+  assert.match(res.explanation, /rất cao và mảnh mai/i);
+  assert.match(res.explanation, /ngắn/i);
+  assert.match(res.explanation, /rộng/i);
+  assert.ok(res.caveats.some((c) => c.includes("Không tự động nâng size")));
+});
+
+test("tall and slender measurements without target product trigger clarification needed", () => {
+  const res = evaluateSizeAdvice({ measurements: { height: 180, weight: 68 } });
+  assert.equal(res.status, "clarification_needed");
+  assert.ok(res.confidence < 0.5);
+  assert.match(res.explanation, /chưa thể chốt chính xác một size/i);
+  assert.ok(res.clarificationQuestion?.includes("áo, quần hay đầm"));
+  assert.ok(res.caveats.some((c) => c.includes("Không tự khẳng định size L hay XL")));
+});
+
+test("corset size evaluation prioritizes bust and highlights lace-up back margin", () => {
+  const res = evaluateSizeAdvice({
+    measurements: { bust: 88, waist: 62 },
+    targetProduct: redCorset
+  });
+  assert.equal(res.status, "exact");
+  assert.equal(res.recommendedSize, "M");
+  assert.ok(res.adjustabilityNote?.includes("dây đan"));
+  assert.match(res.explanation, /vòng 1.*thoải mái.*không bị ép/i);
+  assert.match(res.explanation, /dây đan.*siết chặt tôn eo/i);
+});
+
+test("corset size evaluation with bust > 92cm recommends size XL", () => {
+  const res = evaluateSizeAdvice({
+    measurements: { bust: 94 },
+    targetProduct: redCorset
+  });
+  assert.equal(res.recommendedSize, "XL");
+  assert.match(res.explanation, /Vòng 1 \(94cm\)/);
+});
+
+test("bottoms size evaluation factors in fabric rigidity and waist/hip ratio", () => {
+  const rigidSkirt = product({
+    ...whitePartySkirt,
+    material: "tafta cao cấp"
+  });
+  // Waist 66 is M, but hips 92 requires L. In rigid fabric, prioritize the larger measurement -> L
+  const res = evaluateSizeAdvice({
+    measurements: { waist: 66, hips: 92 },
+    targetProduct: rigidSkirt
+  });
+  assert.equal(res.status, "exact");
+  assert.equal(res.recommendedSize, "L");
+  assert.match(res.explanation, /không co giãn/i);
+
+  // Balanced M measurements (waist 64, hips 89)
+  const resM = evaluateSizeAdvice({
+    measurements: { waist: 64, hips: 89 },
+    targetProduct: rigidSkirt
+  });
+  assert.equal(resM.recommendedSize, "M");
+
+  const stretchyPants = product({
+    ...whiteTrousers,
+    material: "thun co giãn"
+  });
+  const resStretchy = evaluateSizeAdvice({
+    measurements: { waist: 72, hips: 96 },
+    targetProduct: stretchyPants
+  });
+  assert.equal(resStretchy.status, "exact");
+  assert.equal(resStretchy.recommendedSize, "XL");
+});
+
+test("size evaluation detects out-of-stock variants and warns customer", () => {
+  const limitedCorset = product({
+    ...redCorset,
+    variants: [
+      { id: "v-s", productId: redCorset.id, size: "S", stock: 5, active: true },
+      { id: "v-m", productId: redCorset.id, size: "M", stock: 2, active: true },
+      { id: "v-l", productId: redCorset.id, size: "L", stock: 0, active: true }
+    ] as any
+  });
+  const res = evaluateSizeAdvice({
+    measurements: { bust: 90 },
+    targetProduct: limitedCorset
+  });
+  assert.equal(res.recommendedSize, "L");
+  assert.match(res.explanation, /size L tạm hết/i);
+  assert.match(res.explanation, /S, M/);
+});
+
+test("verified size guides provide category specific guidance with design disclaimers", () => {
+  const corsetGuide = getVerifiedSizeGuide("corset");
+  assert.equal(corsetGuide.category, "tops_corset");
+  assert.ok(corsetGuide.generalDisclaimer.includes("dây đan sau lưng"));
+  assert.equal(corsetGuide.rows.length, 3);
+
+  const bottomGuide = getVerifiedSizeGuide("bottoms");
+  assert.equal(bottomGuide.category, "bottoms");
+  assert.ok(bottomGuide.generalDisclaimer.includes("rốn"));
+
+  const generalGuide = getVerifiedSizeGuide();
+  assert.equal(generalGuide.category, "general");
+  assert.ok(generalGuide.generalDisclaimer.includes("thương hiệu thời trang thiết kế"));
+});
+
+test("chat-agent plan incorporates grounded size guidance and contextual action", () => {
+  const plan = buildAgentPlan({
+    message: "Mẫu áo corset đỏ này số đo 88-62 mặc vừa size gì?",
+    found: [redCorset],
+    contextProducts: [redCorset],
+    catalog,
+    orders: [],
+    coupons: [],
+    loggedIn: false,
+    intent: intent({
+      intent: "size_advice",
+      targetScope: "single",
+      items: []
+    })
+  });
+  assert.ok(plan.notes.some((n) => n.includes("Grounded Size Guidance")));
+  assert.ok(plan.notes.some((n) => n.includes("size M")));
+  assert.ok(plan.notes.some((n) => n.includes("dây đan")));
+  assert.equal(plan.actions.some((a) => a.type === "open_product" && a.label.includes("gợi ý size M")), true);
+});
+
+test("fallback intent correctly classifies various Vietnamese size queries", () => {
+  const queries = [
+    "Mình cao 1m80 nặng 68kg mặc vừa size gì?",
+    "Corset này ngực 88 eo 64 mặc cỡ nào",
+    "Số đo 84-60-88 nên chọn size gì shop",
+    "Bảng size của shop thế nào",
+    "Chân váy này có co giãn không"
+  ];
+  for (const q of queries) {
+    const parsed = inferFallbackShoppingIntent({ message: q, contextProducts: [redCorset] });
+    assert.equal(parsed.intent, "size_advice", `Failed intent for query: "${q}"`);
+  }
+});
+
+test("multi-turn size query remains grounded on active product without replacing catalog", () => {
+  const plan = buildAgentPlan({
+    message: "Chân váy này eo 66 mông 92 vừa size gì?",
+    found: [whitePartySkirt],
+    contextProducts: [whitePartySkirt],
+    catalog,
+    orders: [],
+    coupons: [],
+    loggedIn: true,
+    intent: intent({
+      intent: "size_advice",
+      targetScope: "previous",
+      items: []
+    })
+  });
+  assert.equal(plan.products[0]?.id, whitePartySkirt.id);
+  assert.ok(plan.notes.some((n) => n.includes("White Gala Midi Skirt")));
+  assert.ok(plan.notes.some((n) => /size.*L/i.test(n)));
+  assert.equal(plan.actions.some((a) => a.type === "open_product" && a.label.includes("gợi ý size L")), true);
+});
+
+test("insufficient data size inquiry gracefully requests user measurements", () => {
+  const res = evaluateSizeAdvice({ measurements: {} });
+  assert.equal(res.status, "insufficient_data");
+  assert.ok(res.confidence < 0.2);
+  assert.match(res.explanation, /cần biết số đo của bạn/i);
+});
+
+test("body shape analysis accurately detects Hourglass and Pear shapes from 3-ring measurements", () => {
+  // 84-60-88: waist/bust = 0.71, waist/hips = 0.68 -> Hourglass
+  const hourglass = analyzeBodyShape({ height: 160, weight: 48, bust: 84, waist: 60, hips: 88 });
+  assert.ok(hourglass);
+  assert.equal(hourglass.shape, "hourglass");
+  assert.match(hourglass.shapeLabel, /Đồng Hồ Cát/i);
+  assert.ok(hourglass.bestStyles.some((s) => /corset/i.test(s)));
+
+  // 82-64-94: hips - bust = 12 >= 5, waist/hips <= 0.8 -> Pear
+  const pear = analyzeBodyShape({ height: 158, weight: 50, bust: 82, waist: 64, hips: 94 });
+  assert.ok(pear);
+  assert.equal(pear.shape, "pear");
+  assert.match(pear.shapeLabel, /Quả Lê/i);
+  assert.ok(pear.bestStyles.some((s) => /chữ A|suông/i.test(s)));
+});
+
+test("named body shape query provides grounded stylist guidance and styling principles", () => {
+  const pearAdvice = evaluateSizeAdvice({ message: "Mình dáng quả lê thì nên phối đồ thế nào shop?" });
+  assert.equal(pearAdvice.status, "exact");
+  assert.ok(pearAdvice.bodyShape);
+  assert.equal(pearAdvice.bodyShape?.shape, "pear");
+  assert.match(pearAdvice.explanation, /Quả Lê/i);
+  assert.ok(pearAdvice.bodyShape?.bestStyles.length > 0);
+
+  const hourglassAdvice = evaluateSizeAdvice({ message: "Tư vấn phối đồ cho dáng đồng hồ cát" });
+  assert.equal(hourglassAdvice.status, "exact");
+  assert.ok(hourglassAdvice.bodyShape);
+  assert.equal(hourglassAdvice.bodyShape?.shape, "hourglass");
+  assert.match(hourglassAdvice.explanation, /Đồng Hồ Cát/i);
+});
+
+test("conversational checkout intent generates chat_checkout action with target items", () => {
+  const parsed = inferFallbackShoppingIntent({
+    message: "Chốt đơn set này giúp mình với",
+    contextProducts: [redCorset, whitePartySkirt]
+  });
+  assert.equal(parsed.intent, "checkout");
+
+  const plan = buildAgentPlan({
+    message: "Chốt đơn set này giúp mình với",
+    found: [redCorset, whitePartySkirt],
+    contextProducts: [redCorset, whitePartySkirt],
+    catalog: productionCatalog,
+    orders: [],
+    coupons: [],
+    loggedIn: true,
+    intent: parsed
+  });
+
+  const chatCheckoutAction = plan.actions.find((a) => a.type === "chat_checkout");
+  assert.ok(chatCheckoutAction, "chat_checkout action must be generated");
+  assert.equal(chatCheckoutAction?.type, "chat_checkout");
+  assert.match(chatCheckoutAction.label, /Chốt đơn/i);
+  assert.ok(chatCheckoutAction.productIds?.includes(redCorset.id));
+});
+
+test("outfit coordination includes chat_try_on action for in-chat virtual try-on", () => {
+  const plan = buildAgentPlan({
+    message: "Phối cho mình áo đỏ với chân váy trắng đi tiệc",
+    found: [redCorset, whitePartySkirt],
+    contextProducts: [redCorset, whitePartySkirt],
+    catalog: productionCatalog,
+    orders: [],
+    coupons: [],
+    loggedIn: false,
+    intent: initialRedWhiteIntent()
+  });
+
+  const inChatTryOn = plan.actions.find((a) => a.type === "chat_try_on");
+  assert.ok(inChatTryOn, "chat_try_on action must be present for instant preview");
+  assert.match(inChatTryOn.label, /Ướm thử/i);
+  assert.ok(inChatTryOn.productIds.length >= 2);
+
+  const openTryOn = plan.actions.find((a) => a.type === "open_try_on");
+  assert.ok(openTryOn, "open_try_on action must remain for fitting room compatibility");
 });
 
 let passed = 0;

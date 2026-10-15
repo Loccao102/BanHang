@@ -11,6 +11,7 @@ import { getDb } from "@/lib/server/db";
 import { evaluateRecommendation } from "@/lib/server/chat-evaluation";
 import { fastCatalogLookupReply } from "@/lib/server/chat-fast-reply";
 import { socialChatReply } from "@/lib/server/chat-social";
+import { extractMeasurementsFromText, evaluateSizeAdvice } from "@/lib/server/chat-size-knowledge";
 
 export const runtime = "nodejs";
 
@@ -35,7 +36,24 @@ function fallbackReply(message: string, products: Product[], hasOrderContext: bo
   }
 
   // Sizing inquiry
-  if (text.includes("size") || text.includes("cỡ") || text.includes("eo") || text.includes("ngực") || text.includes("nặng") || text.includes("cao") || text.includes("mặc vừa")) {
+  if (text.includes("size") || text.includes("cỡ") || text.includes("eo") || text.includes("ngực") || text.includes("nặng") || text.includes("cao") || text.includes("mặc vừa") || text.includes("v1") || text.includes("v2") || text.includes("v3") || text.includes("số đo")) {
+    const measurements = extractMeasurementsFromText(message);
+    const target = products[0];
+    const sizeResult = evaluateSizeAdvice({
+      measurements,
+      targetProduct: target,
+      message
+    });
+    if (sizeResult.status !== "insufficient_data" || (measurements.height || measurements.weight || measurements.bust || measurements.waist || measurements.hips)) {
+      let reply = `Dạ ${sizeResult.explanation}`;
+      if (sizeResult.clarificationQuestion) {
+        reply += `\n\n💡 ${sizeResult.clarificationQuestion}`;
+      }
+      if (sizeResult.adjustabilityNote) {
+        reply += `\n\n✨ ${sizeResult.adjustabilityNote}`;
+      }
+      return reply;
+    }
     return `Dạ đối với phom dáng thiết kế LSOUL:
 • Size S: Ngực 80-84cm, Eo 60-64cm (Dưới 48kg)
 • Size M: Ngực 84-88cm, Eo 64-68cm (48 - 54kg)

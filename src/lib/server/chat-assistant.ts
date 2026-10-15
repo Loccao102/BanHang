@@ -288,13 +288,14 @@ QUY TẮC MẠCH TRÒ CHUYỆN LIÊN TỤC (MULTI-TURN) VÀ CHỐNG SAI CONTEXT:
     { role: "user" as const, parts: userParts }
   ];
 
-  // Thứ tự ưu tiên model: model tùy chỉnh qua GEMINI_MODEL -> gemini-flash-lite-latest (ổn định, cực nhanh <1s) -> các bản preview mới
-  const primaryModel = process.env.GEMINI_MODEL?.trim() || "gemini-flash-lite-latest";
+  // Thứ tự ưu tiên model: model tùy chỉnh qua GEMINI_MODEL -> gemini-3.1-flash-lite-preview (ổn định, cực nhanh ~1s) -> gemini-3-flash-preview -> gemini-3.8-flash -> fallback gemini-flash-lite-latest
+  const primaryModel = process.env.GEMINI_MODEL?.trim() || "gemini-3.1-flash-lite-preview";
   const configs = [
     { model: primaryModel, thinkingBudget: 0 },
-    { model: "gemini-flash-lite-latest", thinkingBudget: 0 },
     { model: "gemini-3.1-flash-lite-preview", thinkingBudget: 0 },
-    { model: "gemini-3-flash-preview", thinkingBudget: 0 }
+    { model: "gemini-3-flash-preview", thinkingBudget: 0 },
+    { model: "gemini-3.8-flash", thinkingBudget: 0 },
+    { model: "gemini-flash-lite-latest", thinkingBudget: 0 }
   ].filter((config, index, all) => all.findIndex((item) => item.model === config.model) === index);
 
   for (const item of configs) {

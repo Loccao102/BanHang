@@ -957,3 +957,487 @@
     animation: none !important;
   }
 }
+
+/* ==========================================================================
+   FEATURE 6: SELF-IMPROVING FEEDBACK BAR
+   ========================================================================== */
+.chatFeedbackBar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  padding-top: 4px;
+}
+
+.chatFeedbackBtn {
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 11px;
+  color: var(--muted, #666);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.chatFeedbackBtn:hover:not(:disabled) {
+  background: #f3ede8;
+  color: var(--ink, #1a1a1a);
+  border-color: rgba(0, 0, 0, 0.16);
+}
+
+.chatFeedbackBtn.active-up {
+  background: #ecfdf5;
+  color: #065f46;
+  border-color: #a7f3d0;
+  font-weight: 600;
+}
+
+.chatFeedbackBtn.active-down {
+  background: #fef2f2;
+  color: #991b1b;
+  border-color: #fecaca;
+  font-weight: 600;
+}
+
+.chatFeedbackChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+  width: 100%;
+  animation: chatEnter 0.2s ease both;
+}
+
+.chatFeedbackChip {
+  background: #fff;
+  border: 1px dashed #d1d5db;
+  border-radius: 999px;
+  padding: 2px 9px;
+  font-size: 11px;
+  color: #4b5563;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chatFeedbackChip:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  color: #111827;
+}
+
+.chatFeedbackChip.selected {
+  background: #111827;
+  color: #fff;
+  border-color: #111827;
+}
+
+.chatFeedbackToast {
+  font-size: 11px;
+  color: #059669;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  animation: chatEnter 0.2s ease both;
+}
+
+/* ==========================================================================
+   FEATURE 2: IN-CHAT VIRTUAL TRY-ON
+   ========================================================================== */
+.chatTryOnCard {
+  margin-top: 10px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+.chatTryOnHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.chatTryOnBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #7c2d12;
+  background: #ffedd5;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+.chatTryOnLoading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 12px;
+  text-align: center;
+  background: linear-gradient(135deg, #faf5ff 0%, #fff7ed 100%);
+  border-radius: 10px;
+}
+
+.chatTryOnSpinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #f3e8ff;
+  border-top-color: #9333ea;
+  border-radius: 50%;
+  animation: chatSpin 0.8s linear infinite;
+}
+
+@keyframes chatSpin {
+  to { transform: rotate(360deg); }
+}
+
+.chatTryOnImageWrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  max-width: 280px;
+  margin: 0 auto 10px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f3f4f6;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+.chatTryOnAssessment {
+  background: #fdfaf7;
+  border: 1px solid #f3ede7;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: #4b5563;
+}
+
+.chatTryOnAssessment strong {
+  color: #111827;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 3px;
+}
+
+.chatTryOnActions {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.chatTryOnBtn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chatTryOnBtn.primary {
+  background: var(--ink, #111827);
+  color: #ffffff;
+  border: none;
+}
+
+.chatTryOnBtn.primary:hover {
+  background: #000;
+}
+
+.chatTryOnBtn.secondary {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+}
+
+.chatTryOnBtn.secondary:hover {
+  background: #e5e7eb;
+}
+
+/* ==========================================================================
+   FEATURE 5: CONVERSATIONAL CHECKOUT
+   ========================================================================== */
+.chatCheckoutCard {
+  margin-top: 10px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.07);
+}
+
+.chatCheckoutTitle {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink, #111827);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.chatCheckoutItems {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.chatCheckoutItemRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.chatCheckoutItemThumb {
+  width: 36px;
+  height: 44px;
+  position: relative;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #e5e7eb;
+  flex-shrink: 0;
+}
+
+.chatCheckoutItemDetails {
+  flex: 1;
+  min-width: 0;
+}
+
+.chatCheckoutItemDetails strong {
+  display: block;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #111827;
+}
+
+.chatCheckoutItemDetails small {
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.chatCheckoutForm {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.chatCheckoutInputRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.chatCheckoutField {
+  font-size: 12px;
+  padding: 7px 9px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  outline: none;
+  background: #fff;
+  color: #111827;
+  width: 100%;
+}
+
+.chatCheckoutField:focus {
+  border-color: #111827;
+}
+
+.chatPaymentSelector {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin: 6px 0;
+}
+
+.chatPaymentOption {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 8px;
+  font-size: 11.5px;
+  border: 1px solid #e5e7eb;
+  border-radius: 7px;
+  background: #f9fafb;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.chatPaymentOption.active {
+  background: #fef3c7;
+  border-color: #f59e0b;
+  color: #92400e;
+  font-weight: 600;
+}
+
+.chatCheckoutTotals {
+  padding: 8px 0;
+  border-top: 1px dashed #e5e7eb;
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11.5px;
+  color: #6b7280;
+}
+
+.chatCheckoutTotalRow {
+  display: flex;
+  justify-content: space-between;
+}
+
+.chatCheckoutTotalRow.final {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #b91c1c;
+  padding-top: 4px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.chatConfirmOrderBtn {
+  width: 100%;
+  padding: 9px;
+  background: #111827;
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background 0.15s ease;
+}
+
+.chatConfirmOrderBtn:hover:not(:disabled) {
+  background: #000;
+}
+
+.chatConfirmOrderBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* VietQR Waiting Box Inside Chat */
+.chatVietQrBox {
+  margin-top: 8px;
+  background: #fefce8;
+  border: 1px solid #fef08a;
+  border-radius: 10px;
+  padding: 12px;
+  text-align: center;
+}
+
+.chatVietQrImgFrame {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  margin: 8px auto;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  padding: 4px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.chatQrListenBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #92400e;
+  background: #fef3c7;
+  padding: 3px 8px;
+  border-radius: 999px;
+  margin-bottom: 6px;
+}
+
+.chatQrListenDot {
+  width: 7px;
+  height: 7px;
+  background: #f59e0b;
+  border-radius: 50%;
+  animation: chatPulse 1.2s infinite ease-in-out;
+}
+
+@keyframes chatPulse {
+  0%, 100% { transform: scale(0.85); opacity: 0.6; }
+  50% { transform: scale(1.2); opacity: 1; }
+}
+
+.chatQrTable {
+  font-size: 11.5px;
+  text-align: left;
+  margin: 8px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: #fff;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #fde047;
+}
+
+.chatQrTableRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chatCopyMiniBtn {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 10.5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.chatCopyMiniBtn:hover {
+  background: #e5e7eb;
+}
+
+.chatOrderSuccessBadge {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  border-radius: 8px;
+  padding: 10px;
+  margin-top: 8px;
+  text-align: center;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+

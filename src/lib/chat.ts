@@ -52,7 +52,49 @@ export type ChatAgentAction =
       type: "open_checkout";
       label: string;
       autoExecute?: boolean;
+    }
+  | {
+      id: string;
+      type: "chat_try_on";
+      label: string;
+      productIds: string[];
+      autoExecute?: boolean;
+    }
+  | {
+      id: string;
+      type: "chat_checkout";
+      label: string;
+      productIds?: string[];
+      size?: string;
+      autoExecute?: boolean;
     };
+
+export type FeedbackRating = "thumbs_up" | "thumbs_down";
+
+export type MessageFeedback = {
+  rating: FeedbackRating;
+  reason?: string;
+};
+
+export type ChatTryOnResult = {
+  imageUrl: string;
+  productIds: string[];
+  assessment?: {
+    overallScore: number;
+    verdict: string;
+    summary: string;
+  };
+};
+
+export type ChatOrderInfo = {
+  id: string;
+  total: number;
+  payment: "qr" | "cod";
+  paymentStatus: string;
+  status: string;
+  qrUrl?: string;
+  items?: Array<{ name: string; size: string; quantity: number; price: number; image?: string }>;
+};
 
 export type ChatMessageView = {
   id: string;
@@ -62,6 +104,9 @@ export type ChatMessageView = {
   createdAt?: string;
   products?: Product[];
   actions?: ChatAgentAction[];
+  feedback?: MessageFeedback;
+  tryOnResult?: ChatTryOnResult;
+  orderInfo?: ChatOrderInfo;
   /**
    * Internal shopping context snapshot used to preserve explicit constraints across
    * guest-chat turns. Logged-in conversations persist the same state server-side.

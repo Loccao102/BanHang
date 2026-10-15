@@ -1,4 +1,5 @@
 import type { Product } from "@/lib/products";
+import { analyzeBodyShape, type BodyShapeAnalysis, type BodyShapeType } from "@/lib/body-shape";
 
 export type BodyMeasurements = {
   height?: number; // cm
@@ -24,7 +25,10 @@ export type SizeEvaluationResult = {
   adjustabilityNote?: string;
   caveats: string[];
   referenceChart?: string;
+  bodyShape?: BodyShapeAnalysis;
 };
+
+export { analyzeBodyShape, type BodyShapeAnalysis, type BodyShapeType };
 
 /**
  * Phân tích số đo & chiều cao, cân nặng từ văn bản người dùng (tiếng Việt & số đo chuẩn).
@@ -86,6 +90,19 @@ export function extractMeasurementsFromText(text: string): BodyMeasurements {
     }
   }
 
+  // Chuỗi số đo 2 vòng dạng ngực - eo (ví dụ: 88-62 hoặc 88/62)
+  if (!measurements.bust && !measurements.waist && !threeSizesMatch) {
+    const twoSizesMatch = normalized.match(/(?:so do\s*)?\b(\d{2,3})\s*[-/]\s*(\d{2,3})\b/);
+    if (twoSizesMatch) {
+      const n1 = Number(twoSizesMatch[1]);
+      const n2 = Number(twoSizesMatch[2]);
+      if (n1 >= 70 && n1 <= 120 && n2 >= 50 && n2 <= 100) {
+        measurements.bust = n1;
+        measurements.waist = n2;
+      }
+    }
+  }
+
   return measurements;
 }
 
@@ -97,12 +114,12 @@ export function extractMeasurementsFromText(text: string): BodyMeasurements {
  * - Bịa đặt bảng số đo chuẩn chung cho toàn bộ thương hiệu mà không nêu rõ theo dòng phom dáng.
  */
 export function evaluateSizeAdvice(args: {
-  measurements: BodyMeasurements;
+  measurements?: BodyMeasurements;
   targetProduct?: Product | null;
   targetCategory?: string | null;
   message?: string;
 }): SizeEvaluationResult {
-  const { measurements, targetProduct, targetCategory } = args;
+  const { measurements = {}, targetProduct, targetCategory } = args;
   const { height, weight, bust, waist, hips } = measurements;
 
   // 1. Trường hợp kích thước ngoại lệ (Out-of-standard boundary cases)
@@ -199,12 +216,22 @@ export function evaluateSizeAdvice(args: {
         .map((v) => v.size.toUpperCase());
       const isSizeInStock = inStockVariants.includes(sizeCandidate);
 
+      const bodyShape = (bust && waist && hips) || (height && weight)
+        ? analyzeBodyShape({ height, weight, bust, waist, hips })
+        : null;
+
+      const wantsShapeInfo = /dang|body shape|ton dang/i.test(args.message || "");
+      const shapeNote = bodyShape && (wantsShapeInfo || (bust && waist && hips))
+        ? `\n\n✨ Nhận định vóc dáng: ${bodyShape.shapeLabel}. ${bodyShape.shapeDescription} Phong cách tôn dáng gợi ý: ${bodyShape.bestStyles.join(", ")}.`
+        : "";
+
       return {
         status: "exact",
         recommendedSize: sizeCandidate,
         confidence: 0.9,
-        explanation: `Đối với mẫu "${targetProduct.name}" (${targetProduct.color}), dựa trên số đo của bạn, size phù hợp nhất là ${sizeCandidate}. ${reasons.join(" ")} ${!isSizeInStock && inStockVariants.length ? `(Lưu ý: Mẫu này hiện tại size ${sizeCandidate} tạm hết, các size còn hàng: ${inStockVariants.join(", ")})` : ""}`.trim(),
+        explanation: `${`Đối với mẫu "${targetProduct.name}" (${targetProduct.color}), dựa trên số đo của bạn, size phù hợp nhất là ${sizeCandidate}. ${reasons.join(" ")} ${!isSizeInStock && inStockVariants.length ? `(Lưu ý: Mẫu này hiện tại size ${sizeCandidate} tạm hết, các size còn hàng: ${inStockVariants.join(", ")})` : ""}`.trim()}${shapeNote}`,
         adjustabilityNote: adjustability || undefined,
+        bodyShape: bodyShape || undefined,
         caveats: [
           `Thông số đối chiếu trực tiếp với đặc tính của mẫu ${targetProduct.name}.`
         ]
@@ -235,7 +262,24 @@ export function evaluateSizeAdvice(args: {
     }
   }
 
-  // 3. Khách chỉ cung cấp chiều cao và cân nặng chung chung (General height/weight inquiry)
+  // 3. Khách cung cấp số đo 3 vòng đầy đủ (Full 3-ring inquiry / Body Shape consultation)
+  if (bust && waist && hips) {
+    const bodyShape = analyzeBodyShape({ height, weight, bust, waist, hips });
+    const recommended = bodyShape?.recommendedSize ?? "S";
+    return {
+      status: "exact",
+      recommendedSize: recommended,
+      confidence: 0.85,
+      explanation: `Dựa trên số đo 3 vòng của bạn (${bust} - ${waist} - ${hips}cm), size chuẩn tối ưu của bạn tại LSOUL là **size ${recommended}**. ${bodyShape ? `\n\n✨ Nhận định vóc dáng LSOUL: **${bodyShape.shapeLabel}**. ${bodyShape.shapeDescription} Phong cách tôn dáng lý tưởng nhất: ${bodyShape.bestStyles.join(", ")}.` : ""}`,
+      clarificationQuestion: "Bạn đang muốn tìm mẫu áo corset, chân váy hay đầm liền để mình gợi ý các thiết kế tôn dáng nhất nhé?",
+      bodyShape: bodyShape || undefined,
+      caveats: [
+        `Đối chiếu với bảng thông số nhân trắc học LSOUL. Mỗi sản phẩm cụ thể (độ co giãn, dáng phom) có thể chênh lệch nhẹ.`
+      ]
+    };
+  }
+
+  // 4. Khách chỉ cung cấp chiều cao và cân nặng chung chung (General height/weight inquiry)
   if (height && weight) {
     return {
       status: "clarification_needed",
@@ -249,7 +293,115 @@ export function evaluateSizeAdvice(args: {
     };
   }
 
-  // 4. Khách chỉ hỏi tư vấn size mà không cung cấp thông số nào
+  // 5. Khách hỏi tư vấn theo tên dáng người (Named Body Shape consultation)
+  const normalizedMsg = (args.message || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d")
+    .replace(/Đ/g, "D");
+  if (normalizedMsg.includes("dong ho cat") || normalizedMsg.includes("hourglass")) {
+    const bodyShape: BodyShapeAnalysis = {
+      shape: "hourglass",
+      shapeLabel: "Dáng Đồng Hồ Cát (Hourglass)",
+      shapeDescription: "Vòng 1 và vòng 3 nở nang cân xứng, vòng eo thon gọn quyến rũ. Đây là vóc dáng lý tưởng nhất cho các thiết kế LSOUL!",
+      bestStyles: ["Corset siết eo lưng đan", "Đầm bodycon ôm sát", "Quần ống loe cạp cao"],
+      recommendedSize: "S",
+      sizeAdviceNotes: ["Vòng eo thon nhỏ giúp bạn tự tin diện form ôm; các mẫu corset đan dây sẽ tôn trọn thắt eo."],
+      confidenceScore: 95
+    };
+    return {
+      status: "exact",
+      recommendedSize: "S",
+      confidence: 0.9,
+      explanation: `✨ **Tư vấn dáng người: ${bodyShape.shapeLabel}**\n${bodyShape.shapeDescription}\n\nPhong cách tôn dáng lý tưởng nhất: ${bodyShape.bestStyles.join(", ")}. Các thiết kế corset siết eo và đầm bodycon LSOUL sẽ khoe trọn đường cong quyến rũ của bạn!`,
+      clarificationQuestion: "Bạn muốn tìm áo corset, đầm tiệc hay cả set phối sẵn để mình gợi ý nhé?",
+      bodyShape,
+      caveats: ["Tư vấn theo phom dáng đồng hồ cát chuẩn LSOUL."]
+    };
+  }
+  if (normalizedMsg.includes("qua le") || normalizedMsg.includes("pear")) {
+    const bodyShape: BodyShapeAnalysis = {
+      shape: "pear",
+      shapeLabel: "Dáng Quả Lê (Pear Shape)",
+      shapeDescription: "Vòng hông và đùi nở nang hơn phần thân trên, vòng eo gọn gàng duyên dáng.",
+      bestStyles: ["Áo cúp ngực / Baby tee tạo điểm nhấn thân trên", "Chân váy chữ A xòe nhẹ", "Quần ống suông cạp cao"],
+      recommendedSize: "S",
+      sizeAdviceNotes: ["Tập trung điểm nhấn vào phần thân trên (áo corset cúp ngực, bèo nhún) kết hợp chân váy chữ A hoặc quần suông để cân đối hông đùi."],
+      confidenceScore: 95
+    };
+    return {
+      status: "exact",
+      recommendedSize: "S",
+      confidence: 0.9,
+      explanation: `✨ **Tư vấn dáng người: ${bodyShape.shapeLabel}**\n${bodyShape.shapeDescription}\n\nPhong cách tôn dáng lý tưởng nhất: ${bodyShape.bestStyles.join(", ")}. Nguyên tắc là tạo điểm nhấn cho phần thân trên (áo cúp ngực, corset) và phối chân váy chữ A xòe nhẹ hoặc quần suông cạp cao để vóc dáng cân đối, thanh thoát.`,
+      clarificationQuestion: "Bạn có muốn xem gợi ý áo corset phối cùng chân váy chữ A tôn dáng quả lê không nè?",
+      bodyShape,
+      caveats: ["Tư vấn theo phom dáng quả lê chuẩn LSOUL."]
+    };
+  }
+  if (normalizedMsg.includes("tam giac nguoc") || normalizedMsg.includes("inverted triangle")) {
+    const bodyShape: BodyShapeAnalysis = {
+      shape: "inverted_triangle",
+      shapeLabel: "Dáng Tam Giác Ngược",
+      shapeDescription: "Vòng 1 đầy đặn hoặc bờ vai thon dài, hông nhỏ gọn thanh thoát.",
+      bestStyles: ["Áo corset cổ tim / sweetheart", "Chân váy xếp ly bồng xòe", "Quần cargo / quần ống rộng"],
+      recommendedSize: "S",
+      sizeAdviceNotes: ["Chọn áo cổ tim sâu hoặc corset thanh mảnh, kết hợp chân váy xòe bồng hoặc quần ống rộng để tạo độ phồng cho hông."],
+      confidenceScore: 95
+    };
+    return {
+      status: "exact",
+      recommendedSize: "S",
+      confidence: 0.9,
+      explanation: `✨ **Tư vấn dáng người: ${bodyShape.shapeLabel}**\n${bodyShape.shapeDescription}\n\nPhong cách tôn dáng lý tưởng nhất: ${bodyShape.bestStyles.join(", ")}. Bạn nên chọn áo corset cổ tim thanh mảnh và kết hợp chân váy xòe hoặc quần ống rộng để tạo cảm giác hông đầy đặn hơn, giúp tổng thể cân đối hài hòa.`,
+      clarificationQuestion: "Bạn có muốn mình phối thử set áo corset cổ tim và chân váy xòe bồng cho bạn không?",
+      bodyShape,
+      caveats: ["Tư vấn theo phom dáng tam giác ngược chuẩn LSOUL."]
+    };
+  }
+  if (normalizedMsg.includes("qua tao") || normalizedMsg.includes("apple")) {
+    const bodyShape: BodyShapeAnalysis = {
+      shape: "apple",
+      shapeLabel: "Dáng Quả Táo (Apple Shape)",
+      shapeDescription: "Thân trên tròn đầy, vòng 1 nổi bật và đôi chân thon thả quyến rũ.",
+      bestStyles: ["Đầm chữ A cổ chữ V khoét sâu", "Chân váy ngắn khoe chân thon", "Áo blazer chiết eo nhẹ"],
+      recommendedSize: "M",
+      sizeAdviceNotes: ["Tôn vinh vòng 1 và đôi chân đẹp, chọn phom đầm chữ A suông nhẹ hoặc blazer chiết eo."],
+      confidenceScore: 95
+    };
+    return {
+      status: "exact",
+      recommendedSize: "M",
+      confidence: 0.9,
+      explanation: `✨ **Tư vấn dáng người: ${bodyShape.shapeLabel}**\n${bodyShape.shapeDescription}\n\nPhong cách tôn dáng lý tưởng nhất: ${bodyShape.bestStyles.join(", ")}. Ưu tiên khoe trọn đôi chân thon với chân váy ngắn hoặc đầm chữ A cổ chữ V quyến rũ, kết hợp áo khoác blazer chiết eo nhẹ nhàng.`,
+      clarificationQuestion: "Bạn muốn xem các mẫu đầm chữ A hoặc set chân váy ngắn tôn chân thon không nè?",
+      bodyShape,
+      caveats: ["Tư vấn theo phom dáng quả táo chuẩn LSOUL."]
+    };
+  }
+  if (normalizedMsg.includes("thuoc ke") || normalizedMsg.includes("chu nhat") || normalizedMsg.includes("rectangle")) {
+    const bodyShape: BodyShapeAnalysis = {
+      shape: "rectangle",
+      shapeLabel: "Dáng Thước Kẻ / Cân Đối",
+      shapeDescription: "Số đo 3 vòng thanh thoát, cơ thể cân đối và dễ dàng diện đa dạng phong cách.",
+      bestStyles: ["Corset gọng định hình eo", "Chân váy xòe xếp ly", "Đầm bodycon cut-out"],
+      recommendedSize: "S",
+      sizeAdviceNotes: ["Tạo đường cong giả bằng corset thắt eo đan dây và chân váy xòe bồng."],
+      confidenceScore: 95
+    };
+    return {
+      status: "exact",
+      recommendedSize: "S",
+      confidence: 0.9,
+      explanation: `✨ **Tư vấn dáng người: ${bodyShape.shapeLabel}**\n${bodyShape.shapeDescription}\n\nPhong cách tôn dáng lý tưởng nhất: ${bodyShape.bestStyles.join(", ")}. Các mẫu corset gọng định hình siết eo kết hợp chân váy xếp ly bồng sẽ kiến tạo đường cong chữ S quyến rũ ngay tức thì!`,
+      clarificationQuestion: "Bạn muốn mình gợi ý mẫu corset gọng siết eo kết hợp chân váy xếp ly xòe nhé?",
+      bodyShape,
+      caveats: ["Tư vấn theo phom dáng thước kẻ chuẩn LSOUL."]
+    };
+  }
+
+  // 6. Khách chỉ hỏi tư vấn size mà không cung cấp thông số nào
   return {
     status: "insufficient_data",
     confidence: 0.1,
@@ -276,7 +428,7 @@ export function getVerifiedSizeGuide(categoryOrType?: string): {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 
-  if (normalized.includes("corset") || normalized.includes("ao")) {
+  if (normalized.includes("corset") || normalized.includes("ao") || normalized.includes("top")) {
     return {
       title: "Thông số tham khảo dòng Áo & Corset LSOUL",
       category: "tops_corset",
@@ -289,7 +441,15 @@ export function getVerifiedSizeGuide(categoryOrType?: string): {
     };
   }
 
-  if (normalized.includes("quan") || normalized.includes("chan vay") || normalized.includes("vay")) {
+  if (
+    normalized.includes("quan") ||
+    normalized.includes("chan vay") ||
+    normalized.includes("vay") ||
+    normalized.includes("bottom") ||
+    normalized.includes("skirt") ||
+    normalized.includes("pant") ||
+    normalized.includes("trouser")
+  ) {
     return {
       title: "Thông số tham khảo dòng Chân váy & Quần LSOUL",
       category: "bottoms",

@@ -4,6 +4,7 @@ import type { ChatAgentAction } from "@/lib/chat";
 import type { Product } from "@/lib/products";
 import type { IntentItemConstraint, OutfitRole, ShoppingIntent } from "@/lib/server/chat-intent";
 import { parseBudget, retrieveProducts } from "@/lib/server/chat-assistant";
+import { extractMeasurementsFromText, evaluateSizeAdvice } from "./chat-size-knowledge";
 
 function normalize(text: string) {
   return text
@@ -94,11 +95,19 @@ import { coordinateSmartOutfit, OutfitSetType } from "@/lib/stylist-outfit-engin
 
 function inStockSize(product: Product, requested?: string) {
   if (requested) {
-    const variant = product.variants?.find((item) => item.size.toUpperCase() === requested.toUpperCase());
-    return variant && variant.stock > 0 ? variant.size : null;
+    if (product.variants?.length) {
+      const variant = product.variants.find((item) => item.size.toUpperCase() === requested.toUpperCase());
+      return variant && variant.stock > 0 ? variant.size : null;
+    }
+    const hasSize = product.sizes?.some((s) => s.toUpperCase() === requested.toUpperCase());
+    return hasSize && (product.stock ?? 1) > 0 ? requested.toUpperCase() : null;
   }
   const available = product.variants?.filter((item) => item.active && item.stock > 0) ?? [];
-  return available.length === 1 ? available[0].size : null;
+  if (available.length === 1) return available[0].size;
+  if (!product.variants?.length && product.sizes?.length === 1 && (product.stock ?? 1) > 0) {
+    return product.sizes[0];
+  }
+  return null;
 }
 
 function productRole(product: Product): Exclude<OutfitRole, "any"> {
@@ -405,6 +414,15 @@ export function buildAgentPlan(args: AgentPlanArgs) {
       // Allow trying on the coordinated outfit in the AI virtual fitting room
       actions.push({
         id: randomUUID(),
+        type: "chat_try_on",
+        label: hasOuterwear
+          ? `✨ Ướm thử ${mainCount} món trực tiếp trong chat`
+          : `✨ Ướm thử trực tiếp trong chat (${outfit.products.length} món)`,
+        productIds: outfit.products.map((item) => item.id),
+        autoExecute: false
+      });
+      actions.push({
+        id: randomUUID(),
         type: "open_try_on",
         label: hasOuterwear
           ? `✨ Thử ${mainCount} món chính (áo khoác tùy chọn) trong phòng thử AI`
@@ -601,14 +619,67 @@ export function buildAgentPlan(args: AgentPlanArgs) {
 
   const asksCheckout = structured
     ? structured.intent === "checkout"
-    : /(di|mo|tien hanh).*(checkout|thanh toan)|checkout/.test(text);
+    : /(di|mo|tien hanh|chot|mua|dat).*(checkout|thanh toan|don|hang)|checkout|chot don|mua ngay|dat hang|chot set/.test(text);
   if (asksCheckout) {
+    const checkoutCandidates = (products.length ? products : args.contextProducts).slice(0, 3);
+    actions.push({
+      id: randomUUID(),
+      type: "chat_checkout",
+      label: "⚡ Chốt đơn & Thanh toán ngay",
+      productIds: checkoutCandidates.map((item) => item.id),
+      autoExecute: false
+    });
     actions.push({
       id: randomUUID(),
       type: "open_checkout",
       label: "Đi đến thanh toán",
       autoExecute: true
     });
+    notes.push(
+      "Khách hàng muốn chốt đơn/thanh toán ngay. Stylist AI đã mở thẻ chốt đơn trực tiếp trong chat. Hãy tóm tắt ngắn gọn đơn hàng và hướng dẫn khách xác nhận nhận hàng."
+    );
+  }
+
+  const asksSizeAdvice = structured
+    ? structured.intent === "size_advice"
+    : /(tu van size|bang size|size nao|co nao|mac vua|chieu cao|can nang|so do|vong eo|vong nguc|v1|v2|v3|dang nguoi|body shape|dong ho cat|qua le|tam giac nguoc|qua tao|thuoc ke)\b/.test(text);
+
+  if (asksSizeAdvice) {
+    const measurements = extractMeasurementsFromText(args.message);
+    const target = referenced || args.contextProducts[0] || args.found[0];
+    const sizeResult = evaluateSizeAdvice({
+      measurements,
+      targetProduct: target,
+      message: args.message
+    });
+
+    notes.push(
+      "Grounded Size Guidance (Tư vấn size có căn cứ): " + sizeResult.explanation +
+      (sizeResult.clarificationQuestion ? " Câu hỏi làm rõ: " + sizeResult.clarificationQuestion : "") +
+      (sizeResult.adjustabilityNote ? " Lưu ý độ ôm/siết: " + sizeResult.adjustabilityNote : "") +
+      (sizeResult.caveats.length ? " Caveats: " + sizeResult.caveats.join("; ") : "")
+    );
+
+    if (sizeResult.bodyShape) {
+      notes.push(
+        `✨ Nhận định vóc dáng Stylist AI: ${sizeResult.bodyShape.shapeLabel} - ${sizeResult.bodyShape.shapeDescription} ` +
+        `Phong cách tôn dáng lý tưởng: ${sizeResult.bodyShape.bestStyles.join(", ")}. ` +
+        `Khuyên khách chọn thiết kế giúp cân đối tỷ lệ cơ thể và làm nổi bật ưu điểm đường cong.`
+      );
+    }
+
+    if (sizeResult.recommendedSize && target) {
+      const inStock = inStockSize(target, sizeResult.recommendedSize);
+      if (inStock) {
+        actions.push({
+          id: randomUUID(),
+          type: "open_product",
+          label: `Xem ${target.name} · gợi ý size ${inStock}`,
+          productId: target.id,
+          autoExecute: false
+        });
+      }
+    }
   }
 
   return { actions, notes, products };

@@ -562,12 +562,12 @@ export function inferFallbackShoppingIntent(args: {
 
   const asksCoupon = /\b(?:coupon|voucher|ma giam|giam gia|uu dai|khuyen mai|ap ma)\b/.test(text);
   const asksOrder = /\b(?:don hang|order|tracking|van don|dang giao)\b/.test(text);
-  const asksCheckout = /\b(?:thanh toan|checkout|chot don)\b/.test(text);
+  const asksCheckout = /\b(?:thanh toan|checkout|chot don|mua ngay|dat hang|chot set|chot mau|dat don)\b/.test(text);
   const asksTryOn = /\b(?:thu do|thu set|thu outfit|phong thu|thu ca set)\b/.test(text);
   const asksBundleAdd = /(?:them|add|bo|cho).*(?:ca|nguyen|toan).*(?:set|outfit|bo).*(?:gio|cart)/.test(text)
     || /(?:them|add).*(?:set|outfit).*(?:gio|cart)/.test(text);
   const asksAdd = /(?:them|add|bo|cho).*(?:gio|cart)/.test(text);
-  const asksSize = /\b(?:size|kich co|co nao|mac vua|vong eo|vong nguc|can nang|cao \d|con size)\b/.test(text);
+  const asksSize = /\b(?:size|kich co|co nao|mac vua|vong eo|vong nguc|can nang|chieu cao|cao \d|con size|so do|tu van size|bang size|v1|v2|v3|eo \d|nguc \d|mong \d|co gian|dang nguoi|body shape|dong ho cat|qua le|tam giac nguoc|qua tao|thuoc ke)\b/.test(text);
   const asksPolicy = /\b(?:doi tra|doi size|bao hanh|freeship|ship|giao hang|chinh sach)\b/.test(text);
 
   const hasTop = items.some((item) => item.role === "top");
@@ -748,11 +748,13 @@ Các field không có thông tin thì bỏ hẳn, riêng items luôn là array v
 
   const primaryModel = process.env.GEMINI_INTENT_MODEL?.trim()
     || process.env.GEMINI_MODEL?.trim()
-    || "gemini-flash-lite-latest";
+    || "gemini-3.1-flash-lite-preview";
   const configs = [
     { model: primaryModel, thinkingBudget: 0 },
-    { model: "gemini-flash-lite-latest", thinkingBudget: 0 },
-    { model: "gemini-3.1-flash-lite-preview", thinkingBudget: 0 }
+    { model: "gemini-3.1-flash-lite-preview", thinkingBudget: 0 },
+    { model: "gemini-3-flash-preview", thinkingBudget: 0 },
+    { model: "gemini-3.8-flash", thinkingBudget: 0 },
+    { model: "gemini-flash-lite-latest", thinkingBudget: 0 }
   ].filter((config, index, all) => all.findIndex((item) => item.model === config.model) === index);
 
   for (const config of configs) {
