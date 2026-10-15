@@ -33,4 +33,55 @@ assert.equal(cart[0].product.id, saved.id);
 assert.equal(getBuyNowLine([product], product.id, "L"), null);
 assert.equal(getBuyNowLine([{ ...product, active: false }], product.id, "M"), null);
 assert.equal(getBuyNowLine([{ ...product, variants: [{ size: "M", active: true, stock: 0 }] }], product.id, "M"), null);
-console.log("SePay code and Buy Now selection checks passed.");
+
+// Case insensitivity test
+const directLower = getBuyNowLine([product], product.id, "m");
+assert.equal(directLower?.product.id, product.id);
+assert.equal(directLower?.size, "M");
+
+// Lookup by SKU test
+const productWithSku = {
+  id: "lsoul-celeste-draped-column-maxi-dress-dr-celeste-maxi-blk",
+  sku: "DR-CELESTE-MAXI-BLK",
+  name: "Celeste Draped Column Maxi Dress",
+  price: 2450000,
+  active: true,
+  sizes: ["S", "M", "L", "XL"],
+  stock: 48,
+  variants: [
+    { sku: "DR-CELESTE-MAXI-BLK-S", size: "S", stock: 12, active: true },
+    { sku: "DR-CELESTE-MAXI-BLK-M", size: "M", stock: 12, active: true }
+  ]
+} as Product;
+
+// Test lookup by exact ID and size S
+const directCeleste = getBuyNowLine([productWithSku], "lsoul-celeste-draped-column-maxi-dress-dr-celeste-maxi-blk", "S");
+assert.ok(directCeleste);
+assert.equal(directCeleste?.product.id, productWithSku.id);
+assert.equal(directCeleste?.size, "S");
+
+// Test lookup with lowercase size 's'
+const directCelesteLower = getBuyNowLine([productWithSku], "lsoul-celeste-draped-column-maxi-dress-dr-celeste-maxi-blk", "s");
+assert.ok(directCelesteLower);
+assert.equal(directCelesteLower?.size, "S");
+
+// Test lookup by SKU
+const directCelesteSku = getBuyNowLine([productWithSku], "DR-CELESTE-MAXI-BLK", "S");
+assert.ok(directCelesteSku);
+assert.equal(directCelesteSku?.product.id, productWithSku.id);
+
+// Test fallback when variants array is empty but sizes & stock exist
+const productNoVariants = {
+  id: "dress-no-var",
+  name: "Simple Dress",
+  price: 500000,
+  active: true,
+  sizes: ["S", "M"],
+  stock: 10
+} as Product;
+const directFallback = getBuyNowLine([productNoVariants], "dress-no-var", "s");
+assert.ok(directFallback);
+assert.equal(directFallback?.size, "S");
+
+console.log("SePay code, Celeste dress Buy Now, and variant fallback checks passed.");
+

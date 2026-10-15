@@ -16,12 +16,12 @@ import {
   Tag,
   UserRound
 } from "lucide-react";
-import { FormEvent, Suspense, useEffect, useState } from "react";
+import { FormEvent, Suspense, useEffect, useMemo, useState } from "react";
 import { useStore } from "@/components/store-provider";
 import { OrderTracker } from "@/components/order-tracker";
 import { calculateCouponDiscount, type CouponState, type OrderRecord } from "@/lib/cart";
 import { getBuyNowLine } from "@/lib/checkout";
-import { formatPrice } from "@/lib/products";
+import { formatPrice, type Product } from "@/lib/products";
 
 type Shipping = { name: string; phone: string; address: string; city: string; note: string };
 type CouponSuggestion = CouponState & { discount: number };
@@ -41,9 +41,48 @@ function CheckoutContent() {
   const buyNowSize = searchParams.get("size") ?? "";
   const checkoutUrl = `/checkout${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
   const loginUrl = `/login?next=${encodeURIComponent(checkoutUrl)}`;
-  const { cart, catalog, coupon: cartCoupon, applyCoupon, clearCoupon, placeOrder, user, addresses, accountLoading } = useStore();
+  const { cart, catalog, catalogLoading, coupon: cartCoupon, applyCoupon, clearCoupon, placeOrder, user, addresses, accountLoading } = useStore();
   const [buyNowCoupon, setBuyNowCoupon] = useState<CouponState | null>(null);
-  const directLine = buyNowId ? getBuyNowLine(catalog, buyNowId, buyNowSize) : null;
+
+  // Direct fetch fallback for buyNow product if not found in catalog yet
+  const [directProduct, setDirectProduct] = useState<Product | null>(null);
+  const [directProductLoading, setDirectProductLoading] = useState(false);
+
+  useEffect(() => {
+    if (!buyNowId) return;
+    const exists = catalog.some(
+      (p) =>
+        (p.id === buyNowId || p.sku?.toUpperCase() === buyNowId.toUpperCase()) &&
+        p.active !== false
+    );
+    if (exists) return;
+
+    let cancelled = false;
+    setDirectProductLoading(true);
+    fetch(`/api/products/${encodeURIComponent(buyNowId)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelled && data?.product) {
+          setDirectProduct(data.product);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setDirectProductLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [buyNowId, catalog]);
+
+  const activeCatalog = useMemo(() => {
+    if (!directProduct) return catalog;
+    if (catalog.some((p) => p.id === directProduct.id)) return catalog;
+    return [directProduct, ...catalog];
+  }, [catalog, directProduct]);
+
+  const directLine = buyNowId ? getBuyNowLine(activeCatalog, buyNowId, buyNowSize) : null;
   const checkoutItems = buyNowId ? (directLine ? [directLine] : []) : cart;
   const coupon = buyNowId ? buyNowCoupon : cartCoupon;
 
@@ -291,7 +330,7 @@ function CheckoutContent() {
     }
   }
 
-  if (accountLoading) {
+  if (accountLoading || (buyNowId && directProductLoading && !directLine)) {
     return (
       <div className="emptyState">
         <div>
@@ -322,6 +361,16 @@ function CheckoutContent() {
   }
 
   if (buyNowId && !directLine && !completedOrder && !pendingQrOrder) {
+    if (catalogLoading || directProductLoading) {
+      return (
+        <div className="emptyState">
+          <div>
+            <h2>Đang tải thông tin sản phẩm...</h2>
+            <p>Vui lòng đợi trong giây lát.</p>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="emptyState">
         <div>
@@ -492,8 +541,8 @@ function CheckoutContent() {
     );
   }
 
-  // --- STATE 3: Cart Empty ---
-  if (!cart.length) {
+  // --- STATE 3: Items Empty ---
+  if (!checkoutItems.length) {
     return (
       <div className="emptyState">
         <div>

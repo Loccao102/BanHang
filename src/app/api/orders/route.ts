@@ -60,8 +60,11 @@ export async function POST(request: Request) {
       for (const line of items) {
         const product = productMap.get(line.product.id);
         if (!product) throw new Error("PRODUCT_UNAVAILABLE");
-        const variant = product.variants.find((item) => item.size === line.size && item.active);
-        if (!variant || variant.stock < line.quantity) throw new Error(`OUT_OF_STOCK:${product.name}:${line.size}`);
+        const lineSize = String(line.size ?? "").trim().toUpperCase();
+        const variant = product.variants.find(
+          (item) => item.size.trim().toUpperCase() === lineSize && item.active
+        );
+        if (!variant || variant.stock < line.quantity) throw new Error(`OUT_OF_STOCK:${product.name}:${line.size ?? ""}`);
         subtotal += product.price * line.quantity;
         prepared.push({ line, product, variant });
       }

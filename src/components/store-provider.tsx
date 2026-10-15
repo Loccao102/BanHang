@@ -19,6 +19,7 @@ type StoreContextValue = {
   wishlist: string[];
   orders: OrderRecord[];
   catalog: Product[];
+  catalogLoading: boolean;
   settings: StoreSettings;
   persistenceMode: PersistenceMode;
   user: CustomerUser | null;
@@ -117,6 +118,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [catalog, setCatalog] = useState<Product[]>(seedProducts);
+  const [catalogLoading, setCatalogLoading] = useState(true);
   const [settings, setSettings] = useState<StoreSettings>(defaultSettings);
   const [persistenceMode, setPersistenceMode] = useState<PersistenceMode>("browser");
   const [user, setUser] = useState<CustomerUser | null>(null);
@@ -148,6 +150,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
     } catch {
       // Keep the current catalog if the server is temporarily unavailable.
+    } finally {
+      setCatalogLoading(false);
     }
   }, []);
 
@@ -547,7 +551,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(() => ({
-    cart, wishlist, orders, catalog, settings, persistenceMode, user, addresses, accountLoading,
+    cart, wishlist, orders, catalog, catalogLoading, settings, persistenceMode, user, addresses, accountLoading,
     cartCount: cart.reduce((sum, line) => sum + line.quantity, 0),
     coupon, cartDrawerOpen, notice, addToCart, addBundleToCart, removeFromCart, updateQuantity, updateCartVariant,
     clearCart: () => setCart([]), toggleWishlist, applyCoupon, clearCoupon: () => setCoupon(null),
@@ -555,7 +559,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     resetCatalog, updateSettings, refreshAccount, logout,
     openCartDrawer: () => setCartDrawerOpen(true), closeCartDrawer: () => setCartDrawerOpen(false),
     dismissNotice: () => setNotice(null)
-  }), [cart, wishlist, orders, catalog, settings, persistenceMode, user, addresses, accountLoading, coupon, cartDrawerOpen, notice, addToCart, addBundleToCart, removeFromCart, updateQuantity, updateCartVariant, toggleWishlist, applyCoupon, placeOrder, updateOrderStatus, saveProduct, deleteProduct, adjustStock, adjustVariantStock, toggleProductActive, resetCatalog, updateSettings, refreshAccount, logout]);
+  }), [cart, wishlist, orders, catalog, catalogLoading, settings, persistenceMode, user, addresses, accountLoading, coupon, cartDrawerOpen, notice, addToCart, addBundleToCart, removeFromCart, updateQuantity, updateCartVariant, toggleWishlist, applyCoupon, placeOrder, updateOrderStatus, saveProduct, deleteProduct, adjustStock, adjustVariantStock, toggleProductActive, resetCatalog, updateSettings, refreshAccount, logout]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
