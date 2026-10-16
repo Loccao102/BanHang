@@ -57,7 +57,7 @@ h3,
 .searchBigInput input,
 .searchNoResult h3,
 .quickViewInfo h2 {
-  font-family: var(--font-serif), "Times New Roman", serif !important;
+  font-family: var(--font-serif), "Playfair Display", Georgia, serif;
   font-optical-sizing: auto;
 }
 
@@ -76,7 +76,7 @@ h3,
 .productHoverActions button,
 .searchOverlayMeta,
 .cardTitle {
-  font-family: var(--font-sans), system-ui, sans-serif !important;
+  font-family: var(--font-sans), system-ui, sans-serif;
   letter-spacing: .08em;
 }
 
@@ -92,7 +92,8 @@ h3,
 .ordersHeader h1,
 .guideHeader h1,
 .aboutHeader h1 {
-  letter-spacing: -.035em;
+  letter-spacing: -0.012em;
+  line-height: 1.15;
 }
 
 p,

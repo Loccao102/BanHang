@@ -10,15 +10,17 @@ import { useStore } from "@/components/store-provider";
 const categories = [
   { title: "Đầm", subtitle: "Các mẫu đầm LSOUL đã đối chiếu", href: "/shop?category=dress", image: "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791259399/lsoul/home/category-dress-2026.webp" },
   { title: "Đi tiệc", subtitle: "Phom corset và dáng nổi bật", href: "/shop?category=dress", image: "https://res.cloudinary.com/dbk2ncqss/image/upload/v1791259507/lsoul/home/category-party-2026.webp" },
-  { title: "Quần", subtitle: "Jeans, quần suông và quần short dễ phối", href: "/shop?category=pants", image: "/products/pants-wide-pleat-beige.jpg" },
-  { title: "Chân váy", subtitle: "Chân váy mini, midi và dáng xếp ly", href: "/shop?category=skirts", image: "/products/skirt-denim-mini-blue.jpg" }
+  { title: "Áo & Corset", subtitle: "Thiết kế tôn eo và đường nét sắc sảo", href: "/shop?category=tops", image: "/products/top-corset-lace-black.jpg" },
+  { title: "Chân váy", subtitle: "Chân váy mini, midi và dáng xếp ly", href: "/shop?category=skirts", image: "/products/skirt-pleated-mini-black.jpg" },
+  { title: "Quần", subtitle: "Jeans, quần suông và quần short tôn dáng", href: "/shop?category=pants", image: "/products/pants-flare-denim-blue.jpg" },
+  { title: "Blazer & Áo khoác", subtitle: "Phom chiết eo, dáng suông quyền lực", href: "/shop?category=outerwear", image: "/products/blazer-hourglass-black.jpg" }
 ];
 
 export function HomeClient() {
   const { catalog } = useStore();
   const available = catalog.filter((item) => item.active !== false);
-  const featured = available.filter((item) => item.featured).slice(0, 4);
-  const newArrivals = available.filter((item) => item.isNew).slice(0, 4);
+  const featured = available.filter((item) => item.featured).slice(0, 3);
+  const newArrivals = available.filter((item) => item.isNew).slice(0, 3);
 
   return (
     <>
