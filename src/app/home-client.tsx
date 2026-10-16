@@ -19,8 +19,8 @@ const categories = [
 export function HomeClient() {
   const { catalog } = useStore();
   const available = catalog.filter((item) => item.active !== false);
-  const featured = available.filter((item) => item.featured).slice(0, 3);
-  const newArrivals = available.filter((item) => item.isNew).slice(0, 3);
+  const featured = available.filter((item) => item.featured).slice(0, 4);
+  const newArrivals = available.filter((item) => item.isNew).slice(0, 4);
 
   return (
     <>
