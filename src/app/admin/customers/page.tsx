@@ -17,6 +17,7 @@ import {
 } from "@ant-design/icons";
 import { useStore } from "@/components/store-provider";
 import { formatPrice } from "@/lib/products";
+import { Pagination } from "@/components/pagination";
 
 type CustomerRow = {
   id: string;
@@ -40,6 +41,8 @@ export default function AdminCustomersPage() {
   const [error, setError] = useState("");
   const [segment, setSegment] = useState<"all" | "purchased" | "no-orders" | "no-payment">("all");
   const [sort, setSort] = useState<"recent" | "ltv" | "orders">("recent");
+  const [page, setPage] = useState(1);
+  const CUSTOMERS_PER_PAGE = 10;
 
   async function loadCustomers() {
     if (user?.role !== "admin") return;
@@ -61,6 +64,10 @@ export default function AdminCustomersPage() {
     if (user?.role === "admin") void loadCustomers();
   }, [user?.role]);
 
+  useEffect(() => {
+    setPage(1);
+  }, [query, segment, sort]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     const matches = customers.filter((customer) => {
@@ -76,6 +83,12 @@ export default function AdminCustomersPage() {
       : sort === "orders" ? b.orderCount - a.orderCount
       : new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [customers, query, segment, sort]);
+
+  const totalPages = Math.ceil(filtered.length / CUSTOMERS_PER_PAGE);
+  const paginatedCustomers = useMemo(() => {
+    const start = (page - 1) * CUSTOMERS_PER_PAGE;
+    return filtered.slice(start, start + CUSTOMERS_PER_PAGE);
+  }, [filtered, page]);
 
   if (accountLoading) {
     return (
@@ -245,7 +258,7 @@ export default function AdminCustomersPage() {
                   Không có khách hàng phù hợp với bộ lọc.
                 </td></tr>
               )}
-              {filtered.map((customer) => (
+              {paginatedCustomers.map((customer) => (
                 <tr key={customer.id}>
                   <td>
                     <div className="antCustomerCell">
@@ -313,6 +326,19 @@ export default function AdminCustomersPage() {
             </tbody>
           </table>
         </div>
+
+        {totalPages > 1 && (
+          <div style={{ padding: "16px 20px", borderTop: "1px solid var(--line)" }}>
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              onPageChange={(p) => setPage(p)}
+              totalItems={filtered.length}
+              pageSize={CUSTOMERS_PER_PAGE}
+              itemLabel="khách hàng"
+            />
+          </div>
+        )}
       </div>
     </div>
   );

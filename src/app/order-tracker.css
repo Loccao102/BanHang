@@ -707,3 +707,648 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   Order Card (Product-Focused View)
+   ========================================================================== */
+.orderCompactCard {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.orderCompactCard:hover {
+  border-color: var(--ink);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.orderCompactHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.orderCompactMeta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.orderCompactItems {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 0;
+}
+
+.orderCompactItemRow {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  gap: 16px;
+  align-items: center;
+}
+
+.orderCompactThumb {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--soft);
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+}
+
+.orderCompactThumb img {
+  object-fit: cover;
+}
+
+.orderCompactInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.orderCompactName {
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.orderCompactVariant {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.orderCompactPrice {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.orderCompactFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.orderCompactTotal {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.orderTotalLabel {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.orderTotalValue {
+  font-size: 17px;
+  font-weight: 800;
+  color: #b91c1c;
+}
+
+.orderCompactActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.orderPayBtn {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(180, 83, 9, 0.25);
+}
+
+.orderPayBtn:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+}
+
+.orderDetailBtn {
+  background: white;
+  border: 1px solid var(--line);
+  color: var(--ink);
+  padding: 8px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.orderDetailBtn:hover {
+  background: var(--soft);
+  border-color: var(--ink);
+}
+
+/* Pay Badge Button in OrderTracker */
+.orderPayBadgeBtn {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  color: white;
+  border: none;
+  padding: 5px 12px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(180, 83, 9, 0.25);
+}
+
+.orderPayBadgeBtn:hover {
+  filter: brightness(1.1);
+  transform: scale(1.02);
+}
+
+/* Unpaid callout in OrderTracker */
+.trackerUnpaidBox {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.trackerUnpaidInfo {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  max-width: 550px;
+}
+
+.trackerUnpaidIcon {
+  color: #d97706;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.trackerUnpaidInfo strong {
+  display: block;
+  font-size: 14px;
+  color: #92400e;
+  margin-bottom: 2px;
+}
+
+.trackerUnpaidInfo p {
+  font-size: 12px;
+  color: #b45309;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   Modals (Order Detail & VietQR Payment)
+   ========================================================================== */
+.orderDetailModalOverlay,
+.paymentModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(5px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: modalFadeIn 0.2s ease-out;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideUp {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.orderDetailModalContainer {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 960px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  animation: modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.orderDetailModalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 28px;
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 10;
+}
+
+.orderDetailModalEyebrow {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.orderDetailModalTitle {
+  font-size: 20px;
+  margin: 2px 0 0;
+  color: var(--ink);
+}
+
+.orderDetailModalCloseBtn {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--muted);
+  transition: all 0.15s ease;
+}
+
+.orderDetailModalCloseBtn:hover {
+  background: var(--soft);
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+.orderDetailModalBody {
+  padding: 28px;
+}
+
+.orderDetailModalBody .orderTrackerCard {
+  border: none;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+}
+
+/* VietQR Modal */
+.paymentModalCard {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  animation: modalSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.paymentModalHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.paymentModalEyebrow {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.paymentModalTitle {
+  font-size: 18px;
+  margin: 4px 0 0;
+  color: var(--ink);
+}
+
+.paymentModalCloseBtn {
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--muted);
+  transition: all 0.15s ease;
+}
+
+.paymentModalCloseBtn:hover {
+  background: var(--soft);
+  color: var(--ink);
+}
+
+.paymentModalBody {
+  padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.paymentPulseBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #1e40af;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  padding: 6px 14px;
+  border-radius: 99px;
+  margin-bottom: 12px;
+}
+
+.paymentPulseDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #2563eb;
+  animation: pulseDot 1.5s infinite;
+}
+
+@keyframes pulseDot {
+  0% { transform: scale(0.9); opacity: 0.8; }
+  50% { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.8; }
+}
+
+.paymentGuideText {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  margin: 0 0 16px;
+  line-height: 1.5;
+}
+
+.paymentQrFrame {
+  background: white;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin-bottom: 16px;
+}
+
+.paymentBankTable {
+  width: 100%;
+  background: #fdfbf7;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.paymentBankRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.paymentBankRow.highlight {
+  background: #fef3c7;
+  padding: 6px 8px;
+  border-radius: 4px;
+  margin: 2px -4px;
+}
+
+.paymentBankLabel {
+  color: var(--muted);
+}
+
+.paymentBankValue {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.paymentPriceText {
+  color: #b91c1c;
+  font-size: 15px;
+}
+
+.paymentModalActions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.paymentSuccessBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 36px 16px;
+}
+
+.paymentSuccessIcon {
+  color: #16a34a;
+  margin-bottom: 16px;
+}
+
+.paymentSuccessBox h3 {
+  font-size: 20px;
+  color: var(--ink);
+  margin: 0 0 8px;
+}
+
+.paymentSuccessBox p {
+  color: var(--muted);
+  font-size: 14px;
+  max-width: 380px;
+  margin: 0 0 24px;
+  line-height: 1.5;
+}
+
+/* ==========================================================================
+   Reusable Pagination Component
+   ========================================================================== */
+.paginationContainer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 28px 0;
+  padding: 12px 0;
+  font-size: 13px;
+  width: 100%;
+}
+
+.paginationInfo {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.paginationInfo strong {
+  color: var(--ink);
+}
+
+.paginationControls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.paginationNavBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  background: white;
+  color: var(--ink);
+  border-radius: 6px;
+  padding: 7px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.paginationNavBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.paginationNavBtn:not(:disabled):hover {
+  background: var(--soft);
+  border-color: var(--ink);
+}
+
+.paginationNavText {
+  display: inline;
+}
+
+.paginationPages {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.paginationPageBtn {
+  min-width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: white;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.paginationPageBtn.active {
+  background: var(--ink);
+  color: white;
+  border-color: var(--ink);
+}
+
+.paginationPageBtn:not(.active):hover {
+  background: var(--soft);
+  border-color: var(--ink);
+}
+
+.paginationEllipsis {
+  padding: 0 6px;
+  color: var(--muted);
+  user-select: none;
+}
+
+@media (max-width: 640px) {
+  .paginationContainer {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .paginationNavText {
+    display: none;
+  }
+  .orderCompactItemRow {
+    grid-template-columns: 48px 1fr;
+    gap: 12px;
+  }
+  .orderCompactPrice {
+    grid-column: 2;
+  }
+  .orderCompactFooter {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .orderCompactActions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .orderPayBtn, .orderDetailBtn {
+    flex: 1;
+    justify-content: center;
+  }
+}
+

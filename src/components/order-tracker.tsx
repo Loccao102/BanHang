@@ -21,11 +21,13 @@ import {
 import { useState } from "react";
 import type { OrderRecord, OrderStatus } from "@/lib/cart";
 import { formatPrice } from "@/lib/products";
+import { VietQrPaymentModal } from "@/components/vietqr-payment-modal";
 
 interface OrderTrackerProps {
   order: OrderRecord;
   className?: string;
   showItems?: boolean;
+  onPay?: (order: OrderRecord) => void;
 }
 
 const steps = [
@@ -46,17 +48,27 @@ function getStepIndex(status: OrderStatus): number {
   }
 }
 
-export function OrderTracker({ order, className = "", showItems = true }: OrderTrackerProps) {
+export function OrderTracker({ order, className = "", showItems = true, onPay }: OrderTrackerProps) {
   const [copied, setCopied] = useState<string | null>(null);
+  const [showInternalPayment, setShowInternalPayment] = useState(false);
 
   const currentIndex = getStepIndex(order.status);
   const isCancelled = order.status === "cancelled";
+  const isUnpaid = order.paymentStatus !== "paid" && !isCancelled;
 
   function copyText(text: string, key: string) {
     if (typeof navigator !== "undefined") {
       void navigator.clipboard.writeText(text);
       setCopied(key);
       setTimeout(() => setCopied(null), 2000);
+    }
+  }
+
+  function handleTriggerPayment() {
+    if (onPay) {
+      onPay(order);
+    } else {
+      setShowInternalPayment(true);
     }
   }
 
@@ -106,6 +118,16 @@ export function OrderTracker({ order, className = "", showItems = true }: OrderT
             {order.status === "completed" && "Hoàn tất"}
             {order.status === "cancelled" && "Đã hủy"}
           </span>
+          {isUnpaid && (
+            <button
+              type="button"
+              className="orderPayBadgeBtn"
+              onClick={handleTriggerPayment}
+            >
+              <CreditCard size={13} />
+              <span>Thanh toán ngay</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -246,6 +268,35 @@ export function OrderTracker({ order, className = "", showItems = true }: OrderT
           </div>
         </div>
       ) : null}
+
+      {/* Unpaid Action Callout */}
+      {isUnpaid && (
+        <div className="trackerUnpaidBox">
+          <div className="trackerUnpaidInfo">
+            <AlertCircle size={20} className="trackerUnpaidIcon" />
+            <div>
+              <strong>Đơn hàng đang chờ thanh toán</strong>
+              <p>Vui lòng chuyển khoản VietQR để đơn hàng được tự động xác nhận và tiến hành đóng gói vận chuyển sớm nhất.</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            className="btn"
+            onClick={handleTriggerPayment}
+            style={{ display: "inline-flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}
+          >
+            <QrCode size={16} />
+            <span>Thanh toán VietQR ngay</span>
+          </button>
+        </div>
+      )}
+
+      {/* Internal modal fallback if onPay is not supplied */}
+      <VietQrPaymentModal
+        order={order}
+        isOpen={showInternalPayment}
+        onClose={() => setShowInternalPayment(false)}
+      />
     </div>
   );
 }

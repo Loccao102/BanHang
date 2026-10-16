@@ -9,6 +9,11 @@ import { useStore } from "@/components/store-provider";
 import type { CustomerAddress } from "@/lib/account";
 import { formatPrice } from "@/lib/products";
 import { OrderTracker } from "@/components/order-tracker";
+import { OrderCard } from "@/components/order-card";
+import { OrderDetailModal } from "@/components/order-detail-modal";
+import { VietQrPaymentModal } from "@/components/vietqr-payment-modal";
+import { Pagination } from "@/components/pagination";
+import type { OrderRecord } from "@/lib/cart";
 
 type Tab = "overview" | "profile" | "addresses" | "orders";
 
@@ -21,6 +26,9 @@ export default function AccountPage() {
   const [profileMessage, setProfileMessage] = useState("");
   const [passwordMessage, setPasswordMessage] = useState("");
   const [sizingMessage, setSizingMessage] = useState("");
+  const [ordersPage, setOrdersPage] = useState(1);
+  const [selectedDetailOrder, setSelectedDetailOrder] = useState<OrderRecord | null>(null);
+  const [payingOrder, setPayingOrder] = useState<OrderRecord | null>(null);
   const [userMeasurements, setUserMeasurements] = useState<{
     height?: number; weight?: number; bust?: number; waist?: number; hips?: number;
   }>({ height: 160, weight: 48, bust: 84, waist: 64, hips: 90 });
@@ -231,12 +239,77 @@ export default function AccountPage() {
         </article>)}</div>
       </div> : null}
 
-      {tab === "orders" ? <div className="accountPanel">
-        <div className="accountPanelHead"><div><p className="eyebrow">TIẾN ĐỘ & LỊCH SỬ</p><h2>Đơn hàng của bạn</h2></div></div>
-        {orders.length ? <div className="accountOrders" style={{ display: "grid", gap: 16 }}>{orders.map((order) => (
-          <OrderTracker key={order.id} order={order} showItems={true} />
-        ))}</div> : <div className="accountEmpty"><Package size={28} /><h3>Chưa có đơn hàng</h3><Link className="btn secondary" href="/shop">Khám phá bộ sưu tập</Link></div>}
-      </div> : null}
+      {tab === "orders" ? (() => {
+        const sortedOrders = [...orders].sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        const pageSize = 5;
+        const totalPages = Math.ceil(sortedOrders.length / pageSize);
+        const currentOrders = sortedOrders.slice((ordersPage - 1) * pageSize, ordersPage * pageSize);
+
+        return (
+          <div className="accountPanel">
+            <div className="accountPanelHead">
+              <div>
+                <p className="eyebrow">TIẾN ĐỘ & LỊCH SỬ</p>
+                <h2>Đơn hàng của bạn ({orders.length})</h2>
+              </div>
+            </div>
+            {orders.length ? (
+              <div className="accountOrders" style={{ display: "grid", gap: 16 }}>
+                {currentOrders.map((order) => (
+                  <OrderCard
+                    key={order.id}
+                    order={order}
+                    onViewDetail={(o) => setSelectedDetailOrder(o)}
+                    onPay={(o) => setPayingOrder(o)}
+                  />
+                ))}
+
+                {totalPages > 1 && (
+                  <Pagination
+                    currentPage={ordersPage}
+                    totalPages={totalPages}
+                    onPageChange={(p) => setOrdersPage(p)}
+                    totalItems={sortedOrders.length}
+                    pageSize={pageSize}
+                    itemLabel="đơn hàng"
+                  />
+                )}
+              </div>
+            ) : (
+              <div className="accountEmpty">
+                <Package size={28} />
+                <h3>Chưa có đơn hàng</h3>
+                <Link className="btn secondary" href="/shop">
+                  Khám phá bộ sưu tập
+                </Link>
+              </div>
+            )}
+          </div>
+        );
+      })() : null}
+
+      {/* Order Detail Modal */}
+      <OrderDetailModal
+        order={selectedDetailOrder}
+        isOpen={Boolean(selectedDetailOrder)}
+        onClose={() => setSelectedDetailOrder(null)}
+        onPay={(o) => {
+          setSelectedDetailOrder(null);
+          setPayingOrder(o);
+        }}
+      />
+
+      {/* VietQR Payment Modal */}
+      <VietQrPaymentModal
+        order={payingOrder}
+        isOpen={Boolean(payingOrder)}
+        onClose={() => setPayingOrder(null)}
+        onPaymentSuccess={async () => {
+          await refreshAccount(false);
+        }}
+      />
     </section>
   );
 }

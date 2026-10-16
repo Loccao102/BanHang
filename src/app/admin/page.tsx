@@ -44,6 +44,7 @@ import {
   type Product,
   type StorefrontCategory
 } from "@/lib/products";
+import { Pagination } from "@/components/pagination";
 
 type Tab = "overview" | "products" | "orders" | "settings";
 
@@ -150,6 +151,10 @@ function AdminContent() {
   const [stockBusy, setStockBusy] = useState<string | null>(null);
 
   const [uploadingField, setUploadingField] = useState<string | null>(null);
+  const [productsPage, setProductsPage] = useState(1);
+  const [ordersPage, setOrdersPage] = useState(1);
+  const ADMIN_PRODUCTS_PER_PAGE = 10;
+  const ADMIN_ORDERS_PER_PAGE = 10;
 
   useEffect(() => {
     if (tabFromQuery && ["overview", "products", "orders", "settings"].includes(tabFromQuery)) {
@@ -160,6 +165,14 @@ function AdminContent() {
   useEffect(() => {
     setPromo(settings.promoText);
   }, [settings.promoText]);
+
+  useEffect(() => {
+    setProductsPage(1);
+  }, [query, categoryFilter, stockFilter]);
+
+  useEffect(() => {
+    setOrdersPage(1);
+  }, [orderQuery, orderStatusFilter]);
 
   const visibleCatalog = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -174,6 +187,12 @@ function AdminContent() {
     });
   }, [catalog, query, categoryFilter, stockFilter]);
 
+  const totalProductPages = Math.ceil(visibleCatalog.length / ADMIN_PRODUCTS_PER_PAGE);
+  const paginatedCatalog = useMemo(() => {
+    const start = (productsPage - 1) * ADMIN_PRODUCTS_PER_PAGE;
+    return visibleCatalog.slice(start, start + ADMIN_PRODUCTS_PER_PAGE);
+  }, [visibleCatalog, productsPage]);
+
   const visibleOrders = useMemo(() => {
     const q = orderQuery.toLowerCase().trim();
     return orders.filter((order) =>
@@ -181,6 +200,12 @@ function AdminContent() {
       (!q || `${order.id} ${order.customer.name} ${order.customer.phone} ${order.customer.city}`.toLowerCase().includes(q))
     );
   }, [orders, orderQuery, orderStatusFilter]);
+
+  const totalOrderPages = Math.ceil(visibleOrders.length / ADMIN_ORDERS_PER_PAGE);
+  const paginatedOrders = useMemo(() => {
+    const start = (ordersPage - 1) * ADMIN_ORDERS_PER_PAGE;
+    return visibleOrders.slice(start, start + ADMIN_ORDERS_PER_PAGE);
+  }, [visibleOrders, ordersPage]);
 
   const stock = catalog.reduce((sum, item) => sum + item.stock, 0);
   const inventoryValue = catalog.reduce((sum, item) => sum + item.price * item.stock, 0);
@@ -699,7 +724,7 @@ function AdminContent() {
                 </tr>
               </thead>
               <tbody>
-                {visibleCatalog.map((product) => (
+                {paginatedCatalog.map((product) => (
                   <tr key={product.id}>
                     <td>
                       <div className="antProductTableCell">
@@ -815,6 +840,19 @@ function AdminContent() {
               </tbody>
             </table>
           </div>
+
+          {totalProductPages > 1 && (
+            <div style={{ padding: "16px 20px", borderTop: "1px solid var(--line)" }}>
+              <Pagination
+                currentPage={productsPage}
+                totalPages={totalProductPages}
+                onPageChange={(p) => setProductsPage(p)}
+                totalItems={visibleCatalog.length}
+                pageSize={ADMIN_PRODUCTS_PER_PAGE}
+                itemLabel="sản phẩm"
+              />
+            </div>
+          )}
         </div>
       )}
 
@@ -860,7 +898,7 @@ function AdminContent() {
                     </tr>
                   </thead>
                   <tbody>
-                    {visibleOrders.map((order) => (
+                    {paginatedOrders.map((order) => (
                       <tr key={order.id}>
                         <td>
                           <Link
@@ -934,6 +972,19 @@ function AdminContent() {
                     ))}
                   </tbody>
                 </table>
+
+                {totalOrderPages > 1 && (
+                  <div style={{ padding: "16px 20px", borderTop: "1px solid var(--line)" }}>
+                    <Pagination
+                      currentPage={ordersPage}
+                      totalPages={totalOrderPages}
+                      onPageChange={(p) => setOrdersPage(p)}
+                      totalItems={visibleOrders.length}
+                      pageSize={ADMIN_ORDERS_PER_PAGE}
+                      itemLabel="đơn hàng"
+                    />
+                  </div>
+                )}
               </div>
             ) : (
               <div className="antEmptyState large">

@@ -6,6 +6,7 @@ import { Camera, SlidersHorizontal, X } from "lucide-react";
 import { ProductCard } from "@/components/product-card";
 import { useStore } from "@/components/store-provider";
 import { VisualSearchModal } from "@/components/visual-search-modal";
+import { Pagination } from "@/components/pagination";
 import { formatPrice, storefrontCategory, storefrontCategoryLabels, typeLabels } from "@/lib/products";
 import type { ClothingType, ColorFamily, Product } from "@/lib/products";
 import { calculateProductSearchScore, getPersonalizedRecommendations } from "@/lib/product-search";
@@ -66,6 +67,8 @@ export function ShopClient() {
   const [sort, setSort] = useState(searchParams.get("sort") === "new" ? "new" : "featured");
   const [mobileFilters, setMobileFilters] = useState(false);
   const [visualSearchOpen, setVisualSearchOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const PRODUCTS_PER_PAGE = 12;
   const { catalog, wishlist } = useStore();
 
   const availableFilterProducts = useMemo(
@@ -181,6 +184,17 @@ export function ShopClient() {
 
     return result;
   }, [catalog, query, category, productType, color, effectivePriceCeiling, stockOnly, sort, saleOnly, wishlist]);
+
+  // Reset pagination to page 1 when filtering or sorting changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [query, category, productType, color, effectivePriceCeiling, stockOnly, sort]);
+
+  const totalPages = Math.ceil(filtered.length / PRODUCTS_PER_PAGE);
+  const paginatedFiltered = useMemo(() => {
+    const start = (currentPage - 1) * PRODUCTS_PER_PAGE;
+    return filtered.slice(start, start + PRODUCTS_PER_PAGE);
+  }, [filtered, currentPage]);
 
   const fallbackGroups = useMemo(
     () => groupProducts(catalog.filter((product) => product.active !== false && product.stock > 0)).slice(0, 3),
@@ -318,11 +332,28 @@ export function ShopClient() {
           </div>
 
           {filtered.length ? (
-            <div className="productGrid shopProductGrid">
-              {filtered.map(({ key, product, variants }) => (
-                <ProductCard key={key} product={product} colorVariants={variants} />
-              ))}
-            </div>
+            <>
+              <div className="productGrid shopProductGrid">
+                {paginatedFiltered.map(({ key, product, variants }) => (
+                  <ProductCard key={key} product={product} colorVariants={variants} />
+                ))}
+              </div>
+
+              {totalPages > 1 && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={(page) => {
+                    setCurrentPage(page);
+                    window.scrollTo({ top: 320, behavior: "smooth" });
+                  }}
+                  totalItems={filtered.length}
+                  pageSize={PRODUCTS_PER_PAGE}
+                  itemLabel="sản phẩm"
+                  className="shopPagination"
+                />
+              )}
+            </>
           ) : (
             <div className="catalogEmpty">
               <h3>Chưa có sản phẩm phù hợp</h3>
