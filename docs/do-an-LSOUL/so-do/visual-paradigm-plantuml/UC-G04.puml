@@ -1,0 +1,39 @@
+@startuml
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 13
+skinparam titleFontSize 13
+skinparam monochrome true
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam dpi 180
+left to right direction
+title UC-G04 Giỏ hàng, đơn hàng và thanh toán
+
+actor "Khách truy cập" as A_guest
+actor "Khách hàng\n(đã đăng nhập)" as A_customer
+actor "\nDịch vụ thanh toán" as A_payment
+rectangle "LSOUL" {
+  usecase "UC23\nThêm sản phẩm vào giỏ" as U_uc23
+  usecase "UC24\nCập nhật giỏ hàng" as U_uc24
+  usecase "UC25\nÁp mã giảm giá" as U_uc25
+  usecase "UC26\nĐặt hàng từ giỏ hoặc Mua ngay" as U_uc26
+  usecase "UC27\nChọn phương thức thanh toán" as U_uc27
+  usecase "UC28\nThanh toán bằng VietQR" as U_uc28
+  usecase "UC29\nXem lịch sử đơn hàng" as U_uc29
+  usecase "UC30\nTheo dõi trạng thái đơn hàng" as U_uc30
+}
+A_guest -- U_uc23
+A_guest -- U_uc24
+A_guest -- U_uc25
+A_customer -- U_uc23
+A_customer -- U_uc24
+A_customer -- U_uc25
+A_customer -- U_uc26
+A_customer -- U_uc27
+A_customer -- U_uc28
+A_customer -- U_uc29
+A_customer -- U_uc30
+A_payment -- U_uc28
+U_uc26 ..> U_uc27 : «include»
+U_uc28 ..> U_uc27 : «extend»
+@enduml

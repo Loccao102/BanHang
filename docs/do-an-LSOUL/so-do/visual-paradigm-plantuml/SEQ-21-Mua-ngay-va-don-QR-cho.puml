@@ -1,0 +1,48 @@
+@startuml
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 13
+skinparam titleFontSize 13
+skinparam monochrome true
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam dpi 180
+title SEQ-21 – Mua ngay, giỏ hàng và đơn QR chờ thanh toán
+autonumber
+actor "Khách hàng" as Customer
+participant "Checkout UI" as UI
+participant "Products API" as Products
+participant "Orders API" as Orders
+database "PostgreSQL" as DB
+participant "Payment status API" as Payment
+
+Customer -> UI: Mở checkout hoặc Mua ngay(productId, size)
+alt Mua ngay
+  UI -> Products: GET /api/products/{id} nếu catalog chưa có
+  Products --> UI: Product, variants hoặc lỗi
+  UI -> UI: getBuyNowLine(productId, size)
+  alt sản phẩm/cỡ không hợp lệ
+    UI --> Customer: Yêu cầu chọn lại sản phẩm/cỡ
+  else hợp lệ
+    UI -> Orders: POST /api/orders\ncheckoutMode=buy_now, items=[1 dòng]
+    Orders -> DB: Transaction Serializable: đọc giá/tồn/coupon, trừ tồn, tạo đơn
+    DB --> Orders: Order hoặc lỗi
+    note right of Orders: Không xóa CartItem khi buy_now.
+  end
+else Checkout từ giỏ
+  UI -> Orders: POST /api/orders\ncheckoutMode=cart, items=giỏ
+  Orders -> DB: Transaction Serializable: đối chiếu giá/tồn, tạo đơn, xóa giỏ
+  DB --> Orders: Order hoặc lỗi
+end
+alt đơn QR được tạo, paymentStatus=pending
+  Orders --> UI: Order pending, mã LS + 10 ký tự hex
+  UI --> Customer: Hiển thị QR và nội dung chuyển khoản
+  Customer -> UI: Mở lại đơn QR chưa thanh toán
+  UI -> Payment: GET /api/orders/{id}/payment (poll)
+  Payment -> DB: Đọc trạng thái của đơn thuộc khách
+  Payment --> UI: pending hoặc paid
+  note right of Payment: Webhook có chữ ký và đối soát\nđược mô tả ở SEQ-11.
+else COD
+  Orders --> UI: Order cod_pending
+  UI --> Customer: Xác nhận đặt hàng
+end
+@enduml

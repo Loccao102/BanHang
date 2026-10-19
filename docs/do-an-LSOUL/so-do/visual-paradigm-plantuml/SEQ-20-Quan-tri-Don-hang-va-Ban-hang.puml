@@ -1,0 +1,46 @@
+@startuml
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 13
+skinparam titleFontSize 13
+skinparam monochrome true
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+title SEQ-20 - QUẢN TRỊ ĐƠN HÀNG, HỦY ĐƠN & PHÂN TÍCH (THEO CODE)
+actor "Quản trị viên" as A
+boundary "Admin UI" as UI
+control "Admin Orders API" as LIST
+control "Order Detail API" as ORD
+control "Analytics / AI API" as ANA
+control "Prisma Client" as P
+database "PostgreSQL" as DB
+A -> UI : Mở quản lý bán hàng
+UI -> LIST : GET /api/admin/orders
+LIST -> P : requireAdmin + đọc Order/OrderItem
+P -> DB : SELECT Order/OrderItem/Product
+LIST --> UI : danh sách đơn hàng
+A -> UI : xem chi tiết / cập nhật trạng thái
+UI -> ORD : GET/PATCH /api/orders/{id}
+ORD -> P : kiểm tra trạng thái, payment, shipping
+P -> DB : SELECT Order + items
+alt Chuyển sang shipping nhưng QR chưa paid
+  ORD --> UI : 409 UNPAID_QR_ORDER
+else Chuyển trạng thái hợp lệ
+  ORD -> P : Serializable compare-and-swap update
+  P -> DB : UPDATE Order
+  alt Hủy đơn lần đầu
+    ORD -> P : cộng lại stock ProductVariant + Product
+    P -> DB : UPDATE inventory
+  end
+  ORD --> UI : saved + restocked
+end
+A -> UI : xem khách hàng/coupon
+UI -> P : gọi API quản trị tương ứng
+P -> DB : SELECT/UPDATE User/Coupon
+A -> UI : mở Sales Analytics / AI Insights
+UI -> ANA : GET /api/admin/analytics và /api/admin/ai
+ANA -> P : tổng hợp order, payment, stock, Try-On, Stylist, profile
+P -> DB : SELECT dữ liệu báo cáo
+ANA --> UI : metrics + dashboard insights
+@enduml

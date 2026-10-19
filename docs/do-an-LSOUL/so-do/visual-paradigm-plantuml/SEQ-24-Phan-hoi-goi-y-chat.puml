@@ -1,0 +1,37 @@
+@startuml
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 13
+skinparam titleFontSize 13
+skinparam monochrome true
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam dpi 180
+title SEQ-24 – Phản hồi gợi ý của trợ lý chat
+autonumber
+actor "Người dùng" as User
+participant "Chat Widget" as UI
+participant "Feedback API" as API
+database "PostgreSQL" as DB
+participant "Style learning" as Style
+
+User -> UI: Chọn Hợp gu / Chưa hợp
+opt Chưa hợp, chọn lý do
+  UI --> User: Hiển thị các lý do để chọn
+  User -> UI: Chọn lý do phản hồi
+end
+UI -> API: POST /api/chat/feedback\nconversationId, messageId, rating, productIds
+alt rating không hợp lệ
+  API --> UI: 400
+else không có DB hoặc khách chưa đăng nhập
+  API --> UI: success=true, persisted=false
+else có tài khoản và DB
+  API -> DB: Tìm AIRecommendation gần nhất của user/hội thoại
+  opt tìm thấy recommendation
+    API -> DB: Cập nhật feedback, scores, acceptedProductIds
+  end
+  API -> DB: Ghi UserBehaviorEvent cho sản phẩm/gợi ý
+  API -> Style: rebuildUserStyleProfile (bất đồng bộ)
+  API --> UI: success=true, persisted=true
+end
+UI --> User: Hiển thị trạng thái phản hồi
+@enduml

@@ -1,0 +1,42 @@
+@startuml
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 13
+skinparam titleFontSize 13
+skinparam monochrome true
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam dpi 180
+title SEQ-22 – Ướm thử trang phục ngay trong chat
+autonumber
+actor "Người dùng" as User
+participant "Chat Widget" as UI
+participant "Chat API / Agent" as Agent
+participant "Try-On API" as TryOn
+participant "Provider VTON" as Provider
+database "PostgreSQL" as DB
+
+User -> UI: Yêu cầu phối outfit
+UI -> Agent: POST /api/chat
+Agent --> UI: Gợi ý sản phẩm + action chat_try_on
+User -> UI: Chọn Ướm thử trong chat
+UI -> UI: Đọc ảnh đính kèm hoặc ảnh đã lưu trong trình duyệt
+alt chưa có ảnh người
+  UI --> User: Mời tải ảnh toàn thân
+else có ảnh và sản phẩm
+  UI -> TryOn: POST /api/tryon\nmodelImage, productIds
+  TryOn -> DB: Tạo TryOnSession processing nếu DB sẵn sàng
+  TryOn -> Provider: Chọn engine/fallback theo SEQ-07
+  alt provider thành công
+    Provider --> TryOn: Ảnh kết quả
+    TryOn -> DB: completed + output (nếu có session)
+    TryOn --> UI: output
+    UI --> User: Ảnh trong hội thoại; nút chốt đơn/thêm set vào giỏ
+  else input/provider lỗi
+    Provider --> TryOn: Lỗi/timeout (nếu đã gọi)
+    TryOn -> DB: failed khi đã tạo session
+    TryOn --> UI: 400/502 + thông báo
+    UI --> User: Hiển thị lỗi, cho thử lại
+  end
+end
+note over UI,TryOn: UI có thể dẫn khách chưa đăng nhập vào phòng thử đồ;\nAPI Try-On vẫn cho phép userId null tại commit khảo sát.
+@enduml

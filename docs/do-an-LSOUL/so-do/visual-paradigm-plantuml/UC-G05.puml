@@ -1,0 +1,24 @@
+@startuml
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 13
+skinparam titleFontSize 13
+skinparam monochrome true
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam dpi 180
+left to right direction
+title UC-G05 Trợ lý AI
+
+actor "Người dùng mua sắm" as A_user
+actor "Khách hàng" as A_customer
+rectangle "LSOUL" {
+  usecase "UC31\nTư vấn sản phẩm, size và dáng người" as U_uc32
+  usecase "UC32\nThao tác mua sắm, Try-On và checkout trong chat" as U_uc33
+  usecase "UC33\nLịch sử trò chuyện AI" as U_uc34
+}
+A_user -- U_uc32
+A_user -- U_uc33
+A_customer -- U_uc34
+U_uc33 ..> U_uc32 : «extend»
+A_customer -- U_uc33
+@enduml

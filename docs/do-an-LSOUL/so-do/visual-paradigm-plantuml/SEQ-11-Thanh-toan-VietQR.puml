@@ -1,0 +1,56 @@
+@startuml
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 13
+skinparam titleFontSize 13
+skinparam monochrome true
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+title SEQ-11 - THANH TOÁN QR, WEBHOOK VÀ ĐỐI SOÁT (THEO CODE)
+actor "Khách hàng" as U
+boundary "Payment UI" as UI
+control "Payment Status API" as STATUS
+participant "SePay / PayOS" as GW
+control "Webhook API" as WH
+control "Payment Processor" as S
+control "Prisma Client" as P
+database "PostgreSQL" as DB
+UI -> STATUS : GET /api/orders/{id}/payment
+STATUS -> S : kiểm tra user + quyền xem
+S -> P : đọc Order + giao dịch mới nhất
+P -> DB : SELECT Order/PaymentTransaction
+STATUS --> UI : paymentStatus + total/provider/latestTransaction
+UI -> UI : hiển thị QR từ cấu hình thanh toán
+U -> GW : chuyển khoản theo nội dung đơn
+GW -> WH : POST /api/payments/sepay/webhook\nhoặc /api/payments/payos/webhook
+WH -> S : xác minh chữ ký + chuẩn hóa payload
+alt Chữ ký không hợp lệ
+  S --> WH : reject 401
+  WH --> GW : success=false
+else Hợp lệ
+  S -> S : kiểm tra providerTransactionId idempotency
+  alt Giao dịch đã xử lý
+    S --> WH : alreadyProcessed
+  else Giao dịch mới
+    S -> P : tìm đơn + kiểm tra QR, mã đơn, số tiền, trạng thái
+    P -> DB : SELECT Order
+    alt Không khớp / đơn không hợp lệ
+      S -> P : lưu PaymentTransaction(matched=false, failureReason)
+      P -> DB : INSERT PaymentTransaction
+      note right: Order.paymentStatus vẫn pending
+    else Khớp
+      S -> P : lưu giao dịch + cập nhật paid/confirmed
+      P -> DB : INSERT PaymentTransaction; UPDATE Order
+    end
+  end
+  WH --> GW : success=true
+end
+loop Polling
+  UI -> STATUS : GET payment status
+  STATUS -> P : đọc trạng thái mới nhất
+  P -> DB : SELECT Order/PaymentTransaction
+  STATUS --> UI : pending hoặc paid
+end
+UI --> U : hiển thị kết quả
+@enduml

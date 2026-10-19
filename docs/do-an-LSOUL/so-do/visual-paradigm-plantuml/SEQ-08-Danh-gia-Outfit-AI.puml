@@ -1,0 +1,48 @@
+@startuml
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 13
+skinparam titleFontSize 13
+skinparam monochrome true
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+title SEQ-08 - ĐÁNH GIÁ OUTFIT & PHẢN HỒI AI STYLIST (THEO CODE)
+actor "Người dùng" as U
+boundary "Try-On UI" as UI
+control "Stylist API" as API
+control "Stylist Service" as S
+participant "Gemini 2.5 Flash" as AI
+control "Prisma Client" as P
+database "PostgreSQL" as DB
+UI -> API : POST /api/tryon/assess
+API -> API : kiểm tra ảnh, productIds, outfit hợp lệ
+API -> S : assessTryOnLook(image, products, profile)
+opt Đã đăng nhập + DB sẵn sàng
+  S -> P : đọc UserStyleProfile
+  P -> DB : SELECT style profile
+end
+alt Có GEMINI_API_KEY và gọi Gemini thành công
+  S -> AI : đánh giá ảnh + metadata outfit
+  AI --> S : color/proportion/style/render + nhận xét
+else Không có key hoặc Gemini lỗi
+  S -> S : chấm metadata sản phẩm + hồ sơ gu
+end
+opt Có TryOnSession và DB
+  S -> P : upsert OutfitAssessment
+  P -> DB : INSERT/UPDATE OutfitAssessment
+end
+S --> API : assessment + mode (vision+profile hoặc metadata+profile)
+API --> UI : hiển thị điểm, nhận xét, lưu ý
+U -> UI : Gửi feedback accurate/love/inaccurate
+UI -> API : POST /api/tryon/feedback
+API -> P : cập nhật TryOnSession + OutfitAssessment
+P -> DB : UPDATE feedback/rating
+alt Đã đăng nhập
+  API -> P : ghi UserBehaviorEvent + rebuild style profile
+  P -> DB : INSERT event; UPDATE UserStyleProfile
+else Khách/anonymous
+  API --> UI : recorded=true, learned=false
+end
+API --> UI : kết quả phản hồi
+@enduml

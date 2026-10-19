@@ -1,5 +1,7 @@
 # UML diagrams – LSOUL
 
+Bộ báo cáo đồ án và sơ đồ đã chuẩn hóa (7 use case, 24 sequence) nằm tại [`docs/do-an-LSOUL/`](../do-an-LSOUL/README.md).
+
 Bộ UML chính thức lưu dưới dạng **draw.io / diagrams.net** trong GitHub; Sequence có thêm nguồn PlantUML.
 
 ## Use Case

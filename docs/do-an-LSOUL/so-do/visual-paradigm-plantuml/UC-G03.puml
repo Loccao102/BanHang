@@ -1,0 +1,41 @@
+@startuml
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 13
+skinparam titleFontSize 13
+skinparam monochrome true
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam dpi 180
+left to right direction
+title UC-G03 Phối đồ và Try-On
+
+actor "Người dùng mua sắm" as A_user
+actor "\nDịch vụ AI Try-On" as A_tryai
+rectangle "LSOUL" {
+  usecase "UC16\nThêm / xóa yêu thích" as U_uc16
+  usecase "UC17\nXem yêu thích theo nhóm" as U_uc17
+  usecase "UC18\nPhối trang phục" as U_uc18
+  usecase "UC19\nTải ảnh người dùng" as U_uc19
+  usecase "UC20\nThử trang phục bằng AI" as U_uc20
+  usecase "UC20.1\nXem đánh giá độ phù hợp outfit" as U_uc201
+  usecase "UC20.2\nPhản hồi đánh giá AI Stylist" as U_uc202
+  usecase "UC21\nĐiều chỉnh màu & cỡ sau khi thử" as U_uc21
+  usecase "UC22\nThêm cả outfit vào giỏ" as U_uc22
+}
+A_user -- U_uc16
+A_user -- U_uc17
+A_user -- U_uc18
+A_user -- U_uc19
+A_user -- U_uc20
+A_user -- U_uc201
+A_user -- U_uc202
+A_user -- U_uc21
+A_user -- U_uc22
+A_tryai -- U_uc20
+U_uc20 ..> U_uc18 : «include»
+U_uc20 ..> U_uc19 : «include»
+U_uc201 ..> U_uc20 : «extend»
+U_uc202 ..> U_uc201 : «extend»
+U_uc21 ..> U_uc20 : «extend»
+U_uc22 ..> U_uc20 : «extend»
+@enduml

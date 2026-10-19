@@ -1,0 +1,44 @@
+@startuml
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 13
+skinparam titleFontSize 13
+skinparam monochrome true
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam dpi 180
+title SEQ-23 – Chốt đơn và thanh toán trong chat
+autonumber
+actor "Người dùng" as User
+participant "Chat Widget" as UI
+participant "Orders API" as Orders
+database "PostgreSQL" as DB
+participant "Payment status API" as Payment
+
+User -> UI: Chọn action chat_checkout cho set gợi ý
+alt chưa đăng nhập
+  UI --> User: Chuyển sang đăng nhập trước khi checkout
+else đã đăng nhập
+  UI --> User: Form nhận hàng, cỡ, QR/COD trong chat
+  User -> UI: Xác nhận thông tin và đặt hàng
+  alt thiếu địa chỉ/sản phẩm
+    UI --> User: Báo thiếu dữ liệu
+  else dữ liệu đầu vào đủ
+    UI -> Orders: POST /api/orders\ncheckoutMode=cart, các dòng chọn trong chat
+    Orders -> DB: Transaction: xác thực, đọc lại giá/tồn, trừ tồn, tạo đơn
+    Orders -> DB: Xóa CartItem do checkoutMode=cart
+    DB --> Orders: Order hoặc lỗi
+    alt tạo đơn QR
+      Orders --> UI: Order pending
+      UI --> User: Hiển thị QR trong chat
+      loop đến khi paid/đóng chat
+        UI -> Payment: GET /api/orders/{id}/payment
+        Payment --> UI: pending hoặc paid
+      end
+    else tạo đơn COD
+      Orders --> UI: Order cod_pending
+      UI --> User: Xác nhận đơn COD
+    end
+  end
+end
+note over UI,DB: Luồng chat hiện gửi checkoutMode=cart nên xóa giỏ đã lưu.\nCần chốt yêu cầu nếu muốn giữ giỏ khi mua set riêng.
+@enduml

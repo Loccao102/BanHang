@@ -1,0 +1,34 @@
+@startuml
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 13
+skinparam titleFontSize 13
+skinparam monochrome true
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+title SEQ-01 - ĐĂNG NHẬP
+actor "Người dùng" as U
+boundary "Login UI" as UI
+control "Auth API" as API
+control "Auth Service" as S
+control "Prisma Client" as P
+database "PostgreSQL" as DB
+U -> UI : Nhập email + mật khẩu
+UI -> API : POST /api/auth/login
+API -> S : login(email,password)
+S -> P : findUnique(User by email)
+P -> DB : SELECT User
+S -> S : verifyPassword()
+alt Sai thông tin
+  S --> API : authentication failed
+  API --> UI : 401 + error
+  UI --> U : Hiển thị lỗi
+else Hợp lệ
+  S -> P : create Session
+  P -> DB : INSERT Session
+  S --> API : user + session
+  API --> UI : 200 + Set-Cookie
+  UI --> U : Redirect /account
+end
+@enduml

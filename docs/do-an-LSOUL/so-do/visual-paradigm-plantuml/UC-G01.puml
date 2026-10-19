@@ -1,0 +1,32 @@
+@startuml
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 13
+skinparam titleFontSize 13
+skinparam monochrome true
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam dpi 180
+left to right direction
+title UC-G01 Tài khoản
+
+actor "Khách truy cập" as A_guest
+actor "Khách hàng" as A_customer
+rectangle "LSOUL" {
+  usecase "UC01\nĐăng ký tài khoản" as U_uc01
+  usecase "UC02\nĐăng nhập" as U_uc02
+  usecase "UC04\nQuên mật khẩu" as U_uc04
+  usecase "UC05\nĐặt lại mật khẩu" as U_uc05
+  usecase "UC03\nĐăng xuất" as U_uc03
+  usecase "UC06\nQuản lý thông tin cá nhân" as U_uc06
+  usecase "UC07\nĐổi mật khẩu" as U_uc07
+  usecase "UC08\nQuản lý địa chỉ nhận hàng" as U_uc08
+}
+A_guest -- U_uc01
+A_guest -- U_uc02
+A_guest -- U_uc04
+A_guest -- U_uc05
+A_customer -- U_uc03
+A_customer -- U_uc06
+A_customer -- U_uc07
+A_customer -- U_uc08
+@enduml

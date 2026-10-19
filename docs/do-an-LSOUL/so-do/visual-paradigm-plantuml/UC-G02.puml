@@ -1,0 +1,44 @@
+@startuml
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 13
+skinparam titleFontSize 13
+skinparam monochrome true
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam dpi 180
+left to right direction
+title UC-G02 Sản phẩm
+
+actor "Người dùng mua sắm" as A_user
+actor "Dịch vụ AI Vision" as A_vision
+actor "AI Stylist & Fit Engine" as A_stylist
+rectangle "LSOUL" {
+  usecase "UC09\nXem danh sách sản phẩm" as U_uc09
+  usecase "UC10\nTìm kiếm sản phẩm" as U_uc10
+  usecase "UC11\nLọc sản phẩm" as U_uc11
+  usecase "UC12\nSắp xếp sản phẩm" as U_uc12
+  usecase "UC13\nXem chi tiết sản phẩm" as U_uc13
+  usecase "UC14\nChọn màu sản phẩm" as U_uc14
+  usecase "UC15\nChọn cỡ sản phẩm" as U_uc15
+  usecase "UC10.1\nTìm kiếm sản phẩm bằng hình ảnh AI (Visual Search)" as U_uc10_1
+  usecase "UC15.1\nTư vấn chọn cỡ thông minh (Smart Fit)" as U_uc15_1
+}
+A_user -- U_uc09
+A_user -- U_uc10
+A_user -- U_uc11
+A_user -- U_uc12
+A_user -- U_uc13
+A_user -- U_uc14
+A_user -- U_uc15
+U_uc10 ..> U_uc09 : «extend»
+U_uc11 ..> U_uc09 : «extend»
+U_uc12 ..> U_uc09 : «extend»
+U_uc14 ..> U_uc13 : «extend»
+U_uc15 ..> U_uc13 : «extend»
+A_user -- U_uc10_1
+A_user -- U_uc15_1
+A_vision -- U_uc10_1
+A_stylist -- U_uc15_1
+U_uc10_1 ..> U_uc10 : «extend»
+U_uc15_1 ..> U_uc15 : «extend»
+@enduml

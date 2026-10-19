@@ -1,0 +1,39 @@
+@startuml
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 13
+skinparam titleFontSize 13
+skinparam monochrome true
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+title SEQ-19 - QUẢN TRỊ SẢN PHẨM, BIẾN THỂ & TỒN KHO (THEO CODE)
+actor "Quản trị viên" as A
+boundary "Admin Product UI" as UI
+control "Product API" as API
+control "Inventory API" as INV
+control "Prisma Client" as P
+database "PostgreSQL" as DB
+A -> UI : Mở quản lý sản phẩm
+UI -> API : tải catalog qua bootstrap/store state
+API -> P : đọc Product + ProductVariant
+P -> DB : SELECT Product/Variant
+API --> UI : danh sách sản phẩm
+A -> UI : thêm/sửa sản phẩm, màu, size, giá, stock
+UI -> API : POST /api/products
+API -> API : requireAdmin + validate field/category/size/price
+API -> P : transaction upsert Product
+P -> DB : UPSERT Product; DELETE cũ; UPSERT ProductVariant
+API --> UI : saved=true
+A -> UI : điều chỉnh tồn kho theo size
+UI -> INV : PATCH /api/admin/inventory/{productId}\n{size, delta}
+INV -> INV : requireAdmin + validate ±1..1000
+INV -> P : Serializable update variant + product stock
+P -> DB : UPDATE ProductVariant/Product
+alt Size không tồn tại hoặc thiếu hàng
+  P --> INV : rollback / conflict
+  INV --> UI : 404 hoặc 409
+else Thành công
+  INV --> UI : saved=true + tồn kho mới
+end
+@enduml

@@ -1,0 +1,38 @@
+@startuml
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 13
+skinparam titleFontSize 13
+skinparam monochrome true
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam dpi 180
+left to right direction
+title UC-00 Tổng quan
+
+actor "Khách truy cập" as A_guest
+actor "Khách hàng\n(đã đăng nhập)" as A_customer
+actor "Quản trị viên" as A_admin
+actor "\nDịch vụ AI Try-On" as A_tryon
+actor "\nDịch vụ thanh toán" as A_payment
+rectangle "LSOUL" {
+  usecase "G01\nTài khoản" as U_g01
+  usecase "G02\nKhám phá & lựa chọn sản phẩm" as U_g02
+  usecase "G03\nYêu thích, phối đồ & thử đồ AI" as U_g03
+  usecase "G04\nGiỏ hàng, đặt hàng & thanh toán" as U_g04
+  usecase "G05\nTrợ lý mua sắm AI" as U_g05
+  usecase "G06\nQuản trị" as U_g06
+}
+A_guest -- U_g01
+A_guest -- U_g02
+A_guest -- U_g03
+A_guest -- U_g04
+A_guest -- U_g05
+A_customer -- U_g01
+A_customer -- U_g02
+A_customer -- U_g03
+A_customer -- U_g04
+A_customer -- U_g05
+A_admin -- U_g06
+A_tryon -- U_g03
+A_payment -- U_g04
+@enduml

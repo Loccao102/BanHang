@@ -1,0 +1,57 @@
+@startuml
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 13
+skinparam titleFontSize 13
+skinparam monochrome true
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam sequenceMessageAlign center
+skinparam responseMessageBelowArrow true
+title SEQ-07 – Try-On AI (provider/fallback theo mã nguồn)
+actor "Người dùng" as U
+boundary "Try-On UI" as UI
+control "POST /api/tryon" as API
+control "Try-On Service" as S
+participant "IDM-VTON" as IDM
+participant "FASHN API v1.6" as FASHN
+participant "HF FASHN VTON 1.5" as HF
+participant "Gemini Try-On" as GEM
+database "PostgreSQL" as DB
+
+U -> UI : upload ảnh + chọn tối đa 3 sản phẩm
+UI -> API : POST /api/tryon(engine=auto|gemini|fashn|idm)
+API -> API : validate image + outfit
+API -> DB : create TryOnSession(userId nullable, processing)
+alt đầm dài + GEMINI_API_KEY hoặc engine=gemini
+  API -> GEM : render outfit
+  GEM --> API : image
+else sequential VTON
+  loop từng sản phẩm
+    alt tops/outerwear và engine != fashn
+      API -> IDM : render layer
+      IDM --> API : image
+      alt IDM lỗi
+        API -> FASHN : nếu có FASHN_API_KEY
+        FASHN --> API : image
+        API -> HF : fallback nếu FASHN lỗi/không có key
+        HF --> API : image
+      end
+    else bottoms/one-piece
+      API -> FASHN : nếu có FASHN_API_KEY
+      FASHN --> API : image
+      API -> HF : fallback FASHN
+      HF --> API : image
+    end
+  end
+  alt sequential lỗi và GEMINI_API_KEY + engine != fashn
+    API -> GEM : fallback toàn outfit
+    GEM --> API : image
+  end
+end
+opt TRYON_UPSCALE > 1
+  API -> S : Real-ESRGAN upscale
+end
+API -> DB : completed + resultUrl + BehaviorEvent
+API --> UI : provider + steps + result + sessionId
+UI --> U : hiển thị ảnh, đánh giá/điều chỉnh
+@enduml

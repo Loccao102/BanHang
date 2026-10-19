@@ -1,0 +1,39 @@
+@startuml
+skinparam defaultFontName "Times New Roman"
+skinparam defaultFontSize 13
+skinparam titleFontSize 13
+skinparam monochrome true
+skinparam backgroundColor white
+skinparam shadowing false
+skinparam dpi 180
+left to right direction
+title UC-G06 Quản trị
+
+actor "Quản trị viên" as A_admin
+rectangle "LSOUL" {
+  usecase "UC34\nQuản lý sản phẩm, biến thể & tồn kho" as U_uc35
+  usecase "UC35\nQuản lý bán hàng & vận hành" as U_uc36
+  usecase "Thêm / sửa sản phẩm" as U_s351
+  usecase "Quản lý màu & cỡ" as U_s352
+  usecase "Quản lý tồn kho" as U_s353
+  usecase "Quản lý đơn hàng" as U_s361
+  usecase "Quản lý khách hàng" as U_s362
+  usecase "Quản lý mã giảm giá" as U_s363
+  usecase "Theo dõi thanh toán" as U_s364
+  usecase "Xem phân tích kinh doanh" as U_s365
+  usecase "UC36\nTheo dõi phân tích kinh doanh & AI" as U_uc36insights
+  usecase "Theo dõi hiệu quả Try-On / AI Stylist" as U_s366
+}
+A_admin -- U_uc35
+A_admin -- U_uc36
+U_uc35 ..> U_s351 : «include»
+U_uc35 ..> U_s352 : «include»
+U_uc35 ..> U_s353 : «include»
+U_uc36 ..> U_s361 : «include»
+U_uc36 ..> U_s362 : «include»
+U_uc36 ..> U_s363 : «include»
+U_uc36 ..> U_s364 : «include»
+U_uc36insights ..> U_s365 : «include»
+A_admin -- U_uc36insights
+U_uc36insights ..> U_s366 : «include»
+@enduml
