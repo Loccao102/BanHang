@@ -4,7 +4,7 @@ Bộ tài liệu đối chiếu với mã nguồn tại commit `f9f0df76b1ccaa13
 
 | Tệp/thư mục | Nội dung |
 |---|---|
-| `Bao-cao-do-an-LSOUL.docx` | Báo cáo ba chương, 45 hình. Nội dung Times New Roman 13, chữ đen, hình đen trắng. Bìa và thông tin người thực hiện cần điền sau. |
+| `Bao-cao-do-an-LSOUL.docx` | Báo cáo ba chương, 45 hình và 16 bảng. Mục lục, danh mục hình và bảng đã có tên mục; số trang cập nhật trong Word. Times New Roman 13, chữ đen, hình đen trắng. Thông tin cá nhân dùng nhãn thống nhất để thay sau. |
 | `Ma-tran-UseCase-BieuDo-KiemThu.xlsx` | 40 use case/mục mở rộng, 38 kịch bản kiểm thử; Times New Roman 13, đen trắng. |
 | `Danh-sach-thay-doi-LSOUL.md` | Căn cứ, điều chỉnh và phần cần bổ sung. |
 | `so-do/drawio/` | 7 use case và 24 sequence dạng `.drawio`, chỉnh sửa từng thành phần bằng diagrams.net. |

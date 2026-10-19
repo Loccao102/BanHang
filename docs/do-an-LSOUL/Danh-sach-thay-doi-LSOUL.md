@@ -2,32 +2,30 @@
 
 **Ngày lập:** 14/10/2026; **cập nhật:** 19/10/2026
 **Mã nguồn:** `Loccao102/BanHang`, nhánh `main`, commit [`f9f0df76b1ccaa1360ab515d10096e8d29158171`](https://github.com/Loccao102/BanHang/tree/f9f0df76b1ccaa1360ab515d10096e8d29158171).
-**Báo cáo tham khảo:** `C:\Users\This PC\Downloads\1019086301-11-Ba-o-ca-o-đo-a-n-to-t-nghie-p-la-n-1-BuiBinhMinh-211212322.docx`. Tệp gốc không bị ghi đè. Không sửa mã nguồn ứng dụng.
+Tài liệu này ghi nhận phạm vi phân tích, nguồn đối chiếu và giới hạn kiểm thử của đồ án. Mã nguồn ứng dụng không thay đổi.
 
 ## 1. Đầu ra đã tạo
 
 | Đầu ra | Nội dung |
 |---|---|
-| `Bao-cao-do-an-LSOUL.docx` | Báo cáo ba chương; bìa, lời cảm ơn, mở đầu, nội dung nghiệp vụ và công nghệ, use case, activity/sequence/state/ERD/kiến trúc/deployment, ảnh giao diện LSOUL, kiểm thử, phụ lục sơ đồ và kết luận. Heading, caption, mục lục/danh mục hình/bảng dùng trường Word để cập nhật. |
-| `Bieu-do-LSOUL/` | Nguồn chỉnh sửa và PNG xuất; giữ 7 use case, 20 sequence gốc; bổ sung/sửa các sơ đồ theo mã nguồn. Xem `Bieu-do-LSOUL/README.md`. |
+| `Bao-cao-do-an-LSOUL.docx` | Báo cáo ba chương; bìa, lời cảm ơn, mở đầu, phân tích nghiệp vụ, thiết kế hệ thống, kiểm thử, kết luận và phụ lục. Mục lục, danh mục 45 hình và 16 bảng có đầy đủ tên mục; số trang dùng trường Word để cập nhật. |
+| `so-do/` | Nguồn chỉnh sửa và PNG xuất cho 7 use case và 24 sơ đồ trình tự. Xem `so-do/README.md`. |
 | `Ma-tran-UseCase-BieuDo-KiemThu.xlsx` | 40 mục gồm 36 UC chính và 4 UC mở rộng; sheet kiểm thử 38 kịch bản, sheet bằng chứng đã xác minh. |
 | `Danh-sach-thay-doi-LSOUL.md` | Tài liệu này: phạm vi chỉnh sửa, nguồn chứng minh, điểm chưa khớp và thông tin cần bổ sung. |
 
-**Chuẩn hóa ngày 19/10/2026:** báo cáo và ma trận dùng Times New Roman 13 cho nội dung/bảng, chữ đen nền trắng; hình sơ đồ và ảnh giao diện trong báo cáo xuất đen trắng. `Bieu-do-LSOUL/Chinh-sua/` cung cấp 7 use case và 24 sequence ở dạng `.drawio` chỉnh sửa trực tiếp và `.puml` để nhập Visual Paradigm. Khung/bìa và thông tin cá nhân vẫn để người thực hiện hoàn thiện.
+**Chuẩn hóa ngày 19/10/2026:** báo cáo và ma trận dùng Times New Roman 13, chữ đen nền trắng; hình sơ đồ và ảnh giao diện trong báo cáo xuất đen trắng. `so-do/` cung cấp 7 use case và 24 sequence ở dạng `.drawio` chỉnh sửa trực tiếp và `.puml` để nhập Visual Paradigm. Thông tin cá nhân trên bìa dùng nhãn thống nhất để thay sau.
 
-## 2. Nội dung mẫu → nội dung LSOUL → nguồn → trạng thái
+## 2. Nội dung báo cáo và nguồn đối chiếu
 
-| Nội dung báo cáo mẫu | Nội dung LSOUL thay thế | Nguồn chứng minh | Trạng thái |
-|---|---|---|---|
-| Bìa và bìa phụ đề tài bệnh viện, tên sinh viên/GVHD cũ | Tên đề tài LSOUL; thông tin cá nhân để nhãn cần bổ sung | Yêu cầu người dùng; báo cáo mẫu | Đã thay; chờ thông tin người thực hiện |
-| HIS và quy trình đặt lịch khám | Mua sắm thời trang, chọn màu/cỡ, phối outfit, Try-On, đơn và tồn kho | `docs/USE_CASES.md`; `src/app/` | Đã viết lại |
-| Kotlin/Compose, Angular, C#/.NET, SQL Server/EF | TypeScript, React, Next.js App Router, Node.js, Prisma, PostgreSQL/pgvector | `package.json`; `prisma/schema.prisma`; `docker-compose.yml` | Đã thay |
-| Tác nhân bệnh nhân/bác sĩ/quản trị bệnh viện | Khách truy cập, khách hàng, admin, dịch vụ ngoài | `docs/USE_CASES.md`; enum `UserRole` | Đã thay; không thêm role ngoài schema |
-| Phân rã/Use Case/Sequence bệnh viện | G01–G06; 36 UC chính + 4 mở rộng; các sequence nghiệp vụ LSOUL | `docs/diagrams/`; route/API tương ứng | Đã xây dựng và truy vết |
-| ERD/bảng bệnh viện với kiểu dữ liệu không nhất quán | ERD tài khoản–thương mại và AI; từ điển dữ liệu cốt lõi theo Prisma | `prisma/schema.prisma` | Đã xây dựng; xem giới hạn dưới đây |
-| Ảnh giao diện bệnh viện và Android | Ảnh chụp trang chủ, shop, login, Try-On khi chạy local | `src/app/*`; ảnh chụp 16/10/2026 | Đã thay ảnh; ảnh admin cần bổ sung |
-| Kết quả kiểm thử mẫu không có bằng chứng đầy đủ | Kiểm tra tĩnh đã chạy và bảng kịch bản tích hợp ghi trạng thái thực | `package.json`; log lệnh tại phiên lập báo cáo | Đã tách đạt tĩnh/chưa chạy tích hợp |
-| Kết luận và tài liệu y tế/Android/.NET | Kết luận bám commit và nguồn công nghệ phù hợp | Mã nguồn và tài liệu chính thức | Đã thay |
+| Nội dung | Phạm vi thể hiện | Nguồn đối chiếu |
+|---|---|---|
+| Nghiệp vụ mua sắm | Tài khoản, danh mục, màu/cỡ, giỏ hàng, đơn hàng, thanh toán và tồn kho | `docs/USE_CASES.md`; `src/app/`; `src/lib/` |
+| Công nghệ và triển khai | TypeScript, React, Next.js App Router, Prisma, PostgreSQL và Docker Compose | `package.json`; `prisma/schema.prisma`; `docker-compose.yml` |
+| Tác nhân và quyền | Khách truy cập, khách hàng, quản trị viên và dịch vụ ngoài | `docs/USE_CASES.md`; enum `UserRole`; API quản trị |
+| Mô hình chức năng | G01–G06, 36 use case chính và 4 mục mở rộng; sơ đồ trình tự theo luồng nghiệp vụ | `docs/diagrams/`; route/API tương ứng |
+| Dữ liệu | ERD thương mại, tài khoản và AI; từ điển dữ liệu theo Prisma | `prisma/schema.prisma` |
+| Giao diện | Trang chủ, shop, đăng nhập và Try-On ở môi trường phát triển | `src/app/`; ảnh chụp ngày 16/10/2026 |
+| Kiểm thử | Kết quả kiểm tra logic đã chạy và kế hoạch kiểm thử tích hợp | Script kiểm tra trong `package.json`; ma trận truy vết |
 
 ## 3. Biểu đồ đã chuẩn bị
 
@@ -47,8 +45,8 @@
 | `npm run test:checkout` | Exit code 0; kiểm tra mã SePay, Mua ngay và fallback biến thể | Logic nội bộ; không có DB/webhook thực |
 | `npm run test:ai:scenarios` | 7/7 kịch bản đạt | Dữ liệu/fallback cục bộ; không gọi Gemini thực |
 | `npx tsx scripts/test-order-components.ts` | 5 kiểm tra đạt | Logic thành phần; không có webhook thực |
-| Chạy Next.js local và chụp giao diện | Trang chủ, shop, login, Try-On render ở 1440×1000 | Development, dữ liệu mẫu/fallback, chưa đăng nhập |
-| Kiểm tra cấu trúc Word | OOXML validator báo “All validations PASSED”; 45 hình và 38 kịch bản tích hợp đối chiếu được với ma trận | Bộ kết xuất PDF kiểm tra được bố cục tổng quát nhưng không thay thế Word khi kiểm tra dấu tiếng Việt và trang ngang |
+| Chạy Next.js local và chụp giao diện | Trang chủ, shop, login, Try-On render ở 1440×1000 | Development, dữ liệu dự phòng, chưa đăng nhập |
+| Kiểm tra cấu trúc Word | Gói DOCX và XML hợp lệ; 45 hình, 16 bảng, 38 kịch bản tích hợp | Số trang cần cập nhật trong Word sau khi dàn trang cuối cùng |
 
 **Chưa xác minh:** E2E có PostgreSQL, checkout đồng thời, webhook SePay/PayOS thật, admin với dữ liệu đăng nhập, Try-On/Gemini với API key, hiệu năng, responsive nhiều kích thước và đánh giá người dùng. Báo cáo kiểm thử `docs/BAO_CAO_KIEM_THU_2026-10-04.md` gắn commit `32cd894`; không lấy số liệu đó làm kết quả của commit đang xét.
 
@@ -69,10 +67,10 @@
 
 ## 6. Thông tin còn cần bổ sung
 
-1. Tên trường/khoa, sinh viên, mã sinh viên, lớp/khóa, giảng viên hướng dẫn, địa điểm và năm học cho bìa.
+1. Thay các nhãn TRƯỜNG A, KHOA A, SINH VIÊN B, MÃ SINH VIÊN B, LỚP B, GIẢNG VIÊN C, ĐỊA ĐIỂM A và NĂM HỌC A bằng thông tin chính thức.
 2. Ảnh trang quản trị từ một môi trường demo có tài khoản admin và dữ liệu thử phù hợp.
 3. Môi trường triển khai/kiểm thử chính thức, biến cấu hình dịch vụ (không cần cung cấp secret trong báo cáo), log E2E, webhook và AI; dữ liệu đo hiệu năng/đánh giá nếu muốn công bố.
-4. Mở báo cáo trong Word và cập nhật toàn bộ trường để tạo lại mục lục, danh mục hình/bảng và số trang sau khi bổ sung thông tin/ảnh. Bản xem trước PDF từ trình kết xuất thử không hiển thị dấu tiếng Việt và hướng trang ngang chính xác; cần kiểm tra dàn trang cuối cùng trong Word trên máy sẽ nộp.
+4. Mở báo cáo trong Word và cập nhật toàn bộ trường để tính số trang ở mục lục, danh mục hình và danh mục bảng sau khi bổ sung thông tin hoặc ảnh.
 
 ## 7. Tài liệu nguồn chính
 
