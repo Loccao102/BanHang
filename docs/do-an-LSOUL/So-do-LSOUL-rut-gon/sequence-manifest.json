@@ -1,0 +1,194 @@
+[
+  {
+    "code": "SEQ-01",
+    "title": "Đăng nhập",
+    "width": 440,
+    "height": 257,
+    "font_pt": 13,
+    "orientation": "portrait"
+  },
+  {
+    "code": "SEQ-02",
+    "title": "Đăng ký và đăng xuất",
+    "width": 440,
+    "height": 308,
+    "font_pt": 13,
+    "orientation": "portrait"
+  },
+  {
+    "code": "SEQ-03",
+    "title": "Quên và đặt lại mật khẩu",
+    "width": 440,
+    "height": 287,
+    "font_pt": 13,
+    "orientation": "portrait"
+  },
+  {
+    "code": "SEQ-04",
+    "title": "Quản lý tài khoản",
+    "width": 440,
+    "height": 320,
+    "font_pt": 13,
+    "orientation": "portrait"
+  },
+  {
+    "code": "SEQ-05",
+    "title": "Khám phá sản phẩm",
+    "width": 440,
+    "height": 278,
+    "font_pt": 13,
+    "orientation": "portrait"
+  },
+  {
+    "code": "SEQ-06",
+    "title": "Yêu thích và phối trang phục",
+    "width": 440,
+    "height": 302,
+    "font_pt": 13,
+    "orientation": "portrait"
+  },
+  {
+    "code": "SEQ-07",
+    "title": "Thử trang phục bằng AI",
+    "width": 680,
+    "height": 320,
+    "font_pt": 13,
+    "orientation": "landscape"
+  },
+  {
+    "code": "SEQ-08",
+    "title": "Đánh giá trang phục và phản hồi",
+    "width": 680,
+    "height": 341,
+    "font_pt": 13,
+    "orientation": "landscape"
+  },
+  {
+    "code": "SEQ-09",
+    "title": "Giỏ hàng và mã giảm giá",
+    "width": 440,
+    "height": 332,
+    "font_pt": 13,
+    "orientation": "portrait"
+  },
+  {
+    "code": "SEQ-10",
+    "title": "Đặt hàng",
+    "width": 440,
+    "height": 332,
+    "font_pt": 13,
+    "orientation": "portrait"
+  },
+  {
+    "code": "SEQ-11",
+    "title": "Thanh toán QR và đối soát",
+    "width": 680,
+    "height": 374,
+    "font_pt": 13,
+    "orientation": "landscape"
+  },
+  {
+    "code": "SEQ-12",
+    "title": "Lịch sử và theo dõi đơn hàng",
+    "width": 440,
+    "height": 257,
+    "font_pt": 13,
+    "orientation": "portrait"
+  },
+  {
+    "code": "SEQ-13",
+    "title": "Tư vấn mua sắm bằng AI",
+    "width": 680,
+    "height": 278,
+    "font_pt": 13,
+    "orientation": "landscape"
+  },
+  {
+    "code": "SEQ-14",
+    "title": "Lịch sử trò chuyện",
+    "width": 680,
+    "height": 329,
+    "font_pt": 13,
+    "orientation": "landscape"
+  },
+  {
+    "code": "SEQ-15",
+    "title": "Quản trị hệ thống",
+    "width": 440,
+    "height": 332,
+    "font_pt": 13,
+    "orientation": "portrait"
+  },
+  {
+    "code": "SEQ-16",
+    "title": "Chi tiết sản phẩm và biến thể",
+    "width": 440,
+    "height": 257,
+    "font_pt": 13,
+    "orientation": "portrait"
+  },
+  {
+    "code": "SEQ-17",
+    "title": "Điều chỉnh bộ phối và thêm vào giỏ",
+    "width": 680,
+    "height": 320,
+    "font_pt": 13,
+    "orientation": "landscape"
+  },
+  {
+    "code": "SEQ-18",
+    "title": "Thực hiện thao tác mua sắm trong chat",
+    "width": 440,
+    "height": 290,
+    "font_pt": 13,
+    "orientation": "portrait"
+  },
+  {
+    "code": "SEQ-19",
+    "title": "Quản lý sản phẩm và tồn kho",
+    "width": 440,
+    "height": 320,
+    "font_pt": 13,
+    "orientation": "portrait"
+  },
+  {
+    "code": "SEQ-20",
+    "title": "Quản lý đơn hàng và vận hành",
+    "width": 680,
+    "height": 362,
+    "font_pt": 13,
+    "orientation": "landscape"
+  },
+  {
+    "code": "SEQ-21",
+    "title": "Mua ngay và thanh toán lại đơn QR",
+    "width": 440,
+    "height": 332,
+    "font_pt": 13,
+    "orientation": "portrait"
+  },
+  {
+    "code": "SEQ-22",
+    "title": "Thử đồ trong hội thoại",
+    "width": 680,
+    "height": 311,
+    "font_pt": 13,
+    "orientation": "landscape"
+  },
+  {
+    "code": "SEQ-23",
+    "title": "Chốt đơn trong hội thoại",
+    "width": 440,
+    "height": 290,
+    "font_pt": 13,
+    "orientation": "portrait"
+  },
+  {
+    "code": "SEQ-24",
+    "title": "Phản hồi gợi ý trong hội thoại",
+    "width": 440,
+    "height": 236,
+    "font_pt": 13,
+    "orientation": "portrait"
+  }
+]

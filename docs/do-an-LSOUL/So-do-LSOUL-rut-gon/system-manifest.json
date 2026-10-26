@@ -1,0 +1,66 @@
+[
+  {
+    "code": "HT-01",
+    "title": "Các nhóm chức năng",
+    "width": 680,
+    "height": 360,
+    "font_pt": 13,
+    "orientation": "landscape"
+  },
+  {
+    "code": "HT-02",
+    "title": "Kiến trúc hệ thống",
+    "width": 680,
+    "height": 400,
+    "font_pt": 13,
+    "orientation": "landscape"
+  },
+  {
+    "code": "HT-03",
+    "title": "Mô hình triển khai",
+    "width": 680,
+    "height": 420,
+    "font_pt": 13,
+    "orientation": "landscape"
+  },
+  {
+    "code": "TT-01",
+    "title": "Trạng thái đơn hàng",
+    "width": 680,
+    "height": 420,
+    "font_pt": 13,
+    "orientation": "landscape"
+  },
+  {
+    "code": "TT-02",
+    "title": "Trạng thái thanh toán",
+    "width": 680,
+    "height": 420,
+    "font_pt": 13,
+    "orientation": "landscape"
+  },
+  {
+    "code": "TT-03",
+    "title": "Trạng thái phiên thử đồ",
+    "width": 680,
+    "height": 400,
+    "font_pt": 13,
+    "orientation": "landscape"
+  },
+  {
+    "code": "HD-01",
+    "title": "Quy trình đặt hàng và thanh toán",
+    "width": 680,
+    "height": 430,
+    "font_pt": 13,
+    "orientation": "landscape"
+  },
+  {
+    "code": "HD-02",
+    "title": "Quy trình phối và thử trang phục",
+    "width": 680,
+    "height": 440,
+    "font_pt": 13,
+    "orientation": "landscape"
+  }
+]

@@ -2,6 +2,17 @@
 
 Bộ tài liệu phân tích, thiết kế và đánh giá hệ thống thời trang LSOUL.
 
+## Bản rút gọn 75 trang
+
+Bản này diễn đạt ngắn gọn, giảm thuật ngữ và giữ 41 sơ đồ nguyên hình. Mỗi sơ đồ được trình bày liền mạch; các sơ đồ rộng dùng trang A4 ngang, sơ đồ ngắn có thể đặt chung trang. Chữ trong sơ đồ Times New Roman 13 pt, đen trắng. Gồm 45 hình, 16 bảng và 102 trường số trang đã cập nhật.
+
+- [Báo cáo Word 75 trang](Bao-cao-do-an-LSOUL-rut-gon.docx)
+- [Bản PDF xem và in](Bao-cao-do-an-LSOUL-rut-gon.pdf)
+- [Bộ sơ đồ nguyên hình](So-do-LSOUL-rut-gon/) · [Tải ZIP](So-do-LSOUL-rut-gon.zip)
+- [Mở trong draw.io](So-do-LSOUL-rut-gon/LSOUL-So-do-nguyen-hinh.drawio) · [Nhập vào Visual Paradigm Online](So-do-LSOUL-rut-gon/LSOUL-So-do-nguyen-hinh.xml)
+
+## Bản đầy đủ
+
 Báo cáo Word đã dàn lại toàn bộ hình để đọc và in trên A4. 41 sơ đồ được bố trí thành 104 phần, giữ chữ Times New Roman 13 pt ở kích thước đặt trong Word; các luồng dài có ký hiệu hoặc số bước tiếp nối. Ảnh giao diện được phóng vùng thao tác chính. Mục lục, danh mục hình và số trang đã cập nhật. Nguồn chỉnh sửa của các hình trong báo cáo nằm trong [`So-do-LSOUL-de-doc/`](So-do-LSOUL-de-doc/).
 
 | Tệp/thư mục | Nội dung |

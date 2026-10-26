@@ -1,0 +1,74 @@
+[
+  {
+    "code": "UC-00",
+    "title": "Hệ thống thời trang LSOUL",
+    "width": 680,
+    "height": 420,
+    "font_pt": 13,
+    "orientation": "landscape"
+  },
+  {
+    "code": "UC-G01",
+    "title": "Quản lý tài khoản",
+    "width": 680,
+    "height": 420,
+    "font_pt": 13,
+    "orientation": "landscape"
+  },
+  {
+    "code": "UC-G02",
+    "title": "Khám phá và lựa chọn sản phẩm",
+    "width": 680,
+    "height": 420,
+    "font_pt": 13,
+    "orientation": "landscape"
+  },
+  {
+    "code": "UC-G03",
+    "title": "Yêu thích, phối và thử trang phục",
+    "width": 680,
+    "height": 420,
+    "font_pt": 13,
+    "orientation": "landscape"
+  },
+  {
+    "code": "UC-G04",
+    "title": "Giỏ hàng, đặt hàng và thanh toán",
+    "width": 680,
+    "height": 420,
+    "font_pt": 13,
+    "orientation": "landscape"
+  },
+  {
+    "code": "UC-G05",
+    "title": "Trợ lý mua sắm AI",
+    "width": 680,
+    "height": 420,
+    "font_pt": 13,
+    "orientation": "landscape"
+  },
+  {
+    "code": "UC-G06",
+    "title": "Quản trị hệ thống",
+    "width": 680,
+    "height": 420,
+    "font_pt": 13,
+    "orientation": "landscape"
+  },
+  {
+    "code": "DL-01",
+    "title": "Dữ liệu tài khoản và thương mại",
+    "width": 680,
+    "height": 420,
+    "font_pt": 13,
+    "orientation": "landscape"
+  },
+  {
+    "code": "DL-02",
+    "title": "Dữ liệu AI và cá nhân hóa",
+    "width": 680,
+    "height": 420,
+    "font_pt": 13,
+    "orientation": "landscape"
+  }
+]
