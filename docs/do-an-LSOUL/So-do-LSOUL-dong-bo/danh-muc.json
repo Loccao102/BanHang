@@ -1,0 +1,289 @@
+[
+  {
+    "code": "UC-00",
+    "title": "Hệ thống thời trang LSOUL",
+    "width": 850,
+    "height": 630,
+    "objects": 29
+  },
+  {
+    "code": "UC-G01",
+    "title": "Quản lý tài khoản",
+    "width": 850,
+    "height": 660,
+    "objects": 21
+  },
+  {
+    "code": "UC-G02",
+    "title": "Khám phá và lựa chọn sản phẩm",
+    "width": 850,
+    "height": 850,
+    "objects": 32
+  },
+  {
+    "code": "UC-G03",
+    "title": "Yêu thích, phối và thử trang phục",
+    "width": 850,
+    "height": 850,
+    "objects": 32
+  },
+  {
+    "code": "UC-G04",
+    "title": "Giỏ hàng, đặt hàng và thanh toán",
+    "width": 850,
+    "height": 820,
+    "objects": 30
+  },
+  {
+    "code": "UC-G05",
+    "title": "Trợ lý mua sắm AI",
+    "width": 850,
+    "height": 650,
+    "objects": 18
+  },
+  {
+    "code": "UC-G06",
+    "title": "Quản trị hệ thống",
+    "width": 850,
+    "height": 930,
+    "objects": 26
+  },
+  {
+    "code": "SEQ-01",
+    "title": "Đăng nhập",
+    "width": 692,
+    "height": 637,
+    "objects": 40
+  },
+  {
+    "code": "SEQ-02",
+    "title": "Đăng ký và đăng xuất",
+    "width": 692,
+    "height": 955,
+    "objects": 59
+  },
+  {
+    "code": "SEQ-03",
+    "title": "Quên và đặt lại mật khẩu",
+    "width": 692,
+    "height": 897,
+    "objects": 55
+  },
+  {
+    "code": "SEQ-04",
+    "title": "Quản lý tài khoản",
+    "width": 692,
+    "height": 712,
+    "objects": 43
+  },
+  {
+    "code": "SEQ-05",
+    "title": "Khám phá sản phẩm",
+    "width": 692,
+    "height": 696,
+    "objects": 36
+  },
+  {
+    "code": "SEQ-06",
+    "title": "Yêu thích và phối trang phục",
+    "width": 692,
+    "height": 749,
+    "objects": 38
+  },
+  {
+    "code": "SEQ-07",
+    "title": "Thử trang phục bằng AI",
+    "width": 864,
+    "height": 1158,
+    "objects": 71
+  },
+  {
+    "code": "SEQ-08",
+    "title": "Đánh giá trang phục và phản hồi",
+    "width": 864,
+    "height": 1065,
+    "objects": 64
+  },
+  {
+    "code": "SEQ-09",
+    "title": "Giỏ hàng và mã giảm giá",
+    "width": 692,
+    "height": 876,
+    "objects": 46
+  },
+  {
+    "code": "SEQ-10",
+    "title": "Đặt hàng",
+    "width": 692,
+    "height": 905,
+    "objects": 50
+  },
+  {
+    "code": "SEQ-11",
+    "title": "Thanh toán QR và đối soát",
+    "width": 864,
+    "height": 1327,
+    "objects": 83
+  },
+  {
+    "code": "SEQ-12",
+    "title": "Lịch sử và theo dõi đơn hàng",
+    "width": 692,
+    "height": 538,
+    "objects": 30
+  },
+  {
+    "code": "SEQ-13",
+    "title": "Tư vấn mua sắm bằng AI",
+    "width": 864,
+    "height": 738,
+    "objects": 44
+  },
+  {
+    "code": "SEQ-14",
+    "title": "Lịch sử trò chuyện",
+    "width": 692,
+    "height": 884,
+    "objects": 53
+  },
+  {
+    "code": "SEQ-15",
+    "title": "Quản trị hệ thống",
+    "width": 692,
+    "height": 716,
+    "objects": 42
+  },
+  {
+    "code": "SEQ-16",
+    "title": "Chi tiết sản phẩm và biến thể",
+    "width": 692,
+    "height": 614,
+    "objects": 34
+  },
+  {
+    "code": "SEQ-17",
+    "title": "Điều chỉnh bộ phối và thêm vào giỏ",
+    "width": 864,
+    "height": 997,
+    "objects": 58
+  },
+  {
+    "code": "SEQ-18",
+    "title": "Thực hiện thao tác mua sắm trong chat",
+    "width": 692,
+    "height": 1012,
+    "objects": 54
+  },
+  {
+    "code": "SEQ-19",
+    "title": "Quản lý sản phẩm và tồn kho",
+    "width": 692,
+    "height": 1093,
+    "objects": 58
+  },
+  {
+    "code": "SEQ-20",
+    "title": "Quản lý đơn hàng và vận hành",
+    "width": 692,
+    "height": 1099,
+    "objects": 62
+  },
+  {
+    "code": "SEQ-21",
+    "title": "Mua ngay và thanh toán lại đơn QR",
+    "width": 692,
+    "height": 1254,
+    "objects": 66
+  },
+  {
+    "code": "SEQ-22",
+    "title": "Thử đồ trong hội thoại",
+    "width": 864,
+    "height": 1016,
+    "objects": 60
+  },
+  {
+    "code": "SEQ-23",
+    "title": "Chốt đơn trong hội thoại",
+    "width": 692,
+    "height": 1189,
+    "objects": 67
+  },
+  {
+    "code": "SEQ-24",
+    "title": "Phản hồi gợi ý trong hội thoại",
+    "width": 692,
+    "height": 990,
+    "objects": 53
+  },
+  {
+    "code": "HT-01",
+    "title": "Phân rã chức năng",
+    "width": 1440,
+    "height": 300,
+    "objects": 15
+  },
+  {
+    "code": "HT-02",
+    "title": "Kiến trúc thành phần",
+    "width": 900,
+    "height": 460,
+    "objects": 19
+  },
+  {
+    "code": "HT-03",
+    "title": "Mô hình triển khai",
+    "width": 850,
+    "height": 630,
+    "objects": 20
+  },
+  {
+    "code": "HD-01",
+    "title": "Hoạt động đặt hàng và thanh toán",
+    "width": 850,
+    "height": 1350,
+    "objects": 39
+  },
+  {
+    "code": "HD-02",
+    "title": "Hoạt động phối và thử trang phục",
+    "width": 850,
+    "height": 1460,
+    "objects": 41
+  },
+  {
+    "code": "TT-01",
+    "title": "Trạng thái đơn hàng",
+    "width": 800,
+    "height": 550,
+    "objects": 25
+  },
+  {
+    "code": "TT-02",
+    "title": "Trạng thái thanh toán",
+    "width": 850,
+    "height": 640,
+    "objects": 16
+  },
+  {
+    "code": "TT-03",
+    "title": "Trạng thái phiên thử đồ",
+    "width": 850,
+    "height": 600,
+    "objects": 13
+  },
+  {
+    "code": "DL-01",
+    "title": "Dữ liệu tài khoản và thương mại",
+    "width": 1370,
+    "height": 905,
+    "objects": 126
+  },
+  {
+    "code": "DL-02",
+    "title": "Dữ liệu AI và cá nhân hóa",
+    "width": 1370,
+    "height": 863,
+    "objects": 116
+  }
+]
