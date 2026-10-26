@@ -1,0 +1,371 @@
+[
+  {
+    "code": "UC-00",
+    "title": "Hệ thống thời trang LSOUL",
+    "parts": [
+      {
+        "key": "UC-00-P01",
+        "title": "Hệ thống thời trang LSOUL – phần 1/2",
+        "width": 440,
+        "height": 520,
+        "objects": 16
+      },
+      {
+        "key": "UC-00-P02",
+        "title": "Hệ thống thời trang LSOUL – phần 2/2",
+        "width": 440,
+        "height": 520,
+        "objects": 18
+      }
+    ]
+  },
+  {
+    "code": "UC-G01",
+    "title": "Quản lý tài khoản",
+    "parts": [
+      {
+        "key": "UC-G01-P01",
+        "title": "Quản lý tài khoản – phần 1/2",
+        "width": 440,
+        "height": 520,
+        "objects": 12
+      },
+      {
+        "key": "UC-G01-P02",
+        "title": "Quản lý tài khoản – phần 2/2",
+        "width": 440,
+        "height": 520,
+        "objects": 12
+      }
+    ]
+  },
+  {
+    "code": "UC-G02",
+    "title": "Khám phá và lựa chọn sản phẩm",
+    "parts": [
+      {
+        "key": "UC-G02-P01",
+        "title": "Khám phá và lựa chọn sản phẩm – phần 1/5",
+        "width": 440,
+        "height": 520,
+        "objects": 13
+      },
+      {
+        "key": "UC-G02-P02",
+        "title": "Khám phá và lựa chọn sản phẩm – phần 2/5",
+        "width": 440,
+        "height": 520,
+        "objects": 11
+      },
+      {
+        "key": "UC-G02-P03",
+        "title": "Khám phá và lựa chọn sản phẩm – phần 3/5",
+        "width": 440,
+        "height": 520,
+        "objects": 11
+      },
+      {
+        "key": "UC-G02-P04",
+        "title": "Khám phá và lựa chọn sản phẩm – phần 4/5",
+        "width": 440,
+        "height": 520,
+        "objects": 12
+      },
+      {
+        "key": "UC-G02-P05",
+        "title": "Khám phá và lựa chọn sản phẩm – phần 5/5",
+        "width": 440,
+        "height": 520,
+        "objects": 7
+      }
+    ]
+  },
+  {
+    "code": "UC-G03",
+    "title": "Yêu thích, phối và thử trang phục",
+    "parts": [
+      {
+        "key": "UC-G03-P01",
+        "title": "Yêu thích, phối và thử trang phục – phần 1/5",
+        "width": 440,
+        "height": 520,
+        "objects": 15
+      },
+      {
+        "key": "UC-G03-P02",
+        "title": "Yêu thích, phối và thử trang phục – phần 2/5",
+        "width": 440,
+        "height": 520,
+        "objects": 8
+      },
+      {
+        "key": "UC-G03-P03",
+        "title": "Yêu thích, phối và thử trang phục – phần 3/5",
+        "width": 440,
+        "height": 520,
+        "objects": 15
+      },
+      {
+        "key": "UC-G03-P04",
+        "title": "Yêu thích, phối và thử trang phục – phần 4/5",
+        "width": 440,
+        "height": 520,
+        "objects": 14
+      },
+      {
+        "key": "UC-G03-P05",
+        "title": "Yêu thích, phối và thử trang phục – phần 5/5",
+        "width": 440,
+        "height": 520,
+        "objects": 12
+      }
+    ]
+  },
+  {
+    "code": "UC-G04",
+    "title": "Giỏ hàng, đặt hàng và thanh toán",
+    "parts": [
+      {
+        "key": "UC-G04-P01",
+        "title": "Giỏ hàng, đặt hàng và thanh toán – phần 1/4",
+        "width": 440,
+        "height": 520,
+        "objects": 11
+      },
+      {
+        "key": "UC-G04-P02",
+        "title": "Giỏ hàng, đặt hàng và thanh toán – phần 2/4",
+        "width": 440,
+        "height": 520,
+        "objects": 11
+      },
+      {
+        "key": "UC-G04-P03",
+        "title": "Giỏ hàng, đặt hàng và thanh toán – phần 3/4",
+        "width": 440,
+        "height": 520,
+        "objects": 14
+      },
+      {
+        "key": "UC-G04-P04",
+        "title": "Giỏ hàng, đặt hàng và thanh toán – phần 4/4",
+        "width": 440,
+        "height": 520,
+        "objects": 8
+      }
+    ]
+  },
+  {
+    "code": "UC-G05",
+    "title": "Trợ lý mua sắm AI",
+    "parts": [
+      {
+        "key": "UC-G05-P01",
+        "title": "Trợ lý mua sắm AI – phần 1/1",
+        "width": 440,
+        "height": 520,
+        "objects": 17
+      }
+    ]
+  },
+  {
+    "code": "UC-G06",
+    "title": "Quản trị hệ thống",
+    "parts": [
+      {
+        "key": "UC-G06-P01",
+        "title": "Quản trị hệ thống – phần 1/5",
+        "width": 440,
+        "height": 520,
+        "objects": 12
+      },
+      {
+        "key": "UC-G06-P02",
+        "title": "Quản trị hệ thống – phần 2/5",
+        "width": 440,
+        "height": 520,
+        "objects": 9
+      },
+      {
+        "key": "UC-G06-P03",
+        "title": "Quản trị hệ thống – phần 3/5",
+        "width": 440,
+        "height": 520,
+        "objects": 12
+      },
+      {
+        "key": "UC-G06-P04",
+        "title": "Quản trị hệ thống – phần 4/5",
+        "width": 440,
+        "height": 520,
+        "objects": 9
+      },
+      {
+        "key": "UC-G06-P05",
+        "title": "Quản trị hệ thống – phần 5/5",
+        "width": 440,
+        "height": 520,
+        "objects": 12
+      }
+    ]
+  },
+  {
+    "code": "DL-01",
+    "title": "Dữ liệu tài khoản và thương mại",
+    "parts": [
+      {
+        "key": "DL-01-P01",
+        "title": "Dữ liệu tài khoản và thương mại – phần 1/5",
+        "width": 440,
+        "height": 560,
+        "objects": 37
+      },
+      {
+        "key": "DL-01-P02",
+        "title": "Dữ liệu tài khoản và thương mại – phần 2/5",
+        "width": 440,
+        "height": 560,
+        "objects": 40
+      },
+      {
+        "key": "DL-01-P03",
+        "title": "Dữ liệu tài khoản và thương mại – phần 3/5",
+        "width": 440,
+        "height": 560,
+        "objects": 41
+      },
+      {
+        "key": "DL-01-P04",
+        "title": "Dữ liệu tài khoản và thương mại – phần 4/5",
+        "width": 440,
+        "height": 560,
+        "objects": 45
+      },
+      {
+        "key": "DL-01-P05",
+        "title": "Dữ liệu tài khoản và thương mại – phần 5/5",
+        "width": 440,
+        "height": 560,
+        "objects": 23
+      }
+    ],
+    "source_entities": [
+      "User",
+      "Session",
+      "Address",
+      "Product",
+      "ProductVariant",
+      "WishlistItem",
+      "CartItem",
+      "Coupon",
+      "Order",
+      "OrderItem",
+      "PaymentTransaction"
+    ],
+    "source_relations": 12,
+    "relation_batches": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        3,
+        4,
+        5
+      ],
+      [
+        6,
+        7
+      ],
+      [
+        8,
+        9,
+        10
+      ],
+      [
+        11
+      ]
+    ]
+  },
+  {
+    "code": "DL-02",
+    "title": "Dữ liệu AI và cá nhân hóa",
+    "parts": [
+      {
+        "key": "DL-02-P01",
+        "title": "Dữ liệu AI và cá nhân hóa – phần 1/5",
+        "width": 440,
+        "height": 560,
+        "objects": 36
+      },
+      {
+        "key": "DL-02-P02",
+        "title": "Dữ liệu AI và cá nhân hóa – phần 2/5",
+        "width": 440,
+        "height": 560,
+        "objects": 35
+      },
+      {
+        "key": "DL-02-P03",
+        "title": "Dữ liệu AI và cá nhân hóa – phần 3/5",
+        "width": 440,
+        "height": 560,
+        "objects": 35
+      },
+      {
+        "key": "DL-02-P04",
+        "title": "Dữ liệu AI và cá nhân hóa – phần 4/5",
+        "width": 440,
+        "height": 560,
+        "objects": 31
+      },
+      {
+        "key": "DL-02-P05",
+        "title": "Dữ liệu AI và cá nhân hóa – phần 5/5",
+        "width": 440,
+        "height": 560,
+        "objects": 27
+      }
+    ],
+    "source_entities": [
+      "User",
+      "ChatConversation",
+      "ChatMessage",
+      "UserStyleProfile",
+      "UserBehaviorEvent",
+      "ProductAffinity",
+      "AIRecommendation",
+      "Product",
+      "ProductSemanticEmbedding",
+      "TryOnSession",
+      "OutfitAssessment"
+    ],
+    "source_relations": 13,
+    "relation_batches": [
+      [
+        0,
+        1,
+        2
+      ],
+      [
+        3,
+        4,
+        5
+      ],
+      [
+        6,
+        7,
+        8
+      ],
+      [
+        9,
+        10
+      ],
+      [
+        11,
+        12
+      ]
+    ]
+  }
+]

@@ -1,0 +1,146 @@
+[
+  {
+    "code": "HT-01",
+    "title": "Phân rã chức năng",
+    "parts": [
+      {
+        "key": "HT-01-P01",
+        "title": "Phân rã chức năng",
+        "width": 440,
+        "height": 470,
+        "font_pt": 13,
+        "objects": 14
+      }
+    ]
+  },
+  {
+    "code": "HT-02",
+    "title": "Kiến trúc thành phần",
+    "parts": [
+      {
+        "key": "HT-02-P01",
+        "title": "Kiến trúc thành phần",
+        "width": 440,
+        "height": 540,
+        "font_pt": 13,
+        "objects": 18
+      }
+    ]
+  },
+  {
+    "code": "HT-03",
+    "title": "Mô hình triển khai",
+    "parts": [
+      {
+        "key": "HT-03-P01",
+        "title": "Mô hình triển khai",
+        "width": 440,
+        "height": 560,
+        "font_pt": 13,
+        "objects": 19
+      }
+    ]
+  },
+  {
+    "code": "HD-01",
+    "title": "Hoạt động đặt hàng và thanh toán",
+    "parts": [
+      {
+        "key": "HD-01-P01",
+        "title": "Đặt hàng và thanh toán – thông tin đơn",
+        "width": 440,
+        "height": 540,
+        "font_pt": 13,
+        "objects": 16
+      },
+      {
+        "key": "HD-01-P02",
+        "title": "Đặt hàng và thanh toán – tạo đơn",
+        "width": 440,
+        "height": 540,
+        "font_pt": 13,
+        "objects": 15
+      },
+      {
+        "key": "HD-01-P03",
+        "title": "Đặt hàng và thanh toán – đối soát và theo dõi",
+        "width": 440,
+        "height": 560,
+        "font_pt": 13,
+        "objects": 17
+      }
+    ]
+  },
+  {
+    "code": "HD-02",
+    "title": "Hoạt động phối và thử trang phục",
+    "parts": [
+      {
+        "key": "HD-02-P01",
+        "title": "Phối và thử trang phục – kiểm tra dữ liệu",
+        "width": 440,
+        "height": 540,
+        "font_pt": 13,
+        "objects": 16
+      },
+      {
+        "key": "HD-02-P02",
+        "title": "Phối và thử trang phục – tạo ảnh",
+        "width": 440,
+        "height": 540,
+        "font_pt": 13,
+        "objects": 15
+      },
+      {
+        "key": "HD-02-P03",
+        "title": "Phối và thử trang phục – lưu kết quả",
+        "width": 440,
+        "height": 560,
+        "font_pt": 13,
+        "objects": 21
+      }
+    ]
+  },
+  {
+    "code": "TT-01",
+    "title": "Trạng thái đơn hàng",
+    "parts": [
+      {
+        "key": "TT-01-P01",
+        "title": "Trạng thái đơn hàng",
+        "width": 440,
+        "height": 560,
+        "font_pt": 13,
+        "objects": 23
+      }
+    ]
+  },
+  {
+    "code": "TT-02",
+    "title": "Trạng thái thanh toán",
+    "parts": [
+      {
+        "key": "TT-02-P01",
+        "title": "Trạng thái thanh toán",
+        "width": 440,
+        "height": 560,
+        "font_pt": 13,
+        "objects": 16
+      }
+    ]
+  },
+  {
+    "code": "TT-03",
+    "title": "Trạng thái phiên thử đồ",
+    "parts": [
+      {
+        "key": "TT-03-P01",
+        "title": "Trạng thái phiên thử đồ",
+        "width": 440,
+        "height": 540,
+        "font_pt": 13,
+        "objects": 16
+      }
+    ]
+  }
+]
