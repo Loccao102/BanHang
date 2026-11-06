@@ -21,27 +21,38 @@ export default function LoginPage() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (loading) return;
+
     setLoading(true);
     setError("");
     const data = new FormData(event.currentTarget);
 
-    const response = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: data.get("email"), password: data.get("password") })
-    });
-    const result = await response.json();
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: data.get("email"), password: data.get("password") })
+      });
 
-    if (!response.ok) {
-      setError(result.error ?? "Không thể đăng nhập.");
+      // Handle empty/non-JSON error responses without leaving the form stuck.
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(
+          typeof result?.error === "string" ? result.error : "Không thể đăng nhập. Vui lòng thử lại."
+        );
+      }
+
+      await refreshAccount(true);
+      const next = nextParam || new URLSearchParams(window.location.search).get("next");
+      router.push(next || "/account");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Đã có lỗi xảy ra khi đăng nhập. Vui lòng thử lại.");
+    } finally {
+      // Restore the button for HTTP errors, network errors, and refresh errors.
       setLoading(false);
-      return;
     }
-
-    await refreshAccount(true);
-    const next = nextParam || new URLSearchParams(window.location.search).get("next");
-    router.push(next || "/account");
-    router.refresh();
   }
 
   return (
@@ -57,7 +68,7 @@ export default function LoginPage() {
           <label><span>Email</span><input name="email" type="email" autoComplete="email" required placeholder="you@example.com" /></label>
           <label><span>Mật khẩu</span><input name="password" type="password" autoComplete="current-password" required placeholder="••••••••" /></label>
           <div className="authForgot"><Link href="/forgot-password">Quên mật khẩu?</Link></div>
-          {error ? <div className="authError">{error}</div> : null}
+          {error ? <div className="authError" role="alert">{error}</div> : null}
           <button className="btn block" type="submit" disabled={loading}>{loading ? "Đang đăng nhập..." : <>Đăng nhập <ArrowRight size={15} /></>}</button>
           <p className="authSwitch">Chưa có tài khoản? <Link href={nextParam ? `/register?next=${encodeURIComponent(nextParam)}` : "/register"}>Tạo tài khoản</Link></p>
         </form>
