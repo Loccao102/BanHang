@@ -3,19 +3,21 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
-  ArrowLeftOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
   DollarCircleOutlined,
   HeartOutlined,
+  MailOutlined,
+  PhoneOutlined,
+  ReloadOutlined,
   RightOutlined,
   SearchOutlined,
   ShoppingOutlined,
   SyncOutlined,
-  TeamOutlined,
-  UserOutlined
+  TeamOutlined
 } from "@ant-design/icons";
 import { useStore } from "@/components/store-provider";
+import { ToneTag } from "@/components/admin/status-tag";
 import { formatPrice } from "@/lib/products";
 import { Pagination } from "@/components/pagination";
 
@@ -32,6 +34,23 @@ type CustomerRow = {
   lifetimeValue: number;
   lastOrderAt?: string | null;
 };
+
+function initials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "?";
+  const last = parts[parts.length - 1][0] ?? "";
+  const first = parts.length > 1 ? parts[0][0] : "";
+  return `${first}${last}`.toUpperCase();
+}
+
+function customerSegment(c: CustomerRow) {
+  if (c.lifetimeValue >= 5_000_000) return { label: "Khách VIP", tone: "purple" as const };
+  if (c.paidOrderCount > 0) return { label: "Đã mua hàng", tone: "success" as const };
+  if (c.orderCount > 0) return { label: "Chờ thanh toán", tone: "warning" as const };
+  return { label: "Mới đăng ký", tone: "default" as const };
+}
+
+const dateFmt = new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
 
 export default function AdminCustomersPage() {
   const { user, accountLoading } = useStore();
@@ -62,6 +81,7 @@ export default function AdminCustomersPage() {
 
   useEffect(() => {
     if (user?.role === "admin") void loadCustomers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.role]);
 
   useEffect(() => {
@@ -117,10 +137,11 @@ export default function AdminCustomersPage() {
   const totalOrders = customers.reduce((sum, item) => sum + item.orderCount, 0);
   const totalLTV = customers.reduce((sum, item) => sum + item.lifetimeValue, 0);
   const totalWishlist = customers.reduce((sum, item) => sum + item.wishlistCount, 0);
+  const purchasedCustomers = customers.filter((c) => c.paidOrderCount > 0).length;
 
   return (
     <div className="antAdminPageContainer">
-      {/* Ant Design Page Header */}
+      {/* Page Header */}
       <div className="antPageHeader">
         <div className="antPageHeaderLeft">
           <div className="antBreadcrumb">
@@ -132,20 +153,23 @@ export default function AdminCustomersPage() {
           </div>
           <h1 className="antPageTitle">Hồ sơ & Dữ liệu Khách hàng</h1>
           <p className="antPageSubtitle">
-            Theo dõi hành vi mua sắm, giá trị vòng đời (LTV) và danh sách tài khoản đã đăng ký trong hệ sinh thái LSOUL.
+            Theo dõi hành vi mua sắm, phân nhóm hội viên, giá trị vòng đời (LTV) và hồ sơ phong cách 360° trong hệ sinh thái LSOUL.
           </p>
         </div>
 
         <div className="antPageHeaderRight">
           <div className="antHeaderActionGroup">
+            <button type="button" className="antBtn antBtnDefault" disabled={loading} onClick={() => void loadCustomers()}>
+              <ReloadOutlined spin={loading} /> Làm mới
+            </button>
             <Link className="antBtn antBtnDefault" href="/admin/marketing">
-              Quản lý Mã giảm giá & Social
+              Mã giảm giá & Social
             </Link>
           </div>
         </div>
       </div>
 
-      {/* Ant Design Stat Cards Grid */}
+      {/* Stat Cards Grid */}
       <div className="antStatCardsGrid">
         <div className="antStatCard">
           <div className="antStatCardHeader">
@@ -157,7 +181,7 @@ export default function AdminCustomersPage() {
           <div className="antStatValue">{customers.length}</div>
           <div className="antStatFooter">
             <span className="antTag antTagSuccess">
-              <CheckCircleOutlined /> Tài khoản đã đăng ký
+              <CheckCircleOutlined /> {purchasedCustomers} khách đã thanh toán
             </span>
           </div>
         </div>
@@ -171,7 +195,7 @@ export default function AdminCustomersPage() {
           </div>
           <div className="antStatValue">{totalOrders}</div>
           <div className="antStatFooter">
-            <span className="antTag antTagInfo">Đơn từ thành viên đã đăng nhập</span>
+            <span className="antTag antTagInfo">Đơn từ hội viên đã đăng ký</span>
           </div>
         </div>
 
@@ -202,7 +226,7 @@ export default function AdminCustomersPage() {
         </div>
       </div>
 
-      {error && <p role="alert" style={{ color: "#cf1322", margin: "0 0 16px" }}>{error}</p>}
+      {error && <div role="alert" className="antInlineAlert error" style={{ marginBottom: 16 }}>{error}</div>}
 
       {/* Main Customers Table Card */}
       <div className="antCard">
@@ -221,9 +245,9 @@ export default function AdminCustomersPage() {
             </div>
             <select className="antSelect" value={segment} aria-label="Lọc nhóm khách"
               onChange={(event) => setSegment(event.target.value as typeof segment)}>
-              <option value="all">Tất cả khách</option>
-              <option value="purchased">Đã thanh toán</option>
-              <option value="no-payment">Có đơn, chưa thanh toán</option>
+              <option value="all">Tất cả khách ({customers.length})</option>
+              <option value="purchased">Đã thanh toán ({purchasedCustomers})</option>
+              <option value="no-payment">Có đơn, chờ thanh toán</option>
               <option value="no-orders">Chưa đặt đơn</option>
             </select>
             <select className="antSelect" value={sort} aria-label="Sắp xếp khách"
@@ -232,10 +256,6 @@ export default function AdminCustomersPage() {
               <option value="ltv">Chi tiêu cao nhất</option>
               <option value="orders">Nhiều đơn nhất</option>
             </select>
-            <button type="button" className="antBtn antBtnDefault" disabled={loading}
-              onClick={() => void loadCustomers()}>
-              {loading ? "Đang tải..." : "Làm mới"}
-            </button>
           </div>
         </div>
 
@@ -245,90 +265,95 @@ export default function AdminCustomersPage() {
               <tr>
                 <th>Khách hàng</th>
                 <th>Thông tin liên hệ</th>
-                <th>Số đơn đặt</th>
-                <th>Mục yêu thích</th>
+                <th>Trạng thái</th>
+                <th>Đơn đặt & Yêu thích</th>
                 <th>Tổng chi tiêu (LTV)</th>
-                <th>Lần thanh toán gần nhất</th>
+                <th>Thanh toán gần nhất</th>
                 <th style={{ textAlign: "right" }}>Thao tác</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 && (
-                <tr><td colSpan={7} style={{ textAlign: "center", padding: 24 }}>
-                  Không có khách hàng phù hợp với bộ lọc.
-                </td></tr>
-              )}
-              {paginatedCustomers.map((customer) => (
-                <tr key={customer.id}>
-                  <td>
-                    <div className="antCustomerCell">
-                      <div className="antAvatar small">
-                        <UserOutlined />
-                      </div>
-                      <div className="antCustomerMeta">
-                        <Link
-                          href={`/admin/customers/${customer.id}`}
-                          className="antCustomerName"
-                        >
-                          {customer.name}
-                        </Link>
-                        <small className="antSubDate">
-                          Tham gia{" "}
-                          {new Intl.DateTimeFormat("vi-VN", {
-                            dateStyle: "medium"
-                          }).format(new Date(customer.createdAt))}
-                        </small>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <span className="antCustomerEmail">{customer.email}</span>
-                    <small className="antCustomerPhone">
-                      {customer.phone || "Chưa cập nhật SĐT"}
-                    </small>
-                  </td>
-                  <td>
-                    <span className="antTag antTagInfo">
-                      {customer.orderCount} đơn
-                    </span>
-                  </td>
-                  <td>
-                    <span className="antTag antTagDefault">
-                      {customer.wishlistCount} mục
-                    </span>
-                  </td>
-                  <td>
-                    <strong className="antPrice greenText">
-                      {formatPrice(customer.lifetimeValue)}
-                    </strong>
-                  </td>
-                  <td>
-                    {customer.lastOrderAt ? (
-                      <span className="antSubDate">
-                        {new Intl.DateTimeFormat("vi-VN", {
-                          dateStyle: "medium"
-                        }).format(new Date(customer.lastOrderAt))}
-                      </span>
-                    ) : (
-                      <span className="antTextMuted">—</span>
-                    )}
-                  </td>
-                  <td style={{ textAlign: "right" }}>
-                    <Link
-                      href={`/admin/customers/${customer.id}`}
-                      className="antBtn antBtnDefault antBtnSm"
-                    >
-                      Hồ sơ 360 <RightOutlined style={{ fontSize: 10 }} />
-                    </Link>
+                <tr>
+                  <td colSpan={7} style={{ textAlign: "center", padding: 32, color: "#8c8c8c" }}>
+                    Không có khách hàng phù hợp với bộ lọc.
                   </td>
                 </tr>
-              ))}
+              )}
+              {paginatedCustomers.map((customer) => {
+                const seg = customerSegment(customer);
+                return (
+                  <tr key={customer.id}>
+                    <td>
+                      <div className="antCustomerCell">
+                        <div className="antAvatar small">{initials(customer.name)}</div>
+                        <div className="antCustomerMeta">
+                          <Link
+                            href={`/admin/customers/${customer.id}`}
+                            className="antCustomerName"
+                          >
+                            {customer.name}
+                          </Link>
+                          <small className="antSubDate">
+                            Tham gia {dateFmt.format(new Date(customer.createdAt))}
+                          </small>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="antCustomerContact">
+                        <span className="antCustomerEmail">
+                          <MailOutlined /> {customer.email}
+                        </span>
+                        <small className={`antCustomerPhone ${customer.phone ? "" : "muted"}`}>
+                          <PhoneOutlined /> {customer.phone || "Chưa cập nhật SĐT"}
+                        </small>
+                      </div>
+                    </td>
+                    <td>
+                      <ToneTag tone={seg.tone}>{seg.label}</ToneTag>
+                    </td>
+                    <td>
+                      <div className="antTagWrap">
+                        <ToneTag tone={customer.orderCount > 0 ? "info" : "default"}>
+                          {customer.orderCount} đơn{customer.paidOrderCount > 0 ? ` (${customer.paidOrderCount} đã TT)` : ""}
+                        </ToneTag>
+                        {customer.wishlistCount > 0 ? (
+                          <ToneTag tone="default">{customer.wishlistCount} yêu thích</ToneTag>
+                        ) : null}
+                      </div>
+                    </td>
+                    <td>
+                      <strong className={`antPrice ${customer.lifetimeValue > 0 ? "greenText" : ""}`}>
+                        {formatPrice(customer.lifetimeValue)}
+                      </strong>
+                    </td>
+                    <td>
+                      {customer.lastOrderAt ? (
+                        <span className="antSubDate">
+                          {dateFmt.format(new Date(customer.lastOrderAt))}
+                        </span>
+                      ) : (
+                        <span className="antTextMuted">Chưa phát sinh</span>
+                      )}
+                    </td>
+                    <td style={{ textAlign: "right" }}>
+                      <Link
+                        href={`/admin/customers/${customer.id}`}
+                        className="antBtn antBtnDefault antBtnSm"
+                      >
+                        Hồ sơ 360 <RightOutlined style={{ fontSize: 10 }} />
+                      </Link>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
 
         {totalPages > 1 && (
-          <div style={{ padding: "16px 20px", borderTop: "1px solid var(--line)" }}>
+          <div style={{ padding: "16px 20px", borderTop: "1px solid var(--ant-border)" }}>
             <Pagination
               currentPage={page}
               totalPages={totalPages}

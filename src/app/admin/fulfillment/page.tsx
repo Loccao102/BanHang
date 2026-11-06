@@ -1,54 +1,63 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { allowedOrderStatuses } from "@/lib/order-workflow";
 import {
-  ArrowLeftOutlined,
-  BarcodeOutlined,
   CarOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
   DollarCircleOutlined,
   InboxOutlined,
+  SearchOutlined,
   ShoppingOutlined,
   SyncOutlined
 } from "@ant-design/icons";
 import { useStore } from "@/components/store-provider";
-import type { OrderStatus, PaymentStatus } from "@/lib/cart";
+import type { OrderStatus } from "@/lib/cart";
 import { formatPrice } from "@/lib/products";
+import { ORDER_STATUS_META, paymentMethodLabel } from "@/lib/admin-status";
+import { StatusTag } from "@/components/admin/status-tag";
 
-const statuses: { value: OrderStatus; label: string }[] = [
-  { value: "processing", label: "Đang xử lý" },
-  { value: "confirmed", label: "Đã xác nhận" },
-  { value: "shipping", label: "Đang giao hàng" },
-  { value: "completed", label: "Hoàn tất đơn" },
-  { value: "cancelled", label: "Đã hủy đơn" }
-];
-
-const payments: { value: PaymentStatus; label: string }[] = [
-  { value: "pending", label: "Chờ thanh toán" },
-  { value: "paid", label: "Đã thanh toán" },
-  { value: "cod_pending", label: "COD chờ thu tiền" },
-  { value: "failed", label: "Thanh toán lỗi" },
-  { value: "refunded", label: "Đã hoàn tiền" }
-];
+type FulfillFilter = "all" | "pending_dispatch" | "shipping" | "completed" | "cancelled";
 
 export default function FulfillmentPage() {
   const { user, accountLoading, orders, updateOrderStatus } = useStore();
   const [shippingDrafts, setShippingDrafts] = useState<Record<string, { carrier: string; tracking: string }>>({});
+  const [filter, setFilter] = useState<FulfillFilter>("all");
+  const [query, setQuery] = useState("");
+
   function draft(order: (typeof orders)[number]) {
     return shippingDrafts[order.id] || {
       carrier: order.shippingCarrier ?? "",
       tracking: order.trackingCode ?? ""
     };
   }
+
   function updateDraft(id: string, key: "carrier" | "tracking", value: string, order: (typeof orders)[number]) {
     setShippingDrafts((previous) => ({
       ...previous,
       [id]: { ...draft(order), ...previous[id], [key]: value }
     }));
   }
+
+  const filteredOrders = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return orders.filter((order) => {
+      const matchFilter =
+        filter === "all" ||
+        (filter === "pending_dispatch" && (order.status === "processing" || order.status === "confirmed")) ||
+        (filter === "shipping" && order.status === "shipping") ||
+        (filter === "completed" && order.status === "completed") ||
+        (filter === "cancelled" && order.status === "cancelled");
+      const matchQuery =
+        !q ||
+        `${order.id} ${order.customer.name} ${order.customer.phone} ${order.customer.city} ${order.trackingCode ?? ""} ${order.shippingCarrier ?? ""}`
+          .toLowerCase()
+          .includes(q);
+      return matchFilter && matchQuery;
+    });
+  }, [orders, filter, query]);
 
   if (accountLoading) {
     return (
@@ -74,14 +83,14 @@ export default function FulfillmentPage() {
     );
   }
 
+  const dispatchCount = orders.filter((o) => o.status === "processing" || o.status === "confirmed").length;
   const shippingCount = orders.filter((o) => o.status === "shipping").length;
-  const processingCount = orders.filter((o) => o.status === "processing").length;
   const completedCount = orders.filter((o) => o.status === "completed").length;
   const paidCount = orders.filter((o) => o.paymentStatus === "paid").length;
 
   return (
     <div className="antAdminPageContainer">
-      {/* Ant Design Page Header */}
+      {/* Page Header */}
       <div className="antPageHeader">
         <div className="antPageHeaderLeft">
           <div className="antBreadcrumb">
@@ -104,19 +113,19 @@ export default function FulfillmentPage() {
         </div>
       </div>
 
-      {/* Ant Design Stat Cards Grid */}
+      {/* Stat Cards Grid */}
       <div className="antStatCardsGrid">
         <div className="antStatCard">
           <div className="antStatCardHeader">
-            <span className="antStatLabel">ĐƠN CHỜ ĐIỀU PHỐI</span>
+            <span className="antStatLabel">ĐƠN CẦN ĐIỀU PHỐI</span>
             <div className="antStatIconWrap blue">
               <ShoppingOutlined />
             </div>
           </div>
-          <div className="antStatValue">{processingCount}</div>
+          <div className="antStatValue">{dispatchCount}</div>
           <div className="antStatFooter">
             <span className="antTag antTagProcessing">
-              <SyncOutlined spin /> Cần đóng gói & xác nhận
+              <SyncOutlined spin={dispatchCount > 0} /> Đang xử lý & Đã xác nhận
             </span>
           </div>
         </div>
@@ -165,106 +174,155 @@ export default function FulfillmentPage() {
 
       {/* Fulfillment Operations Card */}
       <div className="antCard">
-        <div className="antCardHead">
-          <div>
-            <div className="antCardEyebrow">DANH SÁCH ĐIỀU PHỐI</div>
-            <h2 className="antCardTitle">
-              Xử lý vận chuyển đơn hàng{" "}
-              <span className="antCountTag">{orders.length}</span>
-            </h2>
+        <div className="antCardHead antToolbar">
+          <div className="antToolbarLeft">
+            <div>
+              <div className="antCardEyebrow">DANH SÁCH ĐIỀU PHỐI</div>
+              <h2 className="antCardTitle">
+                Xử lý vận chuyển đơn hàng{" "}
+                <span className="antCountTag">{filteredOrders.length}/{orders.length}</span>
+              </h2>
+            </div>
           </div>
-          <CarOutlined style={{ fontSize: 20, color: "#1677ff" }} />
+          <div className="antToolbarRight">
+            <div className="antSearchInput">
+              <SearchOutlined className="antSearchIcon" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Tìm mã đơn, tên khách, SĐT, vận đơn..."
+              />
+            </div>
+            <select
+              className="antSelect"
+              aria-label="Lọc trạng thái điều phối"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value as FulfillFilter)}
+            >
+              <option value="all">Tất cả đơn ({orders.length})</option>
+              <option value="pending_dispatch">Cần điều phối ({dispatchCount})</option>
+              <option value="shipping">Đang giao hàng ({shippingCount})</option>
+              <option value="completed">Đã hoàn tất ({completedCount})</option>
+              <option value="cancelled">Đã hủy</option>
+            </select>
+          </div>
         </div>
 
         <div className="antCardBody">
-          <div className="antFulfillmentList">
-            {orders.map((order) => (
-              <div key={order.id} className="antFulfillmentRow">
-                <div className="antFulfillColInfo">
-                  <Link
-                    href={`/admin/orders/${order.id}`}
-                    className="antOrderId"
-                  >
-                    #{order.id}
-                  </Link>
-                  <strong className="antCustomerName">
-                    {order.customer.name}
-                  </strong>
-                  <span className="antSubPhone">
-                    {order.customer.phone} · {order.customer.city}
-                  </span>
-                  <strong className="antPrice greenText" style={{ marginTop: 4 }}>
-                    {formatPrice(order.total)}
-                  </strong>
-                </div>
+          {filteredOrders.length ? (
+            <div className="antFulfillmentList">
+              {filteredOrders.map((order) => {
+                const isFinal = order.status === "cancelled" || order.status === "completed";
+                const itemCount = order.items.reduce((sum, line) => sum + line.quantity, 0);
+                return (
+                  <div key={order.id} className="antFulfillmentRow">
+                    <div className="antFulfillColInfo">
+                      <div className="antFulfillIdRow">
+                        <Link href={`/admin/orders/${order.id}`} className="antOrderId">
+                          #{order.id}
+                        </Link>
+                        <StatusTag kind="order" value={order.status} />
+                      </div>
+                      <strong className="antCustomerName">{order.customer.name}</strong>
+                      <span className="antSubPhone">
+                        {order.customer.phone} · {order.customer.city}
+                      </span>
+                      <div className="antFulfillPriceRow">
+                        <strong className="antPrice greenText">{formatPrice(order.total)}</strong>
+                        <span className="antTag antTagDefault">{itemCount} sản phẩm</span>
+                      </div>
+                    </div>
 
-                <div className="antFulfillColField">
-                  <label className="antFulfillLabel">Trạng thái giao nhận</label>
-                  <select
-                    className="antInput"
-                    value={order.status}
-                    onChange={(event) => updateOrderStatus(order.id, event.target.value as OrderStatus, {
-                      shippingCarrier: draft(order).carrier,
-                      trackingCode: draft(order).tracking
-                    })}
-                  >
-                    {statuses.filter((item) => allowedOrderStatuses(order.status).includes(item.value)).map((item) => (
-                      <option value={item.value} key={item.value}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                    <div className="antFulfillColField">
+                      <label className="antFulfillLabel">Chuyển trạng thái đơn</label>
+                      <select
+                        className={`antSelectStatus tone-${ORDER_STATUS_META[order.status]?.tone ?? "default"}`}
+                        value={order.status}
+                        disabled={isFinal}
+                        onChange={(event) =>
+                          updateOrderStatus(order.id, event.target.value as OrderStatus, {
+                            shippingCarrier: draft(order).carrier,
+                            trackingCode: draft(order).tracking
+                          })
+                        }
+                      >
+                        {allowedOrderStatuses(order.status).map((val) => (
+                          <option value={val} key={val}>
+                            {ORDER_STATUS_META[val].label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
 
-                <div className="antFulfillColField">
-                  <label className="antFulfillLabel">Thanh toán</label>
-                  <span className={`antTag ${order.paymentStatus === "paid" ? "antTagSuccess" : "antTagWarning"}`}>
-                    {payments.find((item) => item.value === order.paymentStatus)?.label || order.paymentStatus}
-                  </span>
-                  {order.payment === "cod" && order.status === "completed" && order.paymentStatus !== "paid" && (
-                    <button type="button" className="antBtn antBtnDefault antBtnSm"
-                      onClick={() => updateOrderStatus(order.id, order.status, { paymentStatus: "paid" })}>
-                      Ghi nhận đã thu COD
-                    </button>
-                  )}
-                </div>
+                    <div className="antFulfillColField">
+                      <label className="antFulfillLabel">Trạng thái thanh toán</label>
+                      <div className="antTagWrap">
+                        <StatusTag kind="payment" value={order.paymentStatus} />
+                      </div>
+                      <small className="antSubDate">{paymentMethodLabel(order.payment)}</small>
+                      {order.payment === "cod" && order.status === "completed" && order.paymentStatus !== "paid" && (
+                        <button
+                          type="button"
+                          className="antBtn antBtnSuccess antBtnSm"
+                          style={{ marginTop: 4 }}
+                          onClick={() => updateOrderStatus(order.id, order.status, { paymentStatus: "paid" })}
+                        >
+                          <CheckCircleOutlined /> Đã thu tiền COD
+                        </button>
+                      )}
+                    </div>
 
-                <div className="antFulfillColField">
-                  <label className="antFulfillLabel">Hãng vận chuyển</label>
-                  <input
-                    className="antInput"
-                    value={draft(order).carrier}
-                    placeholder="GHN, GHTK, Viettel Post..."
-                    onChange={(event) => updateDraft(order.id, "carrier", event.target.value, order)}
-                  />
-                </div>
+                    <div className="antFulfillColField">
+                      <label className="antFulfillLabel">Hãng vận chuyển</label>
+                      <input
+                        className="antInput"
+                        value={draft(order).carrier}
+                        disabled={isFinal}
+                        placeholder="GHN, GHTK, Viettel Post..."
+                        onChange={(event) => updateDraft(order.id, "carrier", event.target.value, order)}
+                      />
+                    </div>
 
-                <div className="antFulfillColField">
-                  <label className="antFulfillLabel">Mã vận đơn (Tracking)</label>
-                  <input
-                    className="antInput"
-                    value={draft(order).tracking}
-                    placeholder="Nhập mã vận đơn"
-                    onChange={(event) => updateDraft(order.id, "tracking", event.target.value, order)}
-                  />
-                </div>
+                    <div className="antFulfillColField">
+                      <label className="antFulfillLabel">Mã vận đơn (Tracking)</label>
+                      <input
+                        className="antInput"
+                        value={draft(order).tracking}
+                        disabled={isFinal}
+                        placeholder="Nhập mã vận đơn"
+                        onChange={(event) => updateDraft(order.id, "tracking", event.target.value, order)}
+                      />
+                    </div>
 
-                <div className="antFulfillColAction">
-                  <span className="antTag antTagInfo">
-                    {order.items.reduce((sum, line) => sum + line.quantity, 0)} món
-                  </span>
-                  <button type="button" className="antBtn antBtnPrimary antBtnSm"
-                    onClick={() => updateOrderStatus(order.id, order.status, {
-                      shippingCarrier: draft(order).carrier,
-                      trackingCode: draft(order).tracking
-                    })}>
-                    Lưu vận chuyển
-                  </button>
-                  <Link href={`/admin/orders/${order.id}`} className="antBtn antBtnDefault antBtnSm">Chi tiết</Link>
-                </div>
-              </div>
-            ))}
-          </div>
+                    <div className="antFulfillColAction">
+                      <button
+                        type="button"
+                        className="antBtn antBtnPrimary antBtnSm"
+                        disabled={isFinal}
+                        onClick={() =>
+                          updateOrderStatus(order.id, order.status, {
+                            shippingCarrier: draft(order).carrier,
+                            trackingCode: draft(order).tracking
+                          })
+                        }
+                      >
+                        Lưu vận chuyển
+                      </button>
+                      <Link href={`/admin/orders/${order.id}`} className="antBtn antBtnDefault antBtnSm">
+                        Chi tiết đơn
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="antEmptyState large">
+              <CarOutlined style={{ fontSize: 40, color: "#bfbfbf" }} />
+              <h3>Không có đơn hàng phù hợp</h3>
+              <p>Thử đổi bộ lọc trạng thái hoặc từ khóa tìm kiếm.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

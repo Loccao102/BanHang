@@ -20,6 +20,7 @@ import {
   TrophyOutlined
 } from "@ant-design/icons";
 import { useStore } from "@/components/store-provider";
+import { StatusTag } from "@/components/admin/status-tag";
 import { formatPrice } from "@/lib/products";
 
 type Data = {
@@ -366,10 +367,9 @@ export default function AdminAnalyticsPage() {
               {Object.entries(data.byStatus).map(([k, v]) => (
                 <div key={k} className="antBreakdownItem">
                   <span className="antBreakdownLabel">
-                    <span className="antStatusDot" />
-                    {statusViLabels[k] || k}
+                    <StatusTag kind="order" value={k} />
                   </span>
-                  <span className="antTag antTagDefault">{v} đơn</span>
+                  <strong className="antPrice">{v} đơn</strong>
                 </div>
               ))}
             </div>
@@ -390,10 +390,9 @@ export default function AdminAnalyticsPage() {
               {Object.entries(data.byPayment).map(([k, v]) => (
                 <div key={k} className="antBreakdownItem">
                   <span className="antBreakdownLabel">
-                    <span className="antStatusDot payment" />
-                    {paymentViLabels[k] || k}
+                    <StatusTag kind="payment" value={k} />
                   </span>
-                  <span className="antTag antTagSuccess">{v} giao dịch</span>
+                  <strong className="antPrice">{v} giao dịch</strong>
                 </div>
               ))}
             </div>

@@ -15,6 +15,8 @@ import {
   ThunderboltOutlined
 } from "@ant-design/icons";
 import { useStore } from "@/components/store-provider";
+import { StatusTag } from "@/components/admin/status-tag";
+import { behaviorEventLabel } from "@/lib/admin-status";
 
 type Data = {
   tryOn: {
@@ -246,8 +248,8 @@ export default function AdminAIPage() {
               <div className="antBreakdownList">
                 {Object.entries(data.stylist.feedback).map(([k, v]) => (
                   <div key={k} className="antBreakdownItem">
-                    <span className="antBreakdownLabel">{k}</span>
-                    <span className="antTag antTagInfo">{v} lượt</span>
+                    <span className="antBreakdownLabel"><StatusTag kind="feedback" value={k} /></span>
+                    <strong className="antPrice">{v} lượt</strong>
                   </div>
                 ))}
               </div>
@@ -276,8 +278,8 @@ export default function AdminAIPage() {
               <div className="antBreakdownList">
                 {Object.entries(data.recommendations.feedback).map(([k, v]) => (
                   <div key={k} className="antBreakdownItem">
-                    <span className="antBreakdownLabel">{k}</span>
-                    <span className="antTag antTagDefault">{v}</span>
+                    <span className="antBreakdownLabel"><StatusTag kind="feedback" value={k} /></span>
+                    <strong className="antPrice">{v} lượt</strong>
                   </div>
                 ))}
               </div>
@@ -303,7 +305,10 @@ export default function AdminAIPage() {
                 .sort((a, b) => b[1] - a[1])
                 .map(([k, v]) => (
                   <div key={k} className="antBreakdownItem">
-                    <span className="antBreakdownLabel"><code>{k}</code></span>
+                    <span className="antBreakdownLabel">
+                      <strong>{behaviorEventLabel(k)}</strong>
+                      <code className="antSkuBadge">{k}</code>
+                    </span>
                     <span className="antTag antTagInfo">{v} lần</span>
                   </div>
                 ))}

@@ -20,6 +20,7 @@ import {
   TagsOutlined
 } from "@ant-design/icons";
 import { useStore } from "@/components/store-provider";
+import { StatusTag } from "@/components/admin/status-tag";
 import { formatPrice } from "@/lib/products";
 
 type CouponRow = {
@@ -203,8 +204,8 @@ export default function AdminMarketingPage() {
       </div>
 
       {message && (
-        <div className="antAlertInfo" role="status" style={{ marginBottom: 20, color: messageError ? "#cf1322" : undefined }}>
-          <CheckCircleOutlined style={{ color: messageError ? "#cf1322" : "#1677ff", marginRight: 8 }} />
+        <div className={`antInlineAlert ${messageError ? "error" : "success"}`} role="status" style={{ marginBottom: 20 }}>
+          <CheckCircleOutlined style={{ marginRight: 8 }} />
           <span>{message}</span>
         </div>
       )}
@@ -224,7 +225,7 @@ export default function AdminMarketingPage() {
           </div>
 
           <div className="antCardBody">
-            <form onSubmit={saveCoupon} className="antCouponForm">
+            <form key={editing?.code ?? "new"} onSubmit={saveCoupon} className="antCouponForm">
               <div className="antFormGrid" style={{ gridTemplateColumns: "1fr 1fr" }}>
                 <label className="antFormField">
                   <span className="antFormLabel">Mã voucher *</span>
@@ -402,17 +403,7 @@ export default function AdminMarketingPage() {
                       <div className="antSocialAuthor">
                         <strong>{post.authorName}</strong>
                         <span className="antSocialHandle">{post.authorHandle}</span>
-                        <span
-                          className={`antTag ${
-                            post.status === "approved"
-                              ? "antTagSuccess"
-                              : post.status === "rejected"
-                              ? "antTagError"
-                              : "antTagWarning"
-                          }`}
-                        >
-                          {post.status}
-                        </span>
+                        <StatusTag kind="social" value={post.status} />
                       </div>
                       <p className="antSocialCaption">{post.caption}</p>
                       <small className="antSocialMeta">
@@ -424,17 +415,19 @@ export default function AdminMarketingPage() {
                         type="button"
                         className="antBtn antBtnSuccess antBtnSm"
                         title="Duyệt hiển thị"
+                        disabled={actionBusy || post.status === "approved"}
                         onClick={() => moderate(post.id, "approved")}
                       >
-                        <CheckCircleOutlined /> Duyệt
+                        <CheckCircleOutlined /> {post.status === "approved" ? "Đã duyệt" : "Duyệt"}
                       </button>
                       <button
                         type="button"
                         className="antBtn antBtnDanger antBtnSm"
                         title="Từ chối"
+                        disabled={actionBusy || post.status === "rejected"}
                         onClick={() => moderate(post.id, "rejected")}
                       >
-                        <CloseCircleOutlined /> Từ chối
+                        <CloseCircleOutlined /> {post.status === "rejected" ? "Đã từ chối" : "Từ chối"}
                       </button>
                     </div>
                   </div>

@@ -45,6 +45,8 @@ import {
   type StorefrontCategory
 } from "@/lib/products";
 import { Pagination } from "@/components/pagination";
+import { StatusTag } from "@/components/admin/status-tag";
+import { ORDER_STATUS_META } from "@/lib/admin-status";
 
 type Tab = "overview" | "products" | "orders" | "settings";
 
@@ -628,13 +630,10 @@ function AdminContent() {
                           <strong className="antOrderAmount">
                             {formatPrice(order.total)}
                           </strong>
-                          <span
-                            className={`antTag ${
-                              statusTagClass[order.status] ?? "antTagDefault"
-                            }`}
-                          >
-                            {statusLabel[order.status]}
-                          </span>
+                          <div className="antTagWrap" style={{ justifyContent: "flex-end" }}>
+                            <StatusTag kind="payment" value={order.paymentStatus} />
+                            <StatusTag kind="order" value={order.status} />
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -925,15 +924,10 @@ function AdminContent() {
                           sản phẩm
                         </td>
                         <td>
-                          <span
-                            className={`antTag ${
-                              order.payment === "qr"
-                                ? "antTagInfo"
-                                : "antTagDefault"
-                            }`}
-                          >
-                            {order.payment === "qr" ? "QR Chuyển khoản" : "COD"}
-                          </span>
+                          <StatusTag kind="payment" value={order.paymentStatus} />
+                          <small className="antSubDate">
+                            {order.payment === "qr" ? "QR Chuyển khoản" : "Thanh toán COD"}
+                          </small>
                         </td>
                         <td>
                           <strong className="antPrice greenText">
@@ -943,7 +937,8 @@ function AdminContent() {
                         <td>
                           <div className="antSelectWrap">
                             <select
-                              className="antSelectStatus"
+                              className={`antSelectStatus tone-${ORDER_STATUS_META[order.status]?.tone ?? "default"}`}
+                              disabled={order.status === "cancelled" || order.status === "completed"}
                               value={order.status}
                               onChange={(event) =>
                                 updateOrderStatus(

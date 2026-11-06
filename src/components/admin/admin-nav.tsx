@@ -136,18 +136,16 @@ export function AdminNav({ currentTab, onTabChange }: AdminNavProps) {
         </div>
 
         <div className="antAdminTopActions">
-          <a
-            href={process.env.NEXT_PUBLIC_STORE_URL || "/"}
-            target="_blank"
-            rel="noreferrer"
+          <Link
+            href="/"
             className="antBtn antBtnDefault antBtnSm"
           >
             <ShopOutlined />
-            <span>Xem Website Khách Hàng</span>
+            <span>Xem Cửa hàng</span>
             <ExportOutlined style={{ fontSize: 11, opacity: 0.7 }} />
-          </a>
+          </Link>
 
-          <div className="antUserPill">
+          <Link href="/account" className="antUserPill" title="Tài khoản quản trị">
             <div className="antAvatar">
               <UserOutlined />
             </div>
@@ -155,7 +153,7 @@ export function AdminNav({ currentTab, onTabChange }: AdminNavProps) {
               <span className="antUserName">{user?.name || "Admin"}</span>
               <span className="antUserRole">Quản trị viên</span>
             </div>
-          </div>
+          </Link>
         </div>
       </div>
 
