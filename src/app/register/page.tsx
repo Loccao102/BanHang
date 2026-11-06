@@ -21,7 +21,8 @@ export default function RegisterPage() {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setLoading(true);
+    if (loading) return;
+
     setError("");
     const data = new FormData(event.currentTarget);
     const password = String(data.get("password") ?? "");
@@ -29,27 +30,43 @@ export default function RegisterPage() {
 
     if (password !== confirm) {
       setError("Mật khẩu nhập lại chưa khớp.");
-      setLoading(false);
       return;
     }
 
-    const response = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: data.get("name"), phone: data.get("phone"), email: data.get("email"), password })
-    });
-    const result = await response.json();
+    setLoading(true);
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: data.get("name"),
+          phone: data.get("phone"),
+          email: data.get("email"),
+          password
+        })
+      });
 
-    if (!response.ok) {
-      setError(result.error ?? "Không thể tạo tài khoản.");
+      // Some server failures return an empty/non-JSON body. Do not let JSON
+      // parsing throw outside the form's error handling.
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(
+          typeof result?.error === "string" ? result.error : "Không thể tạo tài khoản. Vui lòng thử lại."
+        );
+      }
+
+      await refreshAccount(true);
+      const next = nextParam || new URLSearchParams(window.location.search).get("next");
+      router.push(next || "/account");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Đã có lỗi xảy ra khi tạo tài khoản. Vui lòng thử lại.");
+    } finally {
+      // Always restore the submit button, including network, API, JSON parse,
+      // and account-refresh failures.
       setLoading(false);
-      return;
     }
-
-    await refreshAccount(true);
-    const next = nextParam || new URLSearchParams(window.location.search).get("next");
-    router.push(next || "/account");
-    router.refresh();
   }
 
   return (
@@ -69,7 +86,7 @@ export default function RegisterPage() {
           <label><span>Email</span><input name="email" type="email" autoComplete="email" required placeholder="you@example.com" /></label>
           <label><span>Mật khẩu</span><input name="password" type="password" autoComplete="new-password" required minLength={8} placeholder="Ít nhất 8 ký tự" /></label>
           <label><span>Nhập lại mật khẩu</span><input name="confirmPassword" type="password" autoComplete="new-password" required minLength={8} placeholder="Nhập lại mật khẩu" /></label>
-          {error ? <div className="authError">{error}</div> : null}
+          {error ? <div className="authError" role="alert">{error}</div> : null}
           <button className="btn block" type="submit" disabled={loading}>{loading ? "Đang tạo tài khoản..." : <>Tạo tài khoản <ArrowRight size={15} /></>}</button>
           <p className="authSwitch">Đã có tài khoản? <Link href={nextParam ? `/login?next=${encodeURIComponent(nextParam)}` : "/login"}>Đăng nhập</Link></p>
         </form>
