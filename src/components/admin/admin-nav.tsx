@@ -79,6 +79,14 @@ export function AdminNav({ currentTab, onTabChange }: AdminNavProps) {
       active: pathname?.startsWith("/admin/customers")
     },
     {
+      key: "accounts",
+      label: "Quản lý tài khoản",
+      icon: <UserOutlined />,
+      href: "/admin/accounts",
+      isTab: false,
+      active: pathname?.startsWith("/admin/accounts")
+    },
+    {
       key: "analytics",
       label: "Báo cáo doanh thu",
       icon: <BarChartOutlined />,

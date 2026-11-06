@@ -6,28 +6,35 @@ import { FormEvent, useState } from "react";
 
 export default function ForgotPasswordPage() {
   const [message, setMessage] = useState("");
-  const [resetUrl, setResetUrl] = useState("");
+  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (loading) return;
     setLoading(true);
     setMessage("");
-    setResetUrl("");
-    const data = new FormData(event.currentTarget);
-    const response = await fetch("/api/auth/forgot-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: data.get("email") })
-    });
-    const result = await response.json();
-    setLoading(false);
-    if (!response.ok) {
-      setMessage(result.error ?? "Không thể tạo yêu cầu.");
-      return;
+    setSuccess(false);
+
+    try {
+      const data = new FormData(event.currentTarget);
+      const response = await fetch("/api/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: data.get("email") })
+      });
+      const result = await response.json().catch(() => null);
+      if (!response.ok) {
+        setMessage(typeof result?.error === "string" ? result.error : "Không thể gửi yêu cầu. Vui lòng thử lại.");
+        return;
+      }
+      setSuccess(true);
+      setMessage("Nếu email tồn tại trong hệ thống, LSOUL đã gửi hướng dẫn đặt lại mật khẩu. Vui lòng kiểm tra hộp thư và thư mục Spam.");
+    } catch {
+      setMessage("Không thể kết nối máy chủ. Vui lòng kiểm tra mạng và thử lại.");
+    } finally {
+      setLoading(false);
     }
-    setMessage("Nếu email tồn tại trong hệ thống, liên kết đặt lại mật khẩu đã được tạo và có hiệu lực trong 30 phút.");
-    if (result.resetUrl) setResetUrl(result.resetUrl);
   }
 
   return (
@@ -41,9 +48,8 @@ export default function ForgotPasswordPage() {
           <p className="eyebrow">QUÊN MẬT KHẨU</p>
           <h2>Nhập email của bạn</h2>
           <label><span>Email</span><input name="email" type="email" required autoComplete="email" placeholder="you@example.com" /></label>
-          {message ? <div className="authNotice">{message}</div> : null}
-          {resetUrl ? <Link className="authResetPreview" href={resetUrl}>Mở liên kết đặt lại mật khẩu (môi trường demo)</Link> : null}
-          <button className="btn block" type="submit" disabled={loading}>{loading ? "Đang xử lý..." : "Tạo liên kết đặt lại"}</button>
+          {message ? <div className={success ? "authNotice" : "authError"} role="status">{message}</div> : null}
+          <button className="btn block" type="submit" disabled={loading}>{loading ? "Đang gửi email..." : "Gửi liên kết đặt lại"}</button>
           <p className="authSwitch"><Link href="/login"><ArrowLeft size={13} /> Quay lại đăng nhập</Link></p>
         </form>
       </div>
