@@ -26,14 +26,15 @@ export async function POST(request: Request) {
     }
 
     const user = await db.user.findUnique({ where: { email } });
-    // Keep the response identical for known and unknown addresses.
+    // Same response for known and unknown email addresses prevents account enumeration.
     if (!user) return NextResponse.json({ accepted: true });
 
-    const apiKey = process.env.RESEND_API_KEY;
-    const from = process.env.EMAIL_FROM;
-    if (!apiKey || !from) {
-      console.error("[LSOUL] Password reset email is not configured: RESEND_API_KEY or EMAIL_FROM is missing.");
-      return NextResponse.json({ error: "Chức năng gửi email khôi phục chưa được cấu hình. Vui lòng thử lại sau." }, { status: 503 });
+    const apiKey = process.env.BREVO_API_KEY;
+    const senderEmail = process.env.BREVO_SENDER_EMAIL;
+    const senderName = process.env.BREVO_SENDER_NAME || "LSOUL";
+    if (!apiKey || !senderEmail) {
+      console.error("[LSOUL] Brevo is not configured: BREVO_API_KEY or BREVO_SENDER_EMAIL is missing.");
+      return NextResponse.json({ error: "Dịch vụ gửi email khôi phục chưa được cấu hình. Vui lòng thử lại sau." }, { status: 503 });
     }
 
     await db.passwordResetToken.deleteMany({ where: { userId: user.id, usedAt: null } });
@@ -51,17 +52,18 @@ export async function POST(request: Request) {
     const safeName = escapeHtml(user.name || "bạn");
 
     try {
-      const mailResponse = await fetch("https://api.resend.com/emails", {
+      const mailResponse = await fetch("https://api.brevo.com/v3/smtp/email", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json"
+          "api-key": apiKey,
+          "accept": "application/json",
+          "content-type": "application/json"
         },
         body: JSON.stringify({
-          from,
-          to: [user.email],
+          sender: { name: senderName, email: senderEmail },
+          to: [{ email: user.email, name: user.name || undefined }],
           subject: "Đặt lại mật khẩu LSOUL",
-          html: `
+          htmlContent: `
             <div style="font-family:Arial,sans-serif;max-width:560px;margin:32px auto;color:#171717;line-height:1.6">
               <h1 style="font-family:Georgia,serif;font-weight:400">Khôi phục tài khoản LSOUL</h1>
               <p>Xin chào ${safeName},</p>
@@ -71,18 +73,19 @@ export async function POST(request: Request) {
               <p>Nếu bạn không yêu cầu thao tác này, hãy bỏ qua email.</p>
               <p style="color:#777;font-size:12px">Nếu nút không hoạt động, sao chép liên kết sau vào trình duyệt:<br/><a href="${safeUrl}">${safeUrl}</a></p>
             </div>
-          `
+          `,
+          textContent: `Xin chào ${user.name || "bạn"},\n\nĐặt lại mật khẩu LSOUL bằng liên kết sau (có hiệu lực trong 30 phút):\n${resetUrl}\n\nNếu bạn không yêu cầu, hãy bỏ qua email này.`
         })
       });
 
       if (!mailResponse.ok) {
         const detail = await mailResponse.text();
-        console.error("[LSOUL] Resend rejected password reset email:", mailResponse.status, detail.slice(0, 1000));
+        console.error("[LSOUL] Brevo rejected password reset email:", mailResponse.status, detail.slice(0, 1000));
         await db.passwordResetToken.delete({ where: { id: tokenRecord.id } }).catch(() => undefined);
         return NextResponse.json({ error: "Không gửi được email khôi phục. Vui lòng thử lại sau." }, { status: 502 });
       }
     } catch (error) {
-      console.error("[LSOUL] Password reset email request failed:", error);
+      console.error("[LSOUL] Brevo email request failed:", error);
       await db.passwordResetToken.delete({ where: { id: tokenRecord.id } }).catch(() => undefined);
       return NextResponse.json({ error: "Không thể kết nối dịch vụ gửi email. Vui lòng thử lại sau." }, { status: 502 });
     }
