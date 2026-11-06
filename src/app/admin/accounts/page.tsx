@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import {useCallback,useEffect,useMemo,useState} from "react";
+import type { FormEvent } from "react";
 import {CloseCircleOutlined,ReloadOutlined,SearchOutlined,SyncOutlined,UserOutlined,PlusOutlined,CopyOutlined} from "@ant-design/icons";
 import {useStore} from "@/components/store-provider";
 import {Pagination} from "@/components/pagination";
@@ -37,7 +38,7 @@ export default function AdminAccountsPage(){
  function openEdit(a:Account){setSelected(a);setDraft({name:a.name,email:a.email,phone:a.phone||"",password:"",role:a.role});setError("");setModal("edit");}
  function closeModal(){setModal(null);setSelected(null);setTemporaryPassword("");}
 
- async function submitAccount(e:React.FormEvent<HTMLFormElement>){
+ async function submitAccount(e:FormEvent<HTMLFormElement>){
   e.preventDefault();setBusyId(selected?.id||"create");setError("");setNotice("");
   try{
    const isCreate=modal==="create";
