@@ -4,7 +4,7 @@ Bộ tài liệu phân tích, thiết kế và đánh giá hệ thống thời t
 
 ## Bản rút gọn 75 trang
 
-Bản này diễn đạt ngắn gọn, giảm thuật ngữ và giữ 41 sơ đồ nguyên hình. Mỗi sơ đồ được trình bày liền mạch; các sơ đồ rộng dùng trang A4 ngang, sơ đồ ngắn có thể đặt chung trang. Chữ trong sơ đồ Times New Roman 13 pt, đen trắng. Gồm 45 hình, 16 bảng và 102 trường số trang đã cập nhật.
+Bản này diễn đạt ngắn gọn, giảm thuật ngữ và giữ 41 sơ đồ nguyên hình. Mỗi sơ đồ được trình bày liền mạch; các sơ đồ rộng dùng trang A4 ngang, sơ đồ ngắn có thể đặt chung trang. Nội dung dùng Times New Roman 13 pt; tiêu đề theo cỡ 18/16/14 pt, chú thích 14 pt, toàn bộ chữ màu đen. Trang dọc A4 dùng lề trên/dưới 2,5 cm, trái 3 cm, phải 2 cm; trang ngang giữ lề trái/phải và chừa 1,5 cm trên/dưới để sơ đồ cùng chú thích nằm trọn trang. Gồm 45 hình, 16 bảng và 102 trường số trang đã cập nhật.
 
 - [Báo cáo Word 75 trang](Bao-cao-do-an-LSOUL-rut-gon.docx)
 - [Bản PDF xem và in](Bao-cao-do-an-LSOUL-rut-gon.pdf)
@@ -13,7 +13,7 @@ Bản này diễn đạt ngắn gọn, giảm thuật ngữ và giữ 41 sơ đ�
 
 ## Bản đầy đủ
 
-Báo cáo Word đã dàn lại toàn bộ hình để đọc và in trên A4. 41 sơ đồ được bố trí thành 104 phần, giữ chữ Times New Roman 13 pt ở kích thước đặt trong Word; các luồng dài có ký hiệu hoặc số bước tiếp nối. Ảnh giao diện được phóng vùng thao tác chính. Mục lục, danh mục hình và số trang đã cập nhật. Nguồn chỉnh sửa của các hình trong báo cáo nằm trong [`So-do-LSOUL-de-doc/`](So-do-LSOUL-de-doc/).
+Báo cáo Word đã dàn lại toàn bộ hình để đọc và in trên A4. 41 sơ đồ được bố trí thành 104 phần, giữ chữ Times New Roman 13 pt ở kích thước đặt trong Word; các luồng dài có ký hiệu hoặc số bước tiếp nối. Ảnh giao diện được phóng vùng thao tác chính. Nội dung dùng Times New Roman 13 pt; tiêu đề theo cỡ 18/16/14 pt, chú thích 14 pt, toàn bộ chữ màu đen. Trang dọc A4 dùng lề trên/dưới 2,5 cm, trái 3 cm, phải 2 cm. Mục lục, danh mục hình và số trang đã cập nhật. Nguồn chỉnh sửa của các hình trong báo cáo nằm trong [`So-do-LSOUL-de-doc/`](So-do-LSOUL-de-doc/).
 
 | Tệp/thư mục | Nội dung |
 |---|---|
