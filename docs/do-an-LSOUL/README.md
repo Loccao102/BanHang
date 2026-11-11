@@ -8,6 +8,7 @@ Bản này diễn đạt ngắn gọn, giảm thuật ngữ và giữ 41 sơ đ�
 
 - [Báo cáo Word 75 trang](Bao-cao-do-an-LSOUL-rut-gon.docx)
 - [Bản PDF xem và in](Bao-cao-do-an-LSOUL-rut-gon.pdf)
+- [Bản Word theo trường và khoa trong mẫu](Bao-cao-do-an-LSOUL-rut-gon-theo-mau.docx) · [PDF](Bao-cao-do-an-LSOUL-rut-gon-theo-mau.pdf)
 - [Bộ sơ đồ nguyên hình](So-do-LSOUL-rut-gon/) · [Tải ZIP](So-do-LSOUL-rut-gon.zip)
 - [Mở trong draw.io](So-do-LSOUL-rut-gon/LSOUL-So-do-nguyen-hinh.drawio) · [Nhập vào Visual Paradigm Online](So-do-LSOUL-rut-gon/LSOUL-So-do-nguyen-hinh.xml)
 
