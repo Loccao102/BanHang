@@ -59,7 +59,7 @@
     "code": "DL-01",
     "title": "Dữ liệu tài khoản và thương mại",
     "width": 680,
-    "height": 420,
+    "height": 455,
     "font_pt": 13,
     "orientation": "landscape"
   },
@@ -67,7 +67,7 @@
     "code": "DL-02",
     "title": "Dữ liệu AI và cá nhân hóa",
     "width": 680,
-    "height": 420,
+    "height": 455,
     "font_pt": 13,
     "orientation": "landscape"
   }
