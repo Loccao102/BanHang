@@ -1,6 +1,6 @@
 # Sơ đồ LSOUL nguyên hình
 
-41 sơ đồ hoàn chỉnh, mỗi sơ đồ là một hình, không chia phần. Dùng Times New Roman 13 pt, chữ và nét đen, nền trắng. Sơ đồ rộng được bố trí cho một trang A4 nằm ngang. ERD nêu trường tiêu biểu và kiểu dữ liệu, đánh dấu PK/FK, thể hiện lực lượng quan hệ; dữ liệu JSON không tạo liên kết khóa ngoại.
+41 sơ đồ hoàn chỉnh, mỗi sơ đồ là một hình, không chia phần. Dùng Times New Roman 13 pt, chữ và nét đen, nền trắng. Sơ đồ rộng được bố trí cho một trang A4 nằm ngang. Trình tự thể hiện các bước nghiệp vụ chính; cấu trúc dữ liệu thể hiện mã chính, mã liên kết và các quan hệ.
 
 - Mở `LSOUL-So-do-nguyen-hinh.drawio` trong draw.io.
 - Trong Visual Paradigm Online, chọn Import draw.io và mở `LSOUL-So-do-nguyen-hinh.xml`.

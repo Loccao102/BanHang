@@ -6,7 +6,7 @@
       {
         "key": "HT-01-P01",
         "title": "Phân rã chức năng",
-        "width": 440,
+        "width": 410,
         "height": 470,
         "font_pt": 13,
         "objects": 14
@@ -86,7 +86,7 @@
       {
         "key": "HD-02-P02",
         "title": "Phối và thử trang phục – tạo ảnh",
-        "width": 440,
+        "width": 410,
         "height": 540,
         "font_pt": 13,
         "objects": 15

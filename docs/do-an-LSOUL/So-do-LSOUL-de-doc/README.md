@@ -1,6 +1,6 @@
 # Sơ đồ LSOUL dùng trong báo cáo Word
 
-41 sơ đồ được bố trí thành 104 phần để đọc trên giấy A4. Chữ Times New Roman 13 pt, màu đen, nền trắng. Mỗi phần không quá 440 × 560 pt; trong Word được đặt đúng kích thước này, giữ cỡ chữ thực tế 13 pt.
+41 sơ đồ được bố trí thành 120 phần để đọc trên giấy A4. Chữ Times New Roman 13 pt, màu đen, nền trắng. Mỗi phần không quá 440 × 560 pt; trong Word được đặt đúng kích thước này, giữ cỡ chữ thực tế 13 pt.
 
 - Sơ đồ tuần tự giữ số bước liên tục, lặp các đối tượng tham gia và điều kiện khi sang phần mới.
 - Sơ đồ hoạt động nối các phần bằng ký hiệu A/B/C.

@@ -177,35 +177,35 @@
         "title": "Quản trị hệ thống – phần 1/5",
         "width": 440,
         "height": 520,
-        "objects": 12
+        "objects": 10
       },
       {
         "key": "UC-G06-P02",
         "title": "Quản trị hệ thống – phần 2/5",
         "width": 440,
         "height": 520,
-        "objects": 9
+        "objects": 8
       },
       {
         "key": "UC-G06-P03",
         "title": "Quản trị hệ thống – phần 3/5",
         "width": 440,
         "height": 520,
-        "objects": 12
+        "objects": 10
       },
       {
         "key": "UC-G06-P04",
         "title": "Quản trị hệ thống – phần 4/5",
         "width": 440,
         "height": 520,
-        "objects": 9
+        "objects": 8
       },
       {
         "key": "UC-G06-P05",
         "title": "Quản trị hệ thống – phần 5/5",
         "width": 440,
         "height": 520,
-        "objects": 12
+        "objects": 10
       }
     ]
   },
@@ -1362,7 +1362,7 @@
       {
         "key": "HT-01-P01",
         "title": "Phân rã chức năng",
-        "width": 440,
+        "width": 410,
         "height": 470,
         "font_pt": 13,
         "objects": 14
@@ -1442,7 +1442,7 @@
       {
         "key": "HD-02-P02",
         "title": "Phối và thử trang phục – tạo ảnh",
-        "width": 440,
+        "width": 410,
         "height": 540,
         "font_pt": 13,
         "objects": 15
@@ -1505,43 +1505,100 @@
     "parts": [
       {
         "key": "DL-01-P01",
-        "title": "Dữ liệu tài khoản và thương mại – phần 1/5",
+        "title": "Dữ liệu tài khoản và thương mại – phần 1/13",
         "width": 440,
         "height": 560,
-        "objects": 37
+        "objects": 23
       },
       {
         "key": "DL-01-P02",
-        "title": "Dữ liệu tài khoản và thương mại – phần 2/5",
+        "title": "Dữ liệu tài khoản và thương mại – phần 2/13",
         "width": 440,
         "height": 560,
-        "objects": 40
+        "objects": 24
       },
       {
         "key": "DL-01-P03",
-        "title": "Dữ liệu tài khoản và thương mại – phần 3/5",
+        "title": "Dữ liệu tài khoản và thương mại – phần 3/13",
+        "width": 440,
+        "height": 560,
+        "objects": 27
+      },
+      {
+        "key": "DL-01-P04",
+        "title": "Dữ liệu tài khoản và thương mại – phần 4/13",
+        "width": 440,
+        "height": 560,
+        "objects": 22
+      },
+      {
+        "key": "DL-01-P05",
+        "title": "Dữ liệu tài khoản và thương mại – phần 5/13",
+        "width": 440,
+        "height": 560,
+        "objects": 25
+      },
+      {
+        "key": "DL-01-P06",
+        "title": "Dữ liệu tài khoản và thương mại – phần 6/13",
+        "width": 440,
+        "height": 560,
+        "objects": 38
+      },
+      {
+        "key": "DL-01-P07",
+        "title": "Dữ liệu tài khoản và thương mại – phần 7/13",
         "width": 440,
         "height": 560,
         "objects": 41
       },
       {
-        "key": "DL-01-P04",
-        "title": "Dữ liệu tài khoản và thương mại – phần 4/5",
+        "key": "DL-01-P08",
+        "title": "Dữ liệu tài khoản và thương mại – phần 8/13",
         "width": 440,
         "height": 560,
-        "objects": 45
+        "objects": 41
       },
       {
-        "key": "DL-01-P05",
-        "title": "Dữ liệu tài khoản và thương mại – phần 5/5",
+        "key": "DL-01-P09",
+        "title": "Dữ liệu tài khoản và thương mại – phần 9/13",
         "width": 440,
         "height": 560,
-        "objects": 23
+        "objects": 36
+      },
+      {
+        "key": "DL-01-P10",
+        "title": "Dữ liệu tài khoản và thương mại – phần 10/13",
+        "width": 440,
+        "height": 560,
+        "objects": 38
+      },
+      {
+        "key": "DL-01-P11",
+        "title": "Dữ liệu tài khoản và thương mại – phần 11/13",
+        "width": 440,
+        "height": 560,
+        "objects": 38
+      },
+      {
+        "key": "DL-01-P12",
+        "title": "Dữ liệu tài khoản và thương mại – phần 12/13",
+        "width": 440,
+        "height": 560,
+        "objects": 27
+      },
+      {
+        "key": "DL-01-P13",
+        "title": "Dữ liệu tài khoản và thương mại – phần 13/13",
+        "width": 440,
+        "height": 560,
+        "objects": 40
       }
     ],
     "source_entities": [
       "User",
       "Session",
+      "PasswordResetToken",
       "Address",
       "Product",
       "ProductVariant",
@@ -1552,29 +1609,46 @@
       "OrderItem",
       "PaymentTransaction"
     ],
-    "source_relations": 12,
+    "source_relations": 13,
     "relation_batches": [
       [
-        0,
-        1,
+        0
+      ],
+      [
+        1
+      ],
+      [
         2
       ],
       [
-        3,
-        4,
+        3
+      ],
+      [
+        4
+      ],
+      [
         5
       ],
       [
-        6,
+        6
+      ],
+      [
         7
       ],
       [
-        8,
-        9,
+        8
+      ],
+      [
+        9
+      ],
+      [
         10
       ],
       [
         11
+      ],
+      [
+        12
       ]
     ]
   },
@@ -1584,38 +1658,94 @@
     "parts": [
       {
         "key": "DL-02-P01",
-        "title": "Dữ liệu AI và cá nhân hóa – phần 1/5",
+        "title": "Dữ liệu AI và cá nhân hóa – phần 1/13",
         "width": 440,
         "height": 560,
-        "objects": 36
+        "objects": 16
       },
       {
         "key": "DL-02-P02",
-        "title": "Dữ liệu AI và cá nhân hóa – phần 2/5",
+        "title": "Dữ liệu AI và cá nhân hóa – phần 2/13",
         "width": 440,
         "height": 560,
-        "objects": 35
+        "objects": 22
       },
       {
         "key": "DL-02-P03",
-        "title": "Dữ liệu AI và cá nhân hóa – phần 3/5",
+        "title": "Dữ liệu AI và cá nhân hóa – phần 3/13",
         "width": 440,
         "height": 560,
-        "objects": 35
+        "objects": 28
       },
       {
         "key": "DL-02-P04",
-        "title": "Dữ liệu AI và cá nhân hóa – phần 4/5",
+        "title": "Dữ liệu AI và cá nhân hóa – phần 4/13",
         "width": 440,
         "height": 560,
-        "objects": 31
+        "objects": 25
       },
       {
         "key": "DL-02-P05",
-        "title": "Dữ liệu AI và cá nhân hóa – phần 5/5",
+        "title": "Dữ liệu AI và cá nhân hóa – phần 5/13",
         "width": 440,
         "height": 560,
-        "objects": 27
+        "objects": 21
+      },
+      {
+        "key": "DL-02-P06",
+        "title": "Dữ liệu AI và cá nhân hóa – phần 6/13",
+        "width": 440,
+        "height": 560,
+        "objects": 24
+      },
+      {
+        "key": "DL-02-P07",
+        "title": "Dữ liệu AI và cá nhân hóa – phần 7/13",
+        "width": 440,
+        "height": 560,
+        "objects": 18
+      },
+      {
+        "key": "DL-02-P08",
+        "title": "Dữ liệu AI và cá nhân hóa – phần 8/13",
+        "width": 440,
+        "height": 560,
+        "objects": 21
+      },
+      {
+        "key": "DL-02-P09",
+        "title": "Dữ liệu AI và cá nhân hóa – phần 9/13",
+        "width": 440,
+        "height": 560,
+        "objects": 24
+      },
+      {
+        "key": "DL-02-P10",
+        "title": "Dữ liệu AI và cá nhân hóa – phần 10/13",
+        "width": 440,
+        "height": 560,
+        "objects": 20
+      },
+      {
+        "key": "DL-02-P11",
+        "title": "Dữ liệu AI và cá nhân hóa – phần 11/13",
+        "width": 440,
+        "height": 560,
+        "objects": 23
+      },
+      {
+        "key": "DL-02-P12",
+        "title": "Dữ liệu AI và cá nhân hóa – phần 12/13",
+        "width": 440,
+        "height": 560,
+        "objects": 41
+      },
+      {
+        "key": "DL-02-P13",
+        "title": "Dữ liệu AI và cá nhân hóa – phần 13/13",
+        "width": 440,
+        "height": 560,
+        "objects": 30
       }
     ],
     "source_entities": [
@@ -1634,26 +1764,42 @@
     "source_relations": 13,
     "relation_batches": [
       [
-        0,
-        1,
+        0
+      ],
+      [
+        1
+      ],
+      [
         2
       ],
       [
-        3,
-        4,
+        3
+      ],
+      [
+        4
+      ],
+      [
         5
       ],
       [
-        6,
-        7,
+        6
+      ],
+      [
+        7
+      ],
+      [
         8
       ],
       [
-        9,
+        9
+      ],
+      [
         10
       ],
       [
-        11,
+        11
+      ],
+      [
         12
       ]
     ]
